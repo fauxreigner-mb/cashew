@@ -203,20 +203,26 @@ Run audit() on the resulting graph:
 
 ## 6. Technical Decisions
 
-### Language: Python (MVP)
-- Fastest to insight
-- NetworkX for graph ops
-- SQLite for persistence
-- If concept proves out → consider Rust rewrite for performance
+### Platform: Agent-native on OpenClaw
+- No standalone app. cashew lives inside OpenClaw's agent infrastructure.
+- Bunny (main session) orchestrates. Sub-agents are the thought workers.
+- Claude Code for the build phase — agent teams for parallel development.
+- CLAUDE.md documents project conventions for coding agents.
 
-### LLM: Claude Sonnet (via Anthropic API)
-- Needs separate API key (not OpenClaw Max subscription)
-- ~$0.01-0.03 per thought node
-- Budget: $50 covers 2,000-5,000 thoughts
+### LLM: Claude Sonnet via OpenClaw sub-agents
+- No separate API key needed — runs on Max subscription
+- Each thought = one `sessions_spawn` call with Sonnet
+- ~5-15 seconds per thought (session overhead)
+- Zero additional cost
+
+### Language: Python (graph store + traversal + tests)
+- Small, focused library — not a full app
+- NetworkX for in-memory graph ops
+- pytest for testing (every behavior tested)
+- If concept proves out → consider Rust rewrite for performance
 
 ### Embeddings: Local
 - embeddinggemma-300m (already on Mac Mini via OpenClaw)
-- OR sentence-transformers (all-MiniLM-L6-v2) — lightweight, well-tested
 - No API calls for retrieval
 
 ### Storage: SQLite
@@ -225,10 +231,9 @@ Run audit() on the resulting graph:
 - Blob columns for embeddings
 - Handles 500K+ nodes easily
 
-### Visualization: Pyvis (MVP) → D3.js (if we need interactivity)
-- Pyvis generates HTML from NetworkX graphs
-- Good enough for prototype
-- D3.js if we want zoom, filter, time-scrubbing
+### Visualization: Later
+- Infra first, UI last
+- D3.js dashboard exists (parked) — connect when infra is solid
 
 ---
 
