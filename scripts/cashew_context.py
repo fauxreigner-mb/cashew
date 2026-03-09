@@ -7,7 +7,11 @@ import sys
 import argparse
 import json
 import os
+import time
+import logging
 from pathlib import Path
+
+logger = logging.getLogger("cashew")
 
 # Add the parent directory to the path so we can import cashew modules
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -21,12 +25,17 @@ def cmd_context(args):
     print(f"🔍 Generating context with hints: {hints}")
     print()
     
+    t0 = time.time()
     context = generate_session_context(args.db, hints)
+    elapsed = time.time() - t0
     
     if context:
         print(context)
         print()
         print("✅ Context generated successfully")
+        if args.debug:
+            print(f"⏱  Elapsed: {elapsed:.2f}s", file=sys.stderr)
+            print(f"📏 Context length: {len(context)} chars", file=sys.stderr)
     else:
         print("❌ No context generated (empty result)")
 
@@ -54,7 +63,9 @@ def cmd_extract(args):
     print("🧠 Extracting insights...")
     print()
     
+    t0 = time.time()
     result = extract_from_conversation(args.db, conversation_text, args.session_id)
+    elapsed = time.time() - t0
     
     print(json.dumps(result, indent=2))
     
@@ -63,9 +74,14 @@ def cmd_extract(args):
         print("✅ Extraction completed successfully")
         print(f"   New nodes: {result['new_nodes']}")
         print(f"   New edges: {result['new_edges']}")
+        if args.debug:
+            print(f"⏱  Elapsed: {elapsed:.2f}s", file=sys.stderr)
     else:
         print()
-        print("❌ Extraction failed")
+        print(f"❌ Extraction failed")
+        if args.debug:
+            print(f"⏱  Elapsed: {elapsed:.2f}s", file=sys.stderr)
+            print(f"🔍 Result: {json.dumps(result, indent=2)}", file=sys.stderr)
         return 1
 
 
@@ -79,7 +95,9 @@ def cmd_think(args):
         print("🤔 Running general think cycle...")
     print()
     
+    t0 = time.time()
     result = run_think_cycle(args.db, domain)
+    elapsed = time.time() - t0
     
     print(json.dumps(result, indent=2))
     
@@ -89,9 +107,13 @@ def cmd_think(args):
         print(f"   Cluster: {result['cluster_topic']}")
         print(f"   New insights: {result['new_nodes']}")
         print(f"   New connections: {result['new_edges']}")
+        if args.debug:
+            print(f"⏱  Elapsed: {elapsed:.2f}s", file=sys.stderr)
     else:
         print()
         print("❌ Think cycle failed")
+        if args.debug:
+            print(f"⏱  Elapsed: {elapsed:.2f}s", file=sys.stderr)
         return 1
 
 
@@ -161,6 +183,7 @@ def main():
     parser.add_argument("--db", default="/Users/bunny/.openclaw/workspace/cashew/data/graph.db", 
                        help="Database path")
     parser.add_argument("--verbose", "-v", action="store_true", help="Verbose output")
+    parser.add_argument("--debug", action="store_true", help="Debug output (timing, diagnostics to stderr)")
     
     subparsers = parser.add_subparsers(dest="command", help="Available commands")
     
@@ -191,13 +214,19 @@ def main():
         parser.print_help()
         return 1
     
-    if args.verbose:
-        import logging
+    if args.debug:
+        logging.basicConfig(level=logging.DEBUG, format="%(name)s %(levelname)s: %(message)s")
+    elif args.verbose:
         logging.basicConfig(level=logging.INFO)
     
     if not os.path.exists(args.db):
         print(f"❌ Error: Database not found: {args.db}")
         return 1
+    
+    if args.debug:
+        db_size = os.path.getsize(args.db)
+        print(f"🗄  DB: {args.db} ({db_size/1024:.1f} KB)", file=sys.stderr)
+        print(f"🔧 Command: {args.command}", file=sys.stderr)
     
     return args.func(args) or 0
 
