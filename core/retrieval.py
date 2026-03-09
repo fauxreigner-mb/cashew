@@ -12,6 +12,7 @@ from dataclasses import dataclass
 import sys
 import argparse
 
+import numpy as np
 from .embeddings import search as embedding_search
 from .hotspots import HOTSPOT_TYPE, HOTSPOT_BOOST
 
@@ -284,6 +285,151 @@ def retrieve(db_path: str, query: str, top_k: int = 5, walk_depth: int = 2, doma
         results = [r for r in results if r.node_id not in hotspot_cluster_members or r.node_type == HOTSPOT_TYPE]
     
     return results[:top_k]
+
+def _retrieve_flat(db_path: str, query: str, top_k: int = 5, domain: Optional[str] = None) -> List[RetrievalResult]:
+    """Simple flat retrieval without hotspot logic. Used as fallback."""
+    return retrieve(db_path, query, top_k, domain=domain)
+
+
+def retrieve_hierarchical(db_path: str, query: str, top_k: int = 5, 
+                          top_hotspots: int = 3, domain: Optional[str] = None) -> List[RetrievalResult]:
+    """
+    Two-stage hierarchical retrieval:
+    1. Find the most relevant hotspot(s) for the query
+    2. Search within their cluster members for specific answers
+    3. Include unclustered nodes as fallback
+    
+    Args:
+        db_path: Path to SQLite database
+        query: Search query
+        top_k: Number of final results to return
+        top_hotspots: Number of hotspots to route through (stage 1)
+        domain: Optional domain filter
+        
+    Returns:
+        List of RetrievalResult objects
+    """
+    if not query or not query.strip():
+        return []
+    
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    
+    # Stage 1: Find relevant hotspots
+    # Get all hotspot node IDs
+    if domain:
+        cursor.execute("""
+            SELECT id FROM thought_nodes 
+            WHERE node_type = ? AND (decayed IS NULL OR decayed = 0) AND domain = ?
+        """, (HOTSPOT_TYPE, domain))
+    else:
+        cursor.execute("""
+            SELECT id FROM thought_nodes 
+            WHERE node_type = ? AND (decayed IS NULL OR decayed = 0)
+        """, (HOTSPOT_TYPE,))
+    
+    hotspot_ids = set(row[0] for row in cursor.fetchall())
+    
+    if not hotspot_ids:
+        conn.close()
+        return _retrieve_flat(db_path, query, top_k, domain=domain)
+    
+    # Get embeddings for ALL hotspots specifically (not relying on top-50 general search)
+    from .embeddings import embed_text
+    
+    query_embedding = np.array(embed_text(query), dtype=np.float32)
+    
+    # Load hotspot embeddings directly
+    hotspot_id_list = list(hotspot_ids)
+    placeholders = ','.join(['?'] * len(hotspot_id_list))
+    cursor.execute(f"""
+        SELECT node_id, vector FROM embeddings 
+        WHERE node_id IN ({placeholders})
+    """, hotspot_id_list)
+    
+    hotspot_scores = []
+    for node_id, vector_blob in cursor.fetchall():
+        vec = np.frombuffer(vector_blob, dtype=np.float32)
+        sim = float(np.dot(query_embedding, vec) / (np.linalg.norm(query_embedding) * np.linalg.norm(vec) + 1e-8))
+        hotspot_scores.append((node_id, sim))
+    
+    hotspot_scores.sort(key=lambda x: x[1], reverse=True)
+    selected_hotspots = hotspot_scores[:top_hotspots]
+    
+    # Also get general embedding results for the non-hotspot pool
+    all_embedding_results = embedding_search(db_path, query, top_k=50)
+    
+    # Stage 2: Get cluster members for selected hotspots
+    search_pool = set()  # Node IDs to search within
+    hotspot_result_ids = set()
+    
+    for hotspot_id, _ in selected_hotspots:
+        hotspot_result_ids.add(hotspot_id)
+        # Get cluster members
+        cursor.execute("""
+            SELECT child_id FROM derivation_edges 
+            WHERE parent_id = ? AND relation = 'summarizes'
+        """, (hotspot_id,))
+        for row in cursor.fetchall():
+            search_pool.add(row[0])
+    
+    # Also get unclustered nodes (not in ANY hotspot's cluster)
+    cursor.execute("""
+        SELECT DISTINCT child_id FROM derivation_edges 
+        WHERE relation = 'summarizes'
+    """)
+    all_clustered = set(row[0] for row in cursor.fetchall())
+    
+    conn.close()
+    
+    # Add ALL unclustered nodes from embedding results (these aren't covered by any hotspot)
+    for node_id, score in all_embedding_results:
+        if node_id not in all_clustered and node_id not in hotspot_ids:
+            search_pool.add(node_id)
+    
+    # Now rank the search pool by embedding similarity
+    pool_scores = {}
+    for node_id, score in all_embedding_results:
+        if node_id in search_pool:
+            pool_scores[node_id] = score
+    
+    # Load node details for the pool
+    all_candidate_ids = list(search_pool | hotspot_result_ids)
+    node_details = _load_node_details(db_path, all_candidate_ids, domain)
+    
+    # Build results: top-1 hotspot (routing context), then detail nodes
+    results = []
+    
+    # Add ONLY the top hotspot as context header
+    if selected_hotspots:
+        best_hotspot_id, best_h_score = selected_hotspots[0]
+        if best_hotspot_id in node_details:
+            details = node_details[best_hotspot_id]
+            results.append(RetrievalResult(
+                node_id=best_hotspot_id,
+                content=details["content"],
+                node_type=details["node_type"],
+                domain=details["domain"],
+                score=best_h_score * HOTSPOT_BOOST,
+                path=[best_hotspot_id]
+            ))
+    
+    # Add ranked pool members (the actual answers)
+    ranked_pool = sorted(pool_scores.items(), key=lambda x: x[1], reverse=True)
+    for node_id, score in ranked_pool:
+        if node_id in node_details and node_id not in hotspot_ids:
+            details = node_details[node_id]
+            results.append(RetrievalResult(
+                node_id=node_id,
+                content=details["content"],
+                node_type=details["node_type"],
+                domain=details["domain"],
+                score=score,
+                path=[node_id]
+            ))
+    
+    return results[:top_k]
+
 
 def format_context(results: List[RetrievalResult], include_paths: bool = False) -> str:
     """
