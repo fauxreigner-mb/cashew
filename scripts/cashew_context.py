@@ -17,6 +17,7 @@ logger = logging.getLogger("cashew")
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from integration.openclaw import generate_session_context, extract_from_conversation, run_think_cycle, run_tension_detection
+from core.hotspots import create_hotspot, update_hotspot, list_hotspots, get_hotspot
 
 
 def cmd_context(args):
@@ -216,6 +217,116 @@ def cmd_sleep(args):
         return 1
 
 
+def cmd_hotspot(args):
+    """Manage hotspot nodes"""
+    action = args.hotspot_action
+    
+    if action == "create":
+        if not args.content:
+            print("❌ --content required for create")
+            return 1
+        
+        # Parse file pointers from --files "label:path,label:path"
+        file_pointers = {}
+        if args.files:
+            for pair in args.files.split(","):
+                if ":" in pair:
+                    label, path = pair.split(":", 1)
+                    file_pointers[label.strip()] = path.strip()
+        
+        # Parse cluster IDs
+        cluster_ids = args.cluster.split(",") if args.cluster else []
+        tags = args.tags.split(",") if args.tags else []
+        
+        hotspot_id = create_hotspot(
+            db_path=args.db,
+            content=args.content,
+            status=args.status or "active",
+            file_pointers=file_pointers,
+            cluster_node_ids=cluster_ids,
+            domain=args.domain or "bunny",
+            tags=tags
+        )
+        print(f"✅ Created hotspot: {hotspot_id}")
+        print(f"   Content: {args.content[:80]}...")
+        print(f"   Status: {args.status or 'active'}")
+        print(f"   Files: {file_pointers}")
+        print(f"   Cluster: {len(cluster_ids)} nodes")
+    
+    elif action == "update":
+        if not args.id:
+            print("❌ --id required for update")
+            return 1
+        
+        file_pointers = None
+        if args.files:
+            file_pointers = {}
+            for pair in args.files.split(","):
+                if ":" in pair:
+                    label, path = pair.split(":", 1)
+                    file_pointers[label.strip()] = path.strip()
+        
+        add_ids = args.cluster.split(",") if args.cluster else None
+        
+        success = update_hotspot(
+            db_path=args.db,
+            hotspot_id=args.id,
+            content=args.content,
+            status=args.status,
+            file_pointers=file_pointers,
+            add_cluster_ids=add_ids
+        )
+        if success:
+            print(f"✅ Updated hotspot: {args.id}")
+        else:
+            print(f"❌ Failed to update hotspot: {args.id}")
+            return 1
+    
+    elif action == "list":
+        hotspots = list_hotspots(args.db, args.domain)
+        if not hotspots:
+            print("No hotspots found.")
+            return
+        
+        print(f"📍 {len(hotspots)} Hotspot(s)")
+        print("=" * 60)
+        for h in hotspots:
+            print(f"\n🔵 [{h['id']}] {h['content'][:80]}")
+            print(f"   Status: {h['status']} | Domain: {h['domain']} | Cluster: {h['cluster_size']} nodes")
+            if h['file_pointers']:
+                for label, path in h['file_pointers'].items():
+                    print(f"   📄 {label}: {path}")
+            if h['tags']:
+                print(f"   🏷  Tags: {', '.join(h['tags'])}")
+            print(f"   Updated: {h['last_updated']}")
+    
+    elif action == "show":
+        if not args.id:
+            print("❌ --id required for show")
+            return 1
+        
+        h = get_hotspot(args.db, args.id)
+        if not h:
+            print(f"❌ Hotspot not found: {args.id}")
+            return 1
+        
+        print(f"📍 Hotspot: {h['id']}")
+        print(f"   Content: {h['content']}")
+        print(f"   Status: {h['status']}")
+        print(f"   Domain: {h['domain']}")
+        print(f"   Updated: {h['last_updated']}")
+        if h['file_pointers']:
+            print(f"   Files:")
+            for label, path in h['file_pointers'].items():
+                print(f"     📄 {label}: {path}")
+        if h['tags']:
+            print(f"   Tags: {', '.join(h['tags'])}")
+        if h['cluster']:
+            print(f"   Cluster ({len(h['cluster'])} nodes):")
+            for node in h['cluster']:
+                print(f"     - [{node['type']}] {node['content'][:60]}...")
+
+
 def main():
     parser = argparse.ArgumentParser(description="Cashew Context CLI")
     parser.add_argument("--db", default="/Users/bunny/.openclaw/workspace/cashew/data/graph.db", 
@@ -251,6 +362,19 @@ def main():
     # Stats command
     stats_parser = subparsers.add_parser("stats", help="Show graph stats")
     stats_parser.set_defaults(func=cmd_stats)
+    
+    # Hotspot command
+    hotspot_parser = subparsers.add_parser("hotspot", help="Manage hotspot nodes")
+    hotspot_parser.add_argument("hotspot_action", choices=["create", "update", "list", "show"],
+                                help="Hotspot action")
+    hotspot_parser.add_argument("--content", help="Hotspot summary content")
+    hotspot_parser.add_argument("--status", help="Status string")
+    hotspot_parser.add_argument("--files", help="File pointers as 'label:path,label:path'")
+    hotspot_parser.add_argument("--cluster", help="Comma-separated cluster node IDs")
+    hotspot_parser.add_argument("--tags", help="Comma-separated search tags")
+    hotspot_parser.add_argument("--domain", help="Domain (raj/bunny)")
+    hotspot_parser.add_argument("--id", help="Hotspot ID (for update/show)")
+    hotspot_parser.set_defaults(func=cmd_hotspot)
     
     args = parser.parse_args()
     

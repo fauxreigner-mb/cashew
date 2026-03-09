@@ -13,6 +13,7 @@ import sys
 import argparse
 
 from .embeddings import search as embedding_search
+from .hotspots import HOTSPOT_TYPE, HOTSPOT_BOOST
 
 @dataclass
 class RetrievalResult:
@@ -240,6 +241,15 @@ def retrieve(db_path: str, query: str, top_k: int = 5, walk_depth: int = 2, doma
         
         # Hybrid score: weighted combination
         hybrid_score = embedding_score * 0.5 + graph_score * 0.5
+        
+        # Boost hotspot nodes so they always surface above detail nodes
+        node_type = details.get("node_type", "")
+        if node_type == HOTSPOT_TYPE:
+            # Hotspots get promoted to guaranteed top position
+            # Base score must be > 0 (i.e., it was actually retrieved as relevant)
+            # Then boost ensures it ranks above non-hotspot nodes
+            if hybrid_score > 0:
+                hybrid_score = max(hybrid_score * HOTSPOT_BOOST, 1.0 + hybrid_score)
         
         result = RetrievalResult(
             node_id=node_id,
