@@ -178,6 +178,35 @@ def cmd_stats(args):
         return 1
 
 
+def cmd_sleep(args):
+    """Run the sleep/consolidation protocol."""
+    import time as _time
+    start = _time.time()
+    print("😴 Running sleep protocol...")
+    
+    try:
+        sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(__file__))))
+        from core.sleep import SleepProtocol
+        
+        protocol = SleepProtocol(args.db)
+        result = protocol.run_sleep_cycle()
+        elapsed = _time.time() - start
+        
+        print(f"\n✅ Sleep protocol completed in {elapsed:.1f}s")
+        if isinstance(result, dict):
+            for k, v in result.items():
+                print(f"  {k}: {v}")
+        else:
+            print(f"  Result: {result}")
+        
+    except Exception as e:
+        print(f"❌ Sleep protocol error: {e}")
+        if args.debug:
+            import traceback
+            traceback.print_exc()
+        return 1
+
+
 def main():
     parser = argparse.ArgumentParser(description="Cashew Context CLI")
     parser.add_argument("--db", default="/Users/bunny/.openclaw/workspace/cashew/data/graph.db", 
@@ -203,6 +232,10 @@ def main():
     think_parser = subparsers.add_parser("think", help="Run a think cycle")
     think_parser.add_argument("--domain", help="Focus domain (e.g., 'career')")
     think_parser.set_defaults(func=cmd_think)
+    
+    # Sleep command
+    sleep_parser = subparsers.add_parser("sleep", help="Run the sleep/consolidation protocol")
+    sleep_parser.set_defaults(func=cmd_sleep)
     
     # Stats command
     stats_parser = subparsers.add_parser("stats", help="Show graph stats")

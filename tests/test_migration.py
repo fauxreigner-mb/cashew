@@ -13,7 +13,7 @@ from pathlib import Path
 BASE_DIR = Path(__file__).parent.parent
 SOURCE_DB = BASE_DIR / "data" / "graph.db"
 TARGET_DB = BASE_DIR / "data" / "brain.db"
-REPORT_PATH = BASE_DIR / "migration_report.json"
+REPORT_PATH = BASE_DIR / "docs" / "migration_report.json"
 
 VALID_NODE_TYPES = {'observation', 'belief', 'decision', 'insight', 'fact'}
 VALID_DOMAINS = {'work', 'personal', 'fitness', 'engineering', 'philosophy', 'music', 'relationships', 'meta'}
