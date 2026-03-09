@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🥜 cashew · Ablation Comparison</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro', sans-serif;
+            background: #0a0a0a; color: #e0e0e0;
+            padding: 16px; max-width: 1400px; margin: 0 auto;
+            line-height: 1.6;
+        }
+        h1 { color: #f5c542; font-size: 22px; margin-bottom: 4px; }
+        .subtitle { color: #666; font-size: 13px; margin-bottom: 24px; }
+        
+        /* Scorecard */
+        .scorecard { margin-bottom: 32px; overflow-x: auto; }
+        .scorecard table { border-collapse: collapse; width: 100%; min-width: 600px; }
+        .scorecard th { text-align: left; padding: 8px 12px; color: #999; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid #222; }
+        .scorecard td { padding: 6px 12px; border-bottom: 1px solid #1a1a1a; font-size: 13px; }
+        .scorecard .method-col { color: #f5c542; font-weight: 600; white-space: nowrap; }
+        .scorecard .score { font-size: 16px; font-weight: 700; }
+        .score-high { color: #51cf66; }
+        .score-mid { color: #f5c542; }
+        .score-low { color: #ff6b6b; }
+        
+        /* Signature grid */
+        .sig-table { margin-bottom: 32px; overflow-x: auto; }
+        .sig-table table { border-collapse: collapse; width: 100%; min-width: 700px; }
+        .sig-table th { text-align: center; padding: 8px; color: #999; font-size: 11px; text-transform: uppercase; border-bottom: 1px solid #222; }
+        .sig-table th:first-child { text-align: left; }
+        .sig-table td { padding: 6px 8px; border-bottom: 1px solid #1a1a1a; font-size: 12px; text-align: center; }
+        .sig-table td:first-child { text-align: left; color: #ccc; }
+        .sig-check { color: #51cf66; font-size: 16px; }
+        .sig-miss { color: #444; font-size: 16px; }
+        .winner { background: rgba(245,197,66,0.08); }
+        
+        /* Method tabs */
+        .tabs { display: flex; gap: 4px; margin-bottom: 16px; flex-wrap: wrap; }
+        .tab {
+            padding: 6px 14px; border-radius: 16px; font-size: 12px;
+            border: 1px solid #333; background: transparent; color: #999;
+            cursor: pointer; transition: all 0.2s;
+        }
+        .tab:hover { border-color: #555; color: #ccc; }
+        .tab.active { border-color: #f5c542; color: #f5c542; background: rgba(245,197,66,0.1); }
+        .tab .count { color: #666; margin-left: 4px; }
+        
+        /* Conclusion cards */
+        .conclusions { display: none; }
+        .conclusions.active { display: block; }
+        .conclusion {
+            padding: 12px 16px; margin-bottom: 8px;
+            background: #111; border: 1px solid #1a1a1a; border-radius: 8px;
+            transition: border-color 0.2s;
+        }
+        .conclusion:hover { border-color: #333; }
+        .conclusion .num { color: #555; font-size: 11px; margin-right: 6px; }
+        .conclusion .conf { 
+            float: right; font-size: 11px; padding: 2px 6px;
+            border-radius: 4px; background: rgba(245,197,66,0.1); color: #f5c542;
+        }
+        .conclusion .text { font-size: 13px; color: #ccc; }
+        .conclusion .cycle-tag {
+            display: inline-block; font-size: 10px; padding: 1px 6px;
+            border-radius: 3px; background: #1a1a1a; color: #666; margin-top: 6px;
+        }
+        
+        .section-title { color: #f5c542; font-size: 15px; font-weight: 600; margin: 24px 0 12px; }
+        .legend-note { color: #555; font-size: 11px; margin-bottom: 16px; }
+        
+        .highlight-box {
+            padding: 16px; margin: 16px 0; border-radius: 8px;
+            background: rgba(245,197,66,0.05); border: 1px solid rgba(245,197,66,0.15);
+        }
+        .highlight-box h3 { color: #f5c542; font-size: 14px; margin-bottom: 8px; }
+        .highlight-box p { color: #aaa; font-size: 13px; }
+        .highlight-box .unique { color: #51cf66; }
+    </style>
+</head>
+<body>
+
+<h1>🥜 cashew · Ablation Testing</h1>
+<div class="subtitle">Does the graph architecture add value, or is it just a prompt cache?</div>
+
+<div class="highlight-box">
+    <h3>Experiment Design</h3>
+    <p>Same 34 balanced input nodes (6 seed claims, 8 reasoning principles, 10 pro-religion evidence, 10 counter-religion evidence) tested across 4 methods. All use Claude Sonnet. The question: does graph structure produce qualitatively different reasoning?</p>
+</div>
+
+<!-- Overview Scorecard -->
+<div class="section-title">Method Comparison</div>
+<div class="scorecard">
+<table>
+    <tr><th>Method</th><th>Structure</th><th>LLM Calls</th><th>Conclusions</th><th>Signature Score</th></tr>
+    <tr><td class="method-col">Single Flat List</td><td>None</td><td>1</td><td id="flat-count">—</td><td><span class="score" id="flat-score">—</span>/10</td></tr>
+    <tr><td class="method-col">Iterative Flat List</td><td>None (iterative)</td><td>12</td><td id="iter-count">—</td><td><span class="score" id="iter-score">—</span>/10</td></tr>
+    <tr><td class="method-col">Random Graph</td><td>Random edges</td><td>12</td><td id="rand-count">—</td><td><span class="score" id="rand-score">—</span>/10</td></tr>
+    <tr><td class="method-col">Cashew Graph</td><td>Typed edges</td><td>12</td><td id="graph-count">—</td><td><span class="score" id="graph-score">—</span>/10</td></tr>
+</table>
+</div>
+
+<!-- Signature Grid -->
+<div class="section-title">Qualitative Signatures</div>
+<div class="legend-note">Does each method produce these insight types? ✅ = found via keyword match, ❌ = absent. ⚠️ Signatures were identified post-hoc from graph output — this biases toward the graph. Keyword matching is imprecise (false positives/negatives possible).</div>
+<div class="sig-table">
+<table>
+    <tr><th>Insight Type</th><th>Flat</th><th>Iterative</th><th>Random</th><th>Graph</th></tr>
+    <tbody id="sig-body"></tbody>
+</table>
+</div>
+
+<div class="highlight-box">
+    <h3>Observations (with caveats)</h3>
+    <p>The structured graph produced some qualitatively distinct insights — <span class="unique">tu quoque</span> (turning empiricism's standards on itself) and <span class="unique">epistemological hierarchy</span> appeared only in graph output. However, the iterative flat list produced insights the graph missed (e.g., "both sides rest on metaphysical assumptions"). <strong>Caveat:</strong> the signature categories below were identified from graph output first, creating selection bias. A fairer test would use blind human evaluation or pre-registered categories. Treat scores as suggestive, not conclusive.</p>
+</div>
+
+<div class="highlight-box" style="border-color: rgba(255,107,107,0.3); background: rgba(255,107,107,0.05);">
+    <h3 style="color: #ff6b6b;">⚠️ Limitations</h3>
+    <p>
+        <strong>1. Selection bias:</strong> Signature categories were identified from graph output, then checked across methods. This inherently favors the graph.<br>
+        <strong>2. Keyword matching:</strong> Regex approximates semantic content but misses equivalent ideas phrased differently (e.g., iterative list discusses convergence themes but doesn't match the exact pattern).<br>
+        <strong>3. Single domain:</strong> All methods tested on religion only. Results may not generalize.<br>
+        <strong>4. No blind evaluation:</strong> A fair comparison would have human raters score conclusions without knowing which method produced them.<br>
+        <strong>5. Same LLM:</strong> All methods use Claude Sonnet, whose training data includes extensive philosophy of religion. This domain may not stress-test the architecture's value.
+    </p>
+</div>
+
+<!-- Browse Conclusions -->
+<div class="section-title">Browse All Conclusions</div>
+<div class="tabs">
+    <button class="tab active" data-method="graph">Cashew Graph <span class="count" id="tab-graph-count"></span></button>
+    <button class="tab" data-method="iterative">Iterative Flat <span class="count" id="tab-iter-count"></span></button>
+    <button class="tab" data-method="random">Random Graph <span class="count" id="tab-rand-count"></span></button>
+    <button class="tab" data-method="flat">Single Flat <span class="count" id="tab-flat-count"></span></button>
+</div>
+
+<div id="conclusions-graph" class="conclusions active"></div>
+<div id="conclusions-iterative" class="conclusions"></div>
+<div id="conclusions-random" class="conclusions"></div>
+<div id="conclusions-flat" class="conclusions"></div>
+
+<script>
+const SIGNATURES = [
+    { label: 'Parity problem', patterns: ['parity'] },
+    { label: 'Paradox / surprising reversal', patterns: ['paradox', 'paradoxically'] },
+    { label: 'Testable framework', patterns: ['testable framework', 'testable prediction', 'testable claim'] },
+    { label: 'Tu quoque (self-referential)', patterns: ['itself rest on', 'own assumptions', 'may itself'] },
+    { label: 'Cross-pollination / convergence', patterns: ['convergence of.*argument', 'cross.?pollination', 'intersection of.*evidence'] },
+    { label: 'Unfalsifiability critique', patterns: ['unfalsif'] },
+    { label: 'Religion as technology', patterns: ['religion.*technology', 'religion.*tool', 'social design', 'religion.*engineering'] },
+    { label: 'Epistemological hierarchy', patterns: ['epistemological hierarchy', 'hierarchy'] },
+    { label: 'Cumulative case', patterns: ['cumulative'] },
+    { label: 'Both sides have assumptions', patterns: ['both.*assumptions', 'both.*metaphysical'] },
+];
+
+function hasSignature(conclusions, patterns) {
+    return conclusions.some(c => {
+        const text = (typeof c === 'string' ? c : c.content).toLowerCase();
+        return patterns.some(p => text.match(new RegExp(p)));
+    });
+}
+
+function renderConclusions(containerId, conclusions, isGraph) {
+    const el = document.getElementById(containerId);
+    el.innerHTML = conclusions.map((c, i) => {
+        const text = typeof c === 'string' ? c : c.content;
+        const conf = typeof c === 'string' ? '' : c.confidence;
+        const cycle = c.cycle || c.focus || '';
+        return `<div class="conclusion">
+            <span class="num">#${i+1}</span>
+            ${conf ? `<span class="conf">${conf}</span>` : ''}
+            <div class="text">${text}</div>
+            ${cycle ? `<div class="cycle-tag">${typeof cycle === 'number' ? 'Cycle ' + cycle : ''} ${c.focus ? c.focus.substring(0,60) : ''}</div>` : ''}
+        </div>`;
+    }).join('');
+}
+
+async function init() {
+    // Load all data
+    const [flatResp, iterResp, randResp, graphResp] = await Promise.all([
+        fetch('./data/ablation-flat-list.json'),
+        fetch('./data/ablation-iterative.json'),
+        fetch('./data/ablation-random-graph.json'),
+        fetch('./data/experiment-clean-v2.json'),
+    ]);
+    
+    const flat = await flatResp.json();
+    const iter = await iterResp.json();
+    const rand = await randResp.json();
+    const graphData = await graphResp.json();
+    
+    const flatC = flat.conclusions;
+    const iterC = iter.conclusions;
+    const randC = rand.conclusions;
+    const graphC = graphData.nodes.filter(n => (n.node_type || n.type) === 'derived');
+    
+    // Counts
+    document.getElementById('flat-count').textContent = flatC.length;
+    document.getElementById('iter-count').textContent = iterC.length;
+    document.getElementById('rand-count').textContent = randC.length;
+    document.getElementById('graph-count').textContent = graphC.length;
+    document.getElementById('tab-flat-count').textContent = `(${flatC.length})`;
+    document.getElementById('tab-iter-count').textContent = `(${iterC.length})`;
+    document.getElementById('tab-rand-count').textContent = `(${randC.length})`;
+    document.getElementById('tab-graph-count').textContent = `(${graphC.length})`;
+    
+    // Signature grid
+    const methods = { flat: flatC, iterative: iterC, random: randC, graph: graphC };
+    let scores = { flat: 0, iterative: 0, random: 0, graph: 0 };
+    
+    const sigBody = document.getElementById('sig-body');
+    SIGNATURES.forEach(sig => {
+        const row = document.createElement('tr');
+        let cells = `<td>${sig.label}</td>`;
+        ['flat', 'iterative', 'random', 'graph'].forEach(m => {
+            const has = hasSignature(methods[m], sig.patterns);
+            if (has) scores[m]++;
+            cells += `<td><span class="${has ? 'sig-check' : 'sig-miss'}">${has ? '✅' : '❌'}</span></td>`;
+        });
+        row.innerHTML = cells;
+        sigBody.appendChild(row);
+    });
+    
+    // Scores — color dynamically by rank
+    const allScores = [scores.flat, scores.iterative, scores.random, scores.graph];
+    const maxScore = Math.max(...allScores);
+    const minScore = Math.min(...allScores);
+    function scoreClass(s) {
+        if (s === maxScore) return 'score-high';
+        if (s === minScore) return 'score-low';
+        return 'score-mid';
+    }
+    for (const [id, s] of [['flat-score', scores.flat], ['iter-score', scores.iterative], ['rand-score', scores.random], ['graph-score', scores.graph]]) {
+        const el = document.getElementById(id);
+        el.textContent = s;
+        el.className = 'score ' + scoreClass(s);
+    }
+    // Highlight winner row
+    const maxMethod = Object.entries(scores).reduce((a, b) => b[1] > a[1] ? b : a);
+    const rowMap = { flat: 0, iterative: 1, random: 2, graph: 3 };
+    document.querySelectorAll('.scorecard tr')[rowMap[maxMethod[0]] + 1]?.classList.add('winner');
+    
+    // Render conclusions
+    renderConclusions('conclusions-graph', graphC, true);
+    renderConclusions('conclusions-iterative', iterC, false);
+    renderConclusions('conclusions-random', randC, false);
+    renderConclusions('conclusions-flat', flatC, false);
+    
+    // Tab switching
+    document.querySelectorAll('.tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.conclusions').forEach(c => c.classList.remove('active'));
+            tab.classList.add('active');
+            document.getElementById('conclusions-' + tab.dataset.method).classList.add('active');
+        });
+    });
+}
+
+init();
+</script>
+</body>
+</html>

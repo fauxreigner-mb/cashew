@@ -1,0 +1,1710 @@
+{
+  "nodes": [
+    {
+      "id": "153c5bb2f654",
+      "content": "A supreme being exists who is all-powerful, all-knowing, and all-good",
+      "node_type": "seed",
+      "confidence": 1.0,
+      "source_file": "experiment_seed",
+      "timestamp": "2026-03-08T22:26:04.343949",
+      "mood_state": null
+    },
+    {
+      "id": "87839aed3cc0",
+      "content": "A sacred text exists that is divinely inspired and is the ultimate authority on truth",
+      "node_type": "seed",
+      "confidence": 1.0,
+      "source_file": "experiment_seed",
+      "timestamp": "2026-03-08T22:26:04.344135",
+      "mood_state": null
+    },
+    {
+      "id": "0a16740837d0",
+      "content": "Prayer and ritual connect humans to the divine and produce tangible results",
+      "node_type": "seed",
+      "confidence": 1.0,
+      "source_file": "experiment_seed",
+      "timestamp": "2026-03-08T22:26:04.344140",
+      "mood_state": null
+    },
+    {
+      "id": "c54b62fc5f82",
+      "content": "Those who do not believe face negative eternal consequences",
+      "node_type": "seed",
+      "confidence": 1.0,
+      "source_file": "experiment_seed",
+      "timestamp": "2026-03-08T22:26:04.344143",
+      "mood_state": null
+    },
+    {
+      "id": "4e92f934d37a",
+      "content": "All morality originates from the supreme being \u2014 without the divine, there is no moral foundation",
+      "node_type": "seed",
+      "confidence": 1.0,
+      "source_file": "experiment_seed",
+      "timestamp": "2026-03-08T22:26:04.344145",
+      "mood_state": null
+    },
+    {
+      "id": "66500253ceec",
+      "content": "A specific historical figure performed miracles, conquered death, and this event is the cornerstone of truth",
+      "node_type": "seed",
+      "confidence": 1.0,
+      "source_file": "experiment_seed",
+      "timestamp": "2026-03-08T22:26:04.344150",
+      "mood_state": null
+    },
+    {
+      "id": "4e1c6579f945",
+      "content": "Extraordinary claims require extraordinary evidence",
+      "node_type": "seed",
+      "confidence": 1.0,
+      "source_file": "experiment_reasoning",
+      "timestamp": "2026-03-08T22:26:04.344152",
+      "mood_state": null
+    },
+    {
+      "id": "b660e29ded46",
+      "content": "Some truths may be properly basic \u2014 known through experience rather than argument",
+      "node_type": "seed",
+      "confidence": 1.0,
+      "source_file": "experiment_reasoning",
+      "timestamp": "2026-03-08T22:26:04.344154",
+      "mood_state": null
+    },
+    {
+      "id": "3eb11f580944",
+      "content": "Always ask why \u2014 follow derivation chains to their roots",
+      "node_type": "seed",
+      "confidence": 1.0,
+      "source_file": "experiment_reasoning",
+      "timestamp": "2026-03-08T22:26:04.344156",
+      "mood_state": null
+    },
+    {
+      "id": "57ee024c9b90",
+      "content": "Test claims against available evidence where evidence is applicable",
+      "node_type": "seed",
+      "confidence": 1.0,
+      "source_file": "experiment_reasoning",
+      "timestamp": "2026-03-08T22:26:04.344158",
+      "mood_state": null
+    },
+    {
+      "id": "ad1f05dd8cee",
+      "content": "Absence of evidence is not evidence of absence",
+      "node_type": "seed",
+      "confidence": 1.0,
+      "source_file": "experiment_reasoning",
+      "timestamp": "2026-03-08T22:26:04.344160",
+      "mood_state": null
+    },
+    {
+      "id": "76d8909793e7",
+      "content": "The strongest position engages the best version of opposing arguments, not strawmen",
+      "node_type": "seed",
+      "confidence": 1.0,
+      "source_file": "experiment_reasoning",
+      "timestamp": "2026-03-08T22:26:04.344162",
+      "mood_state": null
+    },
+    {
+      "id": "fc24cd369be8",
+      "content": "Personal experience is valid data but must be weighed against systematic observation",
+      "node_type": "seed",
+      "confidence": 1.0,
+      "source_file": "experiment_reasoning",
+      "timestamp": "2026-03-08T22:26:04.344164",
+      "mood_state": null
+    },
+    {
+      "id": "b3ea6bf2f54f",
+      "content": "A claim that cannot be falsified may still be meaningful but cannot be called scientific",
+      "node_type": "seed",
+      "confidence": 1.0,
+      "source_file": "experiment_reasoning",
+      "timestamp": "2026-03-08T22:26:04.344165",
+      "mood_state": null
+    },
+    {
+      "id": "5ed0a40dba66",
+      "content": "Fine-tuning of physical constants: if gravity differed by 1 in 10^60, no stars or life could exist",
+      "node_type": "environment",
+      "confidence": 1.0,
+      "source_file": "experiment_pro",
+      "timestamp": "2026-03-08T22:26:04.344167",
+      "mood_state": null
+    },
+    {
+      "id": "00760444fdf4",
+      "content": "Consciousness remains unexplained by pure materialism \u2014 the hard problem of consciousness has no scientific resolution",
+      "node_type": "environment",
+      "confidence": 1.0,
+      "source_file": "experiment_pro",
+      "timestamp": "2026-03-08T22:26:04.344169",
+      "mood_state": null
+    },
+    {
+      "id": "14925ac48ab1",
+      "content": "Near-death experiences across cultures share consistent features: tunnel, light, deceased relatives, life review",
+      "node_type": "environment",
+      "confidence": 1.0,
+      "source_file": "experiment_pro",
+      "timestamp": "2026-03-08T22:26:04.344171",
+      "mood_state": null
+    },
+    {
+      "id": "51e4e0210f6e",
+      "content": "Religious communities show measurably better mental health outcomes, longevity, and social support in peer-reviewed studies",
+      "node_type": "environment",
+      "confidence": 1.0,
+      "source_file": "experiment_pro",
+      "timestamp": "2026-03-08T22:26:04.344173",
+      "mood_state": null
+    },
+    {
+      "id": "4d26be73f417",
+      "content": "Alvin Plantinga's reformed epistemology argues belief in God can be properly basic \u2014 not requiring external evidence, like belief in other minds",
+      "node_type": "environment",
+      "confidence": 1.0,
+      "source_file": "experiment_pro",
+      "timestamp": "2026-03-08T22:26:04.344175",
+      "mood_state": null
+    },
+    {
+      "id": "401cbf819c1d",
+      "content": "William Lane Craig's Kalam cosmological argument: everything that begins to exist has a cause; the universe began to exist; therefore the universe has a cause",
+      "node_type": "environment",
+      "confidence": 1.0,
+      "source_file": "experiment_pro",
+      "timestamp": "2026-03-08T22:26:04.344177",
+      "mood_state": null
+    },
+    {
+      "id": "76f5b719a7c5",
+      "content": "C.S. Lewis's moral argument: universal moral intuitions (fairness, compassion) point to a transcendent moral source",
+      "node_type": "environment",
+      "confidence": 1.0,
+      "source_file": "experiment_pro",
+      "timestamp": "2026-03-08T22:26:04.344178",
+      "mood_state": null
+    },
+    {
+      "id": "6cc79838413b",
+      "content": "Millions report personal transformative religious experiences that fundamentally changed their character and behavior",
+      "node_type": "environment",
+      "confidence": 1.0,
+      "source_file": "experiment_pro",
+      "timestamp": "2026-03-08T22:26:04.344180",
+      "mood_state": null
+    },
+    {
+      "id": "6f3b2f5e5fb4",
+      "content": "The historical evidence for early Christian martyrdom suggests genuine belief, not conspiracy",
+      "node_type": "environment",
+      "confidence": 1.0,
+      "source_file": "experiment_pro",
+      "timestamp": "2026-03-08T22:26:04.344182",
+      "mood_state": null
+    },
+    {
+      "id": "d45192b5623a",
+      "content": "Kierkegaard argued that faith is a 'leap' beyond reason \u2014 rationalism cannot capture all dimensions of human experience",
+      "node_type": "environment",
+      "confidence": 1.0,
+      "source_file": "experiment_pro",
+      "timestamp": "2026-03-08T22:26:04.344184",
+      "mood_state": null
+    },
+    {
+      "id": "601e7a95e348",
+      "content": "The STEP trial (2006, 1,800 patients) found no measurable effect of intercessory prayer on cardiac recovery",
+      "node_type": "environment",
+      "confidence": 1.0,
+      "source_file": "experiment_counter",
+      "timestamp": "2026-03-08T22:26:04.344187",
+      "mood_state": null
+    },
+    {
+      "id": "4edde7eae3e9",
+      "content": "Geological evidence shows earth is 4.5 billion years old, contradicting literal creation accounts",
+      "node_type": "environment",
+      "confidence": 1.0,
+      "source_file": "experiment_counter",
+      "timestamp": "2026-03-08T22:26:04.344189",
+      "mood_state": null
+    },
+    {
+      "id": "ec0a2762da8a",
+      "content": "DNA evidence links humans to other primates through shared genetic sequences",
+      "node_type": "environment",
+      "confidence": 1.0,
+      "source_file": "experiment_counter",
+      "timestamp": "2026-03-08T22:26:04.344191",
+      "mood_state": null
+    },
+    {
+      "id": "543a48f2d39a",
+      "content": "Multiple religions with mutually exclusive truth claims have equally convinced followers",
+      "node_type": "environment",
+      "confidence": 1.0,
+      "source_file": "experiment_counter",
+      "timestamp": "2026-03-08T22:26:04.344193",
+      "mood_state": null
+    },
+    {
+      "id": "3d1825e1ae79",
+      "content": "The problem of evil: children dying of cancer, 230,000 tsunami deaths \u2014 reconciling with all-good, all-powerful deity",
+      "node_type": "environment",
+      "confidence": 1.0,
+      "source_file": "experiment_counter",
+      "timestamp": "2026-03-08T22:26:04.344195",
+      "mood_state": null
+    },
+    {
+      "id": "a43c26d04871",
+      "content": "Archaeological evidence contradicts several historical claims in sacred texts",
+      "node_type": "environment",
+      "confidence": 1.0,
+      "source_file": "experiment_counter",
+      "timestamp": "2026-03-08T22:26:04.344197",
+      "mood_state": null
+    },
+    {
+      "id": "3240324b8861",
+      "content": "Neuroscience explains religious experiences through temporal lobe activity, default mode network changes",
+      "node_type": "environment",
+      "confidence": 1.0,
+      "source_file": "experiment_counter",
+      "timestamp": "2026-03-08T22:26:04.344199",
+      "mood_state": null
+    },
+    {
+      "id": "05c11d92f769",
+      "content": "Secular societies (Scandinavia, Japan) rank among the most peaceful and ethical without religious foundation",
+      "node_type": "environment",
+      "confidence": 1.0,
+      "source_file": "experiment_counter",
+      "timestamp": "2026-03-08T22:26:04.344200",
+      "mood_state": null
+    },
+    {
+      "id": "d2659e48dfa0",
+      "content": "Cognitive science shows humans are predisposed to pattern recognition and agent detection \u2014 explaining tendency toward supernatural belief",
+      "node_type": "environment",
+      "confidence": 1.0,
+      "source_file": "experiment_counter",
+      "timestamp": "2026-03-08T22:26:04.344202",
+      "mood_state": null
+    },
+    {
+      "id": "0db02fa77c66",
+      "content": "Historical analysis shows 'fulfilled prophecies' were often written after events or are too vague to be meaningful",
+      "node_type": "environment",
+      "confidence": 1.0,
+      "source_file": "experiment_counter",
+      "timestamp": "2026-03-08T22:26:04.344204",
+      "mood_state": null
+    },
+    {
+      "id": "6ba0f4d6e32e",
+      "content": "If properly basic beliefs require no external justification, then competing properly basic beliefs from different religious traditions create an epistemic standoff with no rational method for adjudication",
+      "node_type": "derived",
+      "confidence": 0.85,
+      "source_file": "system_generated",
+      "timestamp": "2026-03-08T22:26:19.158148",
+      "mood_state": null
+    },
+    {
+      "id": "00c441a91da9",
+      "content": "The fine-tuning argument faces the problem of reference class: we cannot determine probability without knowing the range of possible universes and their selection mechanism",
+      "node_type": "derived",
+      "confidence": 0.75,
+      "source_file": "system_generated",
+      "timestamp": "2026-03-08T22:26:19.158382",
+      "mood_state": null
+    },
+    {
+      "id": "d13130df6393",
+      "content": "Claiming both properly basic knowledge and historical miracle claims creates tension between immediate intuitive knowledge and evidence-dependent historical reasoning",
+      "node_type": "derived",
+      "confidence": 0.8,
+      "source_file": "system_generated",
+      "timestamp": "2026-03-08T22:26:19.158406",
+      "mood_state": null
+    },
+    {
+      "id": "ede03d7340e8",
+      "content": "The conjunction of an all-good, all-powerful being with historical miracle claims implies that divine intervention should be more systematically observable if it occurs at all",
+      "node_type": "derived",
+      "confidence": 0.7,
+      "source_file": "system_generated",
+      "timestamp": "2026-03-08T22:26:19.158424",
+      "mood_state": null
+    },
+    {
+      "id": "7e0e566beadf",
+      "content": "The cross-cultural consistency of near-death experiences may be better explained by universal neurological processes during brain stress rather than supernatural phenomena, given our established tendency toward pattern recognition and agent detection",
+      "node_type": "derived",
+      "confidence": 0.8,
+      "source_file": "system_generated",
+      "timestamp": "2026-03-08T22:26:33.965797",
+      "mood_state": null
+    },
+    {
+      "id": "118f26d152e1",
+      "content": "The existence of multiple religions with equally convinced followers and mutually exclusive claims creates a logical problem for any single religion's claim to exclusive truth and eternal consequences",
+      "node_type": "derived",
+      "confidence": 0.85,
+      "source_file": "system_generated",
+      "timestamp": "2026-03-08T22:26:33.965989",
+      "mood_state": null
+    },
+    {
+      "id": "e8099bdcd20a",
+      "content": "A rigorous examination of religious claims requires acknowledging that archaeological contradictions and post-hoc prophecy writing represent significant challenges that demand substantive responses rather than dismissal",
+      "node_type": "derived",
+      "confidence": 0.9,
+      "source_file": "system_generated",
+      "timestamp": "2026-03-08T22:26:33.966027",
+      "mood_state": null
+    },
+    {
+      "id": "f030f7d1d0d5",
+      "content": "The human cognitive bias toward supernatural explanation, combined with documented historical inaccuracies in religious texts, suggests that extraordinary religious claims require proportionally extraordinary evidence to overcome naturalistic explanations",
+      "node_type": "derived",
+      "confidence": 0.8,
+      "source_file": "system_generated",
+      "timestamp": "2026-03-08T22:26:33.966103",
+      "mood_state": null
+    },
+    {
+      "id": "f64178d97701",
+      "content": "The cognitive predisposition to pattern recognition and agent detection (d2659e48dfa0) may explain why humans find cosmological arguments like the Kalam compelling, as they satisfy our evolved tendency to seek causal agents for observed phenomena, potentially undermining the argument's logical force independent of psychological appeal",
+      "node_type": "derived",
+      "confidence": 0.75,
+      "source_file": "system_generated",
+      "timestamp": "2026-03-08T22:26:48.839920",
+      "mood_state": null
+    },
+    {
+      "id": "e87ba4dc4843",
+      "content": "If personal experience must be weighed against systematic observation (fc24cd369be8), then claims about miraculous events (66500253ceec) require stronger evidential support when systematic studies like the STEP prayer trial (601e7a95e348) show no measurable supernatural intervention",
+      "node_type": "derived",
+      "confidence": 0.8,
+      "source_file": "system_generated",
+      "timestamp": "2026-03-08T22:26:48.840121",
+      "mood_state": null
+    },
+    {
+      "id": "034fb04f68ab",
+      "content": "The principle of engaging the strongest opposing arguments (76d8909793e7) demands that divine command theorists (4e92f934d37a) address sophisticated secular moral frameworks like contractualism or consequentialism, rather than dismissing them, to demonstrate the necessity of divine moral foundation",
+      "node_type": "derived",
+      "confidence": 0.7,
+      "source_file": "system_generated",
+      "timestamp": "2026-03-08T22:26:48.840182",
+      "mood_state": null
+    },
+    {
+      "id": "992fbdf40c42",
+      "content": "If systematic observation (601e7a95e348) fails to detect divine intervention in controlled conditions, this creates tension with cosmological arguments (401cbf819c1d) that posit an active divine cause, suggesting either divine hiddenness or questioning the empirical accessibility of divine action",
+      "node_type": "derived",
+      "confidence": 0.65,
+      "source_file": "system_generated",
+      "timestamp": "2026-03-08T22:26:48.840230",
+      "mood_state": null
+    },
+    {
+      "id": "bbef69902594",
+      "content": "The existence of universal moral intuitions may have natural explanations that don't require a transcendent source, as cognitive predispositions could account for shared moral patterns across cultures",
+      "node_type": "derived",
+      "confidence": 0.75,
+      "source_file": "system_generated",
+      "timestamp": "2026-03-08T22:27:03.050135",
+      "mood_state": null
+    },
+    {
+      "id": "46d6ac1d7d0b",
+      "content": "The combination of cognitive biases toward supernatural belief and historically unreliable prophecy validation creates significant epistemic challenges for claims about divine revelation",
+      "node_type": "derived",
+      "confidence": 0.8,
+      "source_file": "system_generated",
+      "timestamp": "2026-03-08T22:27:03.050352",
+      "mood_state": null
+    },
+    {
+      "id": "2ae28ac9af41",
+      "content": "If an all-good, all-knowing being exists, the imposition of negative eternal consequences for non-belief appears to contradict the attribute of perfect goodness, especially given natural cognitive tendencies toward supernatural belief",
+      "node_type": "derived",
+      "confidence": 0.7,
+      "source_file": "system_generated",
+      "timestamp": "2026-03-08T22:27:03.050405",
+      "mood_state": null
+    },
+    {
+      "id": "c91d5402b248",
+      "content": "The hard problem of consciousness represents a genuine explanatory gap that neither strongly supports theistic nor materialistic worldviews without additional evidence",
+      "node_type": "derived",
+      "confidence": 0.65,
+      "source_file": "system_generated",
+      "timestamp": "2026-03-08T22:27:03.050459",
+      "mood_state": null
+    },
+    {
+      "id": "02b3c43a5c81",
+      "content": "The epistemological landscape reveals a fundamental asymmetry: while consciousness provides direct evidence for non-material phenomena, religious claims lack the same immediacy of verification, suggesting different evidentiary standards may apply to different domains of human experience",
+      "node_type": "derived",
+      "confidence": 0.75,
+      "source_file": "system_generated",
+      "timestamp": "2026-03-08T22:27:19.739120",
+      "mood_state": null
+    },
+    {
+      "id": "107e68b3bec5",
+      "content": "Reformed epistemology's claim that God-belief can be properly basic faces a severe challenge from the problem of evil, as basic beliefs should align with immediate experiential reality rather than contradict observable suffering",
+      "node_type": "derived",
+      "confidence": 0.8,
+      "source_file": "system_generated",
+      "timestamp": "2026-03-08T22:27:19.739324",
+      "mood_state": null
+    },
+    {
+      "id": "b7b07c87babb",
+      "content": "The contrast between unfulfilled prophecy claims and reported efficacy of prayer suggests that religious experience may be more psychologically than metaphysically grounded, with immediate subjective benefits rather than objective divine intervention",
+      "node_type": "derived",
+      "confidence": 0.7,
+      "source_file": "system_generated",
+      "timestamp": "2026-03-08T22:27:19.739376",
+      "mood_state": null
+    },
+    {
+      "id": "3e52ebb805ae",
+      "content": "The doctrine of eternal consequences for non-belief creates an epistemic paradox when combined with the evidential problems of religion: it implies ultimate stakes based on beliefs that lack compelling verification methods",
+      "node_type": "derived",
+      "confidence": 0.85,
+      "source_file": "system_generated",
+      "timestamp": "2026-03-08T22:27:19.739419",
+      "mood_state": null
+    },
+    {
+      "id": "357e55d57b37",
+      "content": "The existence of moral behavior in secular societies presents a direct empirical challenge to divine command theory, suggesting morality may emerge from evolutionary, social, or rational foundations rather than requiring divine origin",
+      "node_type": "derived",
+      "confidence": 0.85,
+      "source_file": "system_generated",
+      "timestamp": "2026-03-08T22:27:32.839052",
+      "mood_state": null
+    },
+    {
+      "id": "42f2ae4e5763",
+      "content": "Following derivation chains to their roots reveals that claims about moral necessity of the divine must account for the mechanistic explanations of religious experience itself",
+      "node_type": "derived",
+      "confidence": 0.8,
+      "source_file": "system_generated",
+      "timestamp": "2026-03-08T22:27:32.839265",
+      "mood_state": null
+    },
+    {
+      "id": "10402770e00e",
+      "content": "The neurobiological basis of religious experience raises fundamental questions about whether perceived divine moral commands originate from transcendent sources or emergent brain processes",
+      "node_type": "derived",
+      "confidence": 0.75,
+      "source_file": "system_generated",
+      "timestamp": "2026-03-08T22:27:32.839314",
+      "mood_state": null
+    },
+    {
+      "id": "f2e2f1e020e0",
+      "content": "While absence of evidence for divine moral foundation is not conclusive disproof, the positive evidence for naturalistic moral emergence in secular societies shifts the burden of proof toward defenders of divine command theory",
+      "node_type": "derived",
+      "confidence": 0.7,
+      "source_file": "system_generated",
+      "timestamp": "2026-03-08T22:27:32.839359",
+      "mood_state": null
+    },
+    {
+      "id": "9560ad44d5b8",
+      "content": "Religious truth claims face a fundamental epistemological crisis: they cannot meet scientific standards of falsifiability while simultaneously making empirically testable claims that consistently fail verification",
+      "node_type": "derived",
+      "confidence": 0.8,
+      "source_file": "system_generated",
+      "timestamp": "2026-03-08T22:27:45.031949",
+      "mood_state": null
+    },
+    {
+      "id": "9c64cdd1d186",
+      "content": "The existence of mutually exclusive religious truth claims with equally convinced adherents suggests that subjective conviction and social reinforcement are insufficient indicators of objective truth",
+      "node_type": "derived",
+      "confidence": 0.85,
+      "source_file": "system_generated",
+      "timestamp": "2026-03-08T22:27:45.032167",
+      "mood_state": null
+    },
+    {
+      "id": "0941f0776d73",
+      "content": "Archaeological contradictions of sacred historical claims, combined with post-hoc prophecy composition, indicates systematic reliability problems in religious texts as historical documents",
+      "node_type": "derived",
+      "confidence": 0.75,
+      "source_file": "system_generated",
+      "timestamp": "2026-03-08T22:27:45.032219",
+      "mood_state": null
+    },
+    {
+      "id": "55b260f6733b",
+      "content": "The convergence of neurobiological explanations for religious experience with naturalistic moral development suggests divine command theories may be unnecessary hypotheses rather than required explanations",
+      "node_type": "derived",
+      "confidence": 0.7,
+      "source_file": "system_generated",
+      "timestamp": "2026-03-08T22:27:45.032264",
+      "mood_state": null
+    },
+    {
+      "id": "e99e34f173cf",
+      "content": "The Kalam argument's premise that 'everything that begins to exist has a cause' may be undermined by quantum mechanics, where virtual particles appear to emerge without classical causation, potentially weakening the argument's foundation even if the universe did begin to exist",
+      "node_type": "derived",
+      "confidence": 0.75,
+      "source_file": "system_generated",
+      "timestamp": "2026-03-08T22:27:59.984242",
+      "mood_state": null
+    },
+    {
+      "id": "a8ba75464105",
+      "content": "If prophecies are demonstrably written post-hoc or remain too vague for verification, and geological evidence contradicts literal creation accounts, then empirical methodology appears more reliable than religious texts for understanding temporal reality",
+      "node_type": "derived",
+      "confidence": 0.8,
+      "source_file": "system_generated",
+      "timestamp": "2026-03-08T22:27:59.984428",
+      "mood_state": null
+    },
+    {
+      "id": "c0a0d01a33a6",
+      "content": "Even if the universe requires a cause per the Kalam argument, the attributes of omnipotence and perfect goodness create logical tensions with observable reality that may require abandoning classical theistic definitions",
+      "node_type": "derived",
+      "confidence": 0.7,
+      "source_file": "system_generated",
+      "timestamp": "2026-03-08T22:27:59.984480",
+      "mood_state": null
+    },
+    {
+      "id": "dd60427278aa",
+      "content": "Kierkegaard's emphasis on faith transcending reason, while philosophically coherent, cannot resolve evidential contradictions without effectively immunizing religious claims against empirical falsification",
+      "node_type": "derived",
+      "confidence": 0.85,
+      "source_file": "system_generated",
+      "timestamp": "2026-03-08T22:27:59.984581",
+      "mood_state": null
+    },
+    {
+      "id": "17ec2feac408",
+      "content": "The fine-tuning argument (5ed0a40dba66) may actually undermine rather than support the theodicy implied by an all-good, all-powerful being (153c5bb2f654), since a universe requiring such precise calibration suggests either limited divine power or the existence of external constraints on divine action",
+      "node_type": "derived",
+      "confidence": 0.75,
+      "source_file": "system_generated",
+      "timestamp": "2026-03-08T22:28:14.523569",
+      "mood_state": null
+    },
+    {
+      "id": "85cd8f5ffbf0",
+      "content": "If divine moral authority (4e92f934d37a) requires a sacred text as ultimate truth authority (87839aed3cc0), then the existence of multiple conflicting sacred texts across cultures creates an epistemic problem for determining which moral foundation is actually divine in origin",
+      "node_type": "derived",
+      "confidence": 0.8,
+      "source_file": "system_generated",
+      "timestamp": "2026-03-08T22:28:14.523796",
+      "mood_state": null
+    },
+    {
+      "id": "8faade97979b",
+      "content": "The neurological explanation for near-death experiences (7e0e566beadf) extends to transformative religious experiences (6cc79838413b) - if consistent cross-cultural spiritual phenomena can be explained by universal brain processes, this challenges their evidential value for supernatural claims",
+      "node_type": "derived",
+      "confidence": 0.7,
+      "source_file": "system_generated",
+      "timestamp": "2026-03-08T22:28:14.523849",
+      "mood_state": null
+    },
+    {
+      "id": "89050c2300ba",
+      "content": "The expectation of systematic divine intervention (ede03d7340e8) combined with fine-tuning requirements (5ed0a40dba66) creates a paradox: if divine intervention occurs regularly, the need for precisely calibrated physical constants becomes questionable, since ongoing intervention could compensate for suboptimal initial conditions",
+      "node_type": "derived",
+      "confidence": 0.65,
+      "source_file": "system_generated",
+      "timestamp": "2026-03-08T22:28:14.523894",
+      "mood_state": null
+    },
+    {
+      "id": "624150ded1ec",
+      "content": "The cognitive predisposition to pattern recognition and agent detection creates a naturalistic explanation for transformative religious experiences, suggesting these experiences may be powerful psychological phenomena rather than genuine divine encounters",
+      "node_type": "derived",
+      "confidence": 0.75,
+      "source_file": "system_generated",
+      "timestamp": "2026-03-08T22:28:26.496740",
+      "mood_state": null
+    },
+    {
+      "id": "33d220244144",
+      "content": "If consciousness represents a genuine explanatory gap in materialism, this could provide evidential support for divine moral foundations, as both consciousness and objective morality may require non-material grounding",
+      "node_type": "derived",
+      "confidence": 0.65,
+      "source_file": "system_generated",
+      "timestamp": "2026-03-08T22:28:26.496962",
+      "mood_state": null
+    },
+    {
+      "id": "f2de4b676c38",
+      "content": "The tension between reported transformative experiences and the evidential problems facing religious epistemology suggests a disconnect between religious phenomenology and rational justification",
+      "node_type": "derived",
+      "confidence": 0.8,
+      "source_file": "system_generated",
+      "timestamp": "2026-03-08T22:28:26.497016",
+      "mood_state": null
+    },
+    {
+      "id": "c45f0e547b00",
+      "content": "The claim that prayer produces tangible results faces a methodological problem: if cognitive biases predispose humans to perceive agency and patterns, reported prayer efficacy may reflect confirmation bias rather than divine intervention",
+      "node_type": "derived",
+      "confidence": 0.85,
+      "source_file": "system_generated",
+      "timestamp": "2026-03-08T22:28:26.497072",
+      "mood_state": null
+    },
+    {
+      "id": "f280f61836d5",
+      "content": "The explanatory gap between neurobiological correlates and subjective religious experience creates an epistemic blind spot where neither pure materialist reduction nor supernatural claims can be definitively validated",
+      "node_type": "derived",
+      "confidence": 0.85,
+      "source_file": "system_generated",
+      "timestamp": "2026-03-08T22:28:43.227151",
+      "mood_state": null
+    },
+    {
+      "id": "18bda6418f79",
+      "content": "Evolutionary continuity with primates challenges anthropocentric religious narratives while simultaneously raising questions about when and how uniquely human capacities for abstract spiritual reasoning emerged",
+      "node_type": "derived",
+      "confidence": 0.8,
+      "source_file": "system_generated",
+      "timestamp": "2026-03-08T22:28:43.227360",
+      "mood_state": null
+    },
+    {
+      "id": "ec99a0b262a6",
+      "content": "The methodological rigor demanded by archaeological falsification of religious claims must be symmetrically applied to naturalistic explanations that claim to fully account for religious phenomena",
+      "node_type": "derived",
+      "confidence": 0.75,
+      "source_file": "system_generated",
+      "timestamp": "2026-03-08T22:28:43.227409",
+      "mood_state": null
+    },
+    {
+      "id": "539221ae5ead",
+      "content": "Personal religious experience and systematic scientific observation may represent complementary rather than competing epistemic domains, each revealing aspects of reality that the other cannot access",
+      "node_type": "derived",
+      "confidence": 0.7,
+      "source_file": "system_generated",
+      "timestamp": "2026-03-08T22:28:43.227466",
+      "mood_state": null
+    },
+    {
+      "id": "547db715ae2c",
+      "content": "The simultaneous existence of equally convinced followers across mutually exclusive religious truth claims suggests that subjective certainty is an unreliable indicator of objective truth, particularly when combined with evidence that historically claimed divine revelations contain factual errors",
+      "node_type": "derived",
+      "confidence": 0.85,
+      "source_file": "system_generated",
+      "timestamp": "2026-03-08T22:29:00.811847",
+      "mood_state": null
+    },
+    {
+      "id": "5ef63ac414a7",
+      "content": "The pattern of retrospective prophecy writing and vague predictions that can be retrofitted to events reveals a systematic human tendency to create post-hoc narratives of divine intervention, suggesting that apparent supernatural validation may often be a product of cognitive bias rather than genuine foreknowledge",
+      "node_type": "derived",
+      "confidence": 0.8,
+      "source_file": "system_generated",
+      "timestamp": "2026-03-08T22:29:00.812082",
+      "mood_state": null
+    },
+    {
+      "id": "105f63b1c7df",
+      "content": "While Kierkegaard's notion of faith as transcending reason may preserve space for religious experience beyond empirical critique, it simultaneously undermines any epistemic authority that sacred texts might claim over factual domains where scientific and historical evidence can be evaluated",
+      "node_type": "derived",
+      "confidence": 0.75,
+      "source_file": "system_generated",
+      "timestamp": "2026-03-08T22:29:00.812145",
+      "mood_state": null
+    },
+    {
+      "id": "7b0059322b73",
+      "content": "The evolutionary emergence of human spiritual reasoning capabilities presents a paradox: while our capacity for religious thought appears to be a natural product of evolutionary processes, this same evolutionary framework challenges the special ontological status that most religious traditions claim for humanity in cosmic narratives",
+      "node_type": "derived",
+      "confidence": 0.8,
+      "source_file": "system_generated",
+      "timestamp": "2026-03-08T22:29:00.812199",
+      "mood_state": null
+    }
+  ],
+  "edges": [
+    {
+      "source": "b660e29ded46",
+      "target": "87839aed3cc0",
+      "relation": "questions",
+      "weight": 0.61,
+      "reasoning": "random connection"
+    },
+    {
+      "source": "3eb11f580944",
+      "target": "4e1c6579f945",
+      "relation": "supports",
+      "weight": 0.77,
+      "reasoning": "random connection"
+    },
+    {
+      "source": "0a16740837d0",
+      "target": "87839aed3cc0",
+      "relation": "supports",
+      "weight": 0.6,
+      "reasoning": "random connection"
+    },
+    {
+      "source": "d2659e48dfa0",
+      "target": "87839aed3cc0",
+      "relation": "contradicts",
+      "weight": 0.82,
+      "reasoning": "random connection"
+    },
+    {
+      "source": "ec0a2762da8a",
+      "target": "5ed0a40dba66",
+      "relation": "derived_from",
+      "weight": 0.77,
+      "reasoning": "random connection"
+    },
+    {
+      "source": "153c5bb2f654",
+      "target": "ad1f05dd8cee",
+      "relation": "derived_from",
+      "weight": 0.65,
+      "reasoning": "random connection"
+    },
+    {
+      "source": "57ee024c9b90",
+      "target": "b3ea6bf2f54f",
+      "relation": "questions",
+      "weight": 0.55,
+      "reasoning": "random connection"
+    },
+    {
+      "source": "601e7a95e348",
+      "target": "4e1c6579f945",
+      "relation": "questions",
+      "weight": 0.88,
+      "reasoning": "random connection"
+    },
+    {
+      "source": "14925ac48ab1",
+      "target": "0a16740837d0",
+      "relation": "derived_from",
+      "weight": 0.74,
+      "reasoning": "random connection"
+    },
+    {
+      "source": "601e7a95e348",
+      "target": "66500253ceec",
+      "relation": "questions",
+      "weight": 0.87,
+      "reasoning": "random connection"
+    },
+    {
+      "source": "d45192b5623a",
+      "target": "fc24cd369be8",
+      "relation": "supports",
+      "weight": 0.52,
+      "reasoning": "random connection"
+    },
+    {
+      "source": "5ed0a40dba66",
+      "target": "4d26be73f417",
+      "relation": "supports",
+      "weight": 0.88,
+      "reasoning": "random connection"
+    },
+    {
+      "source": "4e1c6579f945",
+      "target": "601e7a95e348",
+      "relation": "questions",
+      "weight": 0.7,
+      "reasoning": "random connection"
+    },
+    {
+      "source": "d45192b5623a",
+      "target": "ad1f05dd8cee",
+      "relation": "questions",
+      "weight": 0.66,
+      "reasoning": "random connection"
+    },
+    {
+      "source": "51e4e0210f6e",
+      "target": "4e92f934d37a",
+      "relation": "contradicts",
+      "weight": 0.74,
+      "reasoning": "random connection"
+    },
+    {
+      "source": "00760444fdf4",
+      "target": "ad1f05dd8cee",
+      "relation": "derived_from",
+      "weight": 0.67,
+      "reasoning": "random connection"
+    },
+    {
+      "source": "5ed0a40dba66",
+      "target": "76f5b719a7c5",
+      "relation": "supports",
+      "weight": 0.6,
+      "reasoning": "random connection"
+    },
+    {
+      "source": "0a16740837d0",
+      "target": "76f5b719a7c5",
+      "relation": "derived_from",
+      "weight": 0.62,
+      "reasoning": "random connection"
+    },
+    {
+      "source": "b3ea6bf2f54f",
+      "target": "76f5b719a7c5",
+      "relation": "contradicts",
+      "weight": 0.79,
+      "reasoning": "random connection"
+    },
+    {
+      "source": "4edde7eae3e9",
+      "target": "a43c26d04871",
+      "relation": "contradicts",
+      "weight": 0.62,
+      "reasoning": "random connection"
+    },
+    {
+      "source": "00760444fdf4",
+      "target": "14925ac48ab1",
+      "relation": "derived_from",
+      "weight": 0.9,
+      "reasoning": "random connection"
+    },
+    {
+      "source": "4edde7eae3e9",
+      "target": "d45192b5623a",
+      "relation": "contradicts",
+      "weight": 0.95,
+      "reasoning": "random connection"
+    },
+    {
+      "source": "3eb11f580944",
+      "target": "d2659e48dfa0",
+      "relation": "derived_from",
+      "weight": 0.54,
+      "reasoning": "random connection"
+    },
+    {
+      "source": "c54b62fc5f82",
+      "target": "b660e29ded46",
+      "relation": "contradicts",
+      "weight": 0.78,
+      "reasoning": "random connection"
+    },
+    {
+      "source": "543a48f2d39a",
+      "target": "4e92f934d37a",
+      "relation": "derived_from",
+      "weight": 0.67,
+      "reasoning": "random connection"
+    },
+    {
+      "source": "a43c26d04871",
+      "target": "0db02fa77c66",
+      "relation": "questions",
+      "weight": 0.94,
+      "reasoning": "random connection"
+    },
+    {
+      "source": "153c5bb2f654",
+      "target": "b660e29ded46",
+      "relation": "questions",
+      "weight": 0.85,
+      "reasoning": "random connection"
+    },
+    {
+      "source": "4d26be73f417",
+      "target": "6ba0f4d6e32e",
+      "relation": "derived_from",
+      "weight": 0.8,
+      "reasoning": "Plantinga's reformed epistemology establishes the framework for properly basic religious beliefs"
+    },
+    {
+      "source": "543a48f2d39a",
+      "target": "6ba0f4d6e32e",
+      "relation": "supports",
+      "weight": 0.9,
+      "reasoning": "The existence of mutually exclusive yet equally convinced religious followers demonstrates the practical problem when multiple groups claim properly basic knowledge"
+    },
+    {
+      "source": "5ed0a40dba66",
+      "target": "00c441a91da9",
+      "relation": "questions",
+      "weight": 0.8,
+      "reasoning": "The precise probability calculation assumes we know the sample space of possible physical constants, which is epistemically unavailable to us"
+    },
+    {
+      "source": "153c5bb2f654",
+      "target": "00c441a91da9",
+      "relation": "questions",
+      "weight": 0.7,
+      "reasoning": "This epistemic limitation undermines fine-tuning as strong evidence for a supreme designer"
+    },
+    {
+      "source": "b660e29ded46",
+      "target": "d13130df6393",
+      "relation": "contradicts",
+      "weight": 0.7,
+      "reasoning": "Properly basic beliefs are known through direct experience, not requiring argument or evidence"
+    },
+    {
+      "source": "66500253ceec",
+      "target": "d13130df6393",
+      "relation": "contradicts",
+      "weight": 0.8,
+      "reasoning": "Historical claims about specific events require testimonial and evidential support, not immediate experience"
+    },
+    {
+      "source": "153c5bb2f654",
+      "target": "ede03d7340e8",
+      "relation": "derived_from",
+      "weight": 0.8,
+      "reasoning": "An all-powerful, all-good being would have both the capacity and motivation for beneficial intervention"
+    },
+    {
+      "source": "66500253ceec",
+      "target": "ede03d7340e8",
+      "relation": "questions",
+      "weight": 0.75,
+      "reasoning": "If miracles occurred historically, the absence of clear contemporary miraculous interventions requires explanation"
+    },
+    {
+      "source": "14925ac48ab1",
+      "target": "7e0e566beadf",
+      "relation": "derived_from",
+      "weight": 0.8,
+      "reasoning": "Uses the consistent features across cultures as the primary data point"
+    },
+    {
+      "source": "d2659e48dfa0",
+      "target": "7e0e566beadf",
+      "relation": "supports",
+      "weight": 0.7,
+      "reasoning": "Cognitive predispositions provide a naturalistic framework for explaining consistent supernatural interpretations"
+    },
+    {
+      "source": "543a48f2d39a",
+      "target": "118f26d152e1",
+      "relation": "derived_from",
+      "weight": 0.9,
+      "reasoning": "Multiple exclusive truth claims with equal conviction levels cannot all be correct"
+    },
+    {
+      "source": "c54b62fc5f82",
+      "target": "118f26d152e1",
+      "relation": "questions",
+      "weight": 0.8,
+      "reasoning": "If multiple religions claim exclusive salvation, the mechanism for determining the 'correct' choice becomes problematic"
+    },
+    {
+      "source": "76d8909793e7",
+      "target": "e8099bdcd20a",
+      "relation": "derived_from",
+      "weight": 0.85,
+      "reasoning": "Applies the principle of engaging strongest arguments to religious discourse"
+    },
+    {
+      "source": "a43c26d04871",
+      "target": "e8099bdcd20a",
+      "relation": "supports",
+      "weight": 0.8,
+      "reasoning": "Archaeological evidence represents concrete data that must be addressed"
+    },
+    {
+      "source": "0db02fa77c66",
+      "target": "e8099bdcd20a",
+      "relation": "supports",
+      "weight": 0.75,
+      "reasoning": "Historical analysis of prophecies provides specific methodological challenges to address"
+    },
+    {
+      "source": "d2659e48dfa0",
+      "target": "f030f7d1d0d5",
+      "relation": "derived_from",
+      "weight": 0.8,
+      "reasoning": "Cognitive biases establish a baseline tendency that must be accounted for"
+    },
+    {
+      "source": "a43c26d04871",
+      "target": "f030f7d1d0d5",
+      "relation": "supports",
+      "weight": 0.7,
+      "reasoning": "Archaeological contradictions reduce the baseline credibility requiring higher evidentiary standards"
+    },
+    {
+      "source": "0db02fa77c66",
+      "target": "f030f7d1d0d5",
+      "relation": "supports",
+      "weight": 0.7,
+      "reasoning": "Prophecy analysis shows patterns of human construction rather than supernatural foreknowledge"
+    },
+    {
+      "source": "d2659e48dfa0",
+      "target": "f64178d97701",
+      "relation": "derived_from",
+      "weight": 0.8,
+      "reasoning": "Applies cognitive science findings about human psychological tendencies"
+    },
+    {
+      "source": "401cbf819c1d",
+      "target": "f64178d97701",
+      "relation": "questions",
+      "weight": 0.7,
+      "reasoning": "Suggests the argument's appeal may be psychologically rather than logically grounded"
+    },
+    {
+      "source": "fc24cd369be8",
+      "target": "e87ba4dc4843",
+      "relation": "derived_from",
+      "weight": 0.9,
+      "reasoning": "Applies the principle of weighing personal experience against systematic data"
+    },
+    {
+      "source": "601e7a95e348",
+      "target": "e87ba4dc4843",
+      "relation": "supports",
+      "weight": 0.8,
+      "reasoning": "Uses systematic study as evidence against supernatural claims"
+    },
+    {
+      "source": "66500253ceec",
+      "target": "e87ba4dc4843",
+      "relation": "questions",
+      "weight": 0.7,
+      "reasoning": "Challenges miraculous claims using systematic observation principle"
+    },
+    {
+      "source": "76d8909793e7",
+      "target": "034fb04f68ab",
+      "relation": "derived_from",
+      "weight": 0.9,
+      "reasoning": "Applies the steel-man principle to moral arguments"
+    },
+    {
+      "source": "4e92f934d37a",
+      "target": "034fb04f68ab",
+      "relation": "questions",
+      "weight": 0.8,
+      "reasoning": "Challenges the divine command position to address stronger secular alternatives"
+    },
+    {
+      "source": "601e7a95e348",
+      "target": "992fbdf40c42",
+      "relation": "derived_from",
+      "weight": 0.7,
+      "reasoning": "Uses empirical findings about prayer inefficacy"
+    },
+    {
+      "source": "401cbf819c1d",
+      "target": "992fbdf40c42",
+      "relation": "questions",
+      "weight": 0.6,
+      "reasoning": "Creates tension between argued divine causation and lack of empirical evidence"
+    },
+    {
+      "source": "fc24cd369be8",
+      "target": "992fbdf40c42",
+      "relation": "supports",
+      "weight": 0.8,
+      "reasoning": "Applies systematic observation principle to evaluate divine claims"
+    },
+    {
+      "source": "76f5b719a7c5",
+      "target": "bbef69902594",
+      "relation": "questions",
+      "weight": 0.8,
+      "reasoning": "Lewis's moral argument assumes moral intuitions require supernatural explanation"
+    },
+    {
+      "source": "d2659e48dfa0",
+      "target": "bbef69902594",
+      "relation": "supports",
+      "weight": 0.7,
+      "reasoning": "Cognitive predispositions demonstrate how shared human traits can emerge from evolutionary processes rather than transcendent sources"
+    },
+    {
+      "source": "0db02fa77c66",
+      "target": "46d6ac1d7d0b",
+      "relation": "derived_from",
+      "weight": 0.85,
+      "reasoning": "Historical analysis shows prophecy claims lack reliable verification"
+    },
+    {
+      "source": "d2659e48dfa0",
+      "target": "46d6ac1d7d0b",
+      "relation": "derived_from",
+      "weight": 0.75,
+      "reasoning": "Cognitive biases explain human tendency to see supernatural patterns and agency"
+    },
+    {
+      "source": "153c5bb2f654",
+      "target": "2ae28ac9af41",
+      "relation": "contradicts",
+      "weight": 0.8,
+      "reasoning": "Perfect goodness seems incompatible with eternal punishment for finite cognitive limitations"
+    },
+    {
+      "source": "c54b62fc5f82",
+      "target": "2ae28ac9af41",
+      "relation": "contradicts",
+      "weight": 0.75,
+      "reasoning": "Negative eternal consequences conflict with all-good nature"
+    },
+    {
+      "source": "d2659e48dfa0",
+      "target": "2ae28ac9af41",
+      "relation": "supports",
+      "weight": 0.6,
+      "reasoning": "Cognitive predispositions suggest belief/non-belief may be influenced by natural factors beyond individual control"
+    },
+    {
+      "source": "00760444fdf4",
+      "target": "c91d5402b248",
+      "relation": "derived_from",
+      "weight": 0.9,
+      "reasoning": "The hard problem shows current scientific limitations in explaining consciousness"
+    },
+    {
+      "source": "76d8909793e7",
+      "target": "c91d5402b248",
+      "relation": "derived_from",
+      "weight": 0.7,
+      "reasoning": "Strongest argument requires acknowledging that explanatory gaps don't automatically validate any particular metaphysical position"
+    },
+    {
+      "source": "00760444fdf4",
+      "target": "02b3c43a5c81",
+      "relation": "derived_from",
+      "weight": 0.8,
+      "reasoning": "Consciousness as unexplained by materialism provides a clear example of phenomena requiring non-physical explanation"
+    },
+    {
+      "source": "4d26be73f417",
+      "target": "02b3c43a5c81",
+      "relation": "questions",
+      "weight": 0.7,
+      "reasoning": "Challenges whether religious beliefs can truly be properly basic when they lack the direct experiential access that consciousness provides"
+    },
+    {
+      "source": "4d26be73f417",
+      "target": "107e68b3bec5",
+      "relation": "derived_from",
+      "weight": 0.9,
+      "reasoning": "Takes Plantinga's framework as the starting point for analysis"
+    },
+    {
+      "source": "3d1825e1ae79",
+      "target": "107e68b3bec5",
+      "relation": "contradicts",
+      "weight": 0.85,
+      "reasoning": "The reality of massive suffering contradicts what would be expected if belief in an all-good, all-powerful God were properly basic"
+    },
+    {
+      "source": "0db02fa77c66",
+      "target": "b7b07c87babb",
+      "relation": "derived_from",
+      "weight": 0.8,
+      "reasoning": "Historical failure of prophecies provides evidence against objective divine communication"
+    },
+    {
+      "source": "0a16740837d0",
+      "target": "b7b07c87babb",
+      "relation": "questions",
+      "weight": 0.75,
+      "reasoning": "If divine connection were real, we would expect more reliable prophetic accuracy alongside prayer efficacy"
+    },
+    {
+      "source": "c54b62fc5f82",
+      "target": "3e52ebb805ae",
+      "relation": "derived_from",
+      "weight": 0.9,
+      "reasoning": "The high stakes of eternal consequences form the basis of this analysis"
+    },
+    {
+      "source": "0db02fa77c66",
+      "target": "3e52ebb805ae",
+      "relation": "supports",
+      "weight": 0.8,
+      "reasoning": "Failed prophecies exemplify the lack of reliable verification methods for religious claims"
+    },
+    {
+      "source": "3d1825e1ae79",
+      "target": "3e52ebb805ae",
+      "relation": "supports",
+      "weight": 0.75,
+      "reasoning": "The problem of evil further undermines the reliability of methods for determining religious truth"
+    },
+    {
+      "source": "05c11d92f769",
+      "target": "357e55d57b37",
+      "relation": "contradicts",
+      "weight": 0.9,
+      "reasoning": "Observable moral excellence in secular societies directly challenges the claim that divine foundation is necessary for morality"
+    },
+    {
+      "source": "4e92f934d37a",
+      "target": "357e55d57b37",
+      "relation": "contradicts",
+      "weight": 0.9,
+      "reasoning": "If all morality required divine origin, secular societies should lack moral foundation and ethical behavior"
+    },
+    {
+      "source": "3eb11f580944",
+      "target": "42f2ae4e5763",
+      "relation": "derived_from",
+      "weight": 0.85,
+      "reasoning": "Applying the principle of following derivations to examine the foundations of religious moral claims"
+    },
+    {
+      "source": "3240324b8861",
+      "target": "42f2ae4e5763",
+      "relation": "supports",
+      "weight": 0.8,
+      "reasoning": "Neuroscientific explanations provide naturalistic accounts for the very experiences that ground divine moral claims"
+    },
+    {
+      "source": "3240324b8861",
+      "target": "10402770e00e",
+      "relation": "questions",
+      "weight": 0.85,
+      "reasoning": "If religious experiences have material neural correlates, this challenges claims about their divine origin"
+    },
+    {
+      "source": "4e92f934d37a",
+      "target": "10402770e00e",
+      "relation": "questions",
+      "weight": 0.8,
+      "reasoning": "Brain-based explanations for divine experiences undermine certainty about divine moral foundations"
+    },
+    {
+      "source": "ad1f05dd8cee",
+      "target": "f2e2f1e020e0",
+      "relation": "derived_from",
+      "weight": 0.75,
+      "reasoning": "Acknowledging that lack of divine evidence doesn't prove absence while noting positive counter-evidence exists"
+    },
+    {
+      "source": "05c11d92f769",
+      "target": "f2e2f1e020e0",
+      "relation": "supports",
+      "weight": 0.8,
+      "reasoning": "Secular moral success provides positive evidence for alternative moral foundations beyond mere absence of divine evidence"
+    },
+    {
+      "source": "b3ea6bf2f54f",
+      "target": "9560ad44d5b8",
+      "relation": "derived_from",
+      "weight": 0.8,
+      "reasoning": "Religious claims cannot be falsified, placing them outside scientific methodology"
+    },
+    {
+      "source": "0db02fa77c66",
+      "target": "9560ad44d5b8",
+      "relation": "supports",
+      "weight": 0.7,
+      "reasoning": "Failed prophecy verification demonstrates empirical inadequacy"
+    },
+    {
+      "source": "601e7a95e348",
+      "target": "9560ad44d5b8",
+      "relation": "supports",
+      "weight": 0.75,
+      "reasoning": "Prayer study failure shows empirical claims don't withstand rigorous testing"
+    },
+    {
+      "source": "543a48f2d39a",
+      "target": "9c64cdd1d186",
+      "relation": "derived_from",
+      "weight": 0.9,
+      "reasoning": "Multiple incompatible claims cannot all be true, yet have equal conviction levels"
+    },
+    {
+      "source": "51e4e0210f6e",
+      "target": "9c64cdd1d186",
+      "relation": "questions",
+      "weight": 0.6,
+      "reasoning": "Positive social outcomes may explain conviction independent of truth value"
+    },
+    {
+      "source": "a43c26d04871",
+      "target": "0941f0776d73",
+      "relation": "derived_from",
+      "weight": 0.8,
+      "reasoning": "Archaeological evidence directly contradicts historical claims"
+    },
+    {
+      "source": "0db02fa77c66",
+      "target": "0941f0776d73",
+      "relation": "derived_from",
+      "weight": 0.7,
+      "reasoning": "Post-hoc prophecy writing shows systematic historical distortion"
+    },
+    {
+      "source": "10402770e00e",
+      "target": "55b260f6733b",
+      "relation": "derived_from",
+      "weight": 0.8,
+      "reasoning": "Neurobiological basis questions transcendent origin of moral commands"
+    },
+    {
+      "source": "f2e2f1e020e0",
+      "target": "55b260f6733b",
+      "relation": "supports",
+      "weight": 0.75,
+      "reasoning": "Naturalistic moral emergence reduces need for divine explanation"
+    },
+    {
+      "source": "401cbf819c1d",
+      "target": "e99e34f173cf",
+      "relation": "questions",
+      "weight": 0.8,
+      "reasoning": "Modern physics suggests causation at quantum levels operates differently than classical intuitions, challenging the universal applicability of the first premise"
+    },
+    {
+      "source": "0db02fa77c66",
+      "target": "a8ba75464105",
+      "relation": "supports",
+      "weight": 0.9,
+      "reasoning": "Post-hoc prophecies indicate unreliable predictive claims in religious texts"
+    },
+    {
+      "source": "4edde7eae3e9",
+      "target": "a8ba75464105",
+      "relation": "supports",
+      "weight": 0.9,
+      "reasoning": "Geological evidence provides independently verifiable data contradicting religious chronologies"
+    },
+    {
+      "source": "401cbf819c1d",
+      "target": "c0a0d01a33a6",
+      "relation": "derived_from",
+      "weight": 0.7,
+      "reasoning": "The argument establishes need for a cause but doesn't specify divine attributes"
+    },
+    {
+      "source": "3d1825e1ae79",
+      "target": "c0a0d01a33a6",
+      "relation": "supports",
+      "weight": 0.8,
+      "reasoning": "Problem of evil challenges the compatibility of omnipotence with perfect goodness"
+    },
+    {
+      "source": "2ae28ac9af41",
+      "target": "c0a0d01a33a6",
+      "relation": "supports",
+      "weight": 0.7,
+      "reasoning": "Perfect goodness appears inconsistent with eternal punishment for natural cognitive limitations"
+    },
+    {
+      "source": "d45192b5623a",
+      "target": "dd60427278aa",
+      "relation": "derived_from",
+      "weight": 0.9,
+      "reasoning": "Kierkegaard's leap of faith concept forms the foundation for this analysis"
+    },
+    {
+      "source": "4edde7eae3e9",
+      "target": "dd60427278aa",
+      "relation": "questions",
+      "weight": 0.8,
+      "reasoning": "Geological evidence presents concrete empirical challenges that faith-based approaches must address"
+    },
+    {
+      "source": "0db02fa77c66",
+      "target": "dd60427278aa",
+      "relation": "questions",
+      "weight": 0.8,
+      "reasoning": "Historical analysis of prophecies provides empirical data that pure faith-based epistemology cannot adequately address"
+    },
+    {
+      "source": "5ed0a40dba66",
+      "target": "17ec2feac408",
+      "relation": "derived_from",
+      "weight": 0.8,
+      "reasoning": "Fine-tuning implies constraints that may limit divine omnipotence"
+    },
+    {
+      "source": "153c5bb2f654",
+      "target": "17ec2feac408",
+      "relation": "questions",
+      "weight": 0.7,
+      "reasoning": "Challenges the coherence of unlimited divine attributes"
+    },
+    {
+      "source": "4e92f934d37a",
+      "target": "85cd8f5ffbf0",
+      "relation": "derived_from",
+      "weight": 0.9,
+      "reasoning": "Divine moral authority requires reliable access to divine commands"
+    },
+    {
+      "source": "87839aed3cc0",
+      "target": "85cd8f5ffbf0",
+      "relation": "questions",
+      "weight": 0.8,
+      "reasoning": "Multiple competing claims to divine textual authority undermine singular authority"
+    },
+    {
+      "source": "7e0e566beadf",
+      "target": "8faade97979b",
+      "relation": "derived_from",
+      "weight": 0.85,
+      "reasoning": "Same neurological mechanisms likely apply to broader category of religious experiences"
+    },
+    {
+      "source": "6cc79838413b",
+      "target": "8faade97979b",
+      "relation": "contradicts",
+      "weight": 0.75,
+      "reasoning": "Natural explanation reduces supernatural evidential weight of transformative experiences"
+    },
+    {
+      "source": "ede03d7340e8",
+      "target": "89050c2300ba",
+      "relation": "derived_from",
+      "weight": 0.7,
+      "reasoning": "Regular intervention implies ability to override physical constraints"
+    },
+    {
+      "source": "5ed0a40dba66",
+      "target": "89050c2300ba",
+      "relation": "contradicts",
+      "weight": 0.8,
+      "reasoning": "Divine intervention capability makes fine-tuning argument less compelling"
+    },
+    {
+      "source": "d2659e48dfa0",
+      "target": "624150ded1ec",
+      "relation": "supports",
+      "weight": 0.8,
+      "reasoning": "Cognitive biases toward supernatural belief provide the mechanism"
+    },
+    {
+      "source": "6cc79838413b",
+      "target": "624150ded1ec",
+      "relation": "questions",
+      "weight": 0.7,
+      "reasoning": "Offers alternative explanation for reported transformative experiences"
+    },
+    {
+      "source": "00760444fdf4",
+      "target": "33d220244144",
+      "relation": "supports",
+      "weight": 0.7,
+      "reasoning": "Unexplained consciousness suggests limits of pure materialism"
+    },
+    {
+      "source": "4e92f934d37a",
+      "target": "33d220244144",
+      "relation": "supports",
+      "weight": 0.6,
+      "reasoning": "Non-material consciousness could parallel non-material moral foundations"
+    },
+    {
+      "source": "6cc79838413b",
+      "target": "f2de4b676c38",
+      "relation": "contradicts",
+      "weight": 0.7,
+      "reasoning": "Widespread transformative experiences suggest positive evidence"
+    },
+    {
+      "source": "107e68b3bec5",
+      "target": "f2de4b676c38",
+      "relation": "derived_from",
+      "weight": 0.8,
+      "reasoning": "Reformed epistemology faces evidential challenges despite experiential claims"
+    },
+    {
+      "source": "dd60427278aa",
+      "target": "f2de4b676c38",
+      "relation": "derived_from",
+      "weight": 0.7,
+      "reasoning": "Faith transcending reason creates epistemological isolation from evidence"
+    },
+    {
+      "source": "0a16740837d0",
+      "target": "c45f0e547b00",
+      "relation": "questions",
+      "weight": 0.9,
+      "reasoning": "Challenges the reliability of reported prayer results"
+    },
+    {
+      "source": "d2659e48dfa0",
+      "target": "c45f0e547b00",
+      "relation": "derived_from",
+      "weight": 0.8,
+      "reasoning": "Pattern recognition bias could create false perception of prayer efficacy"
+    },
+    {
+      "source": "3240324b8861",
+      "target": "f280f61836d5",
+      "relation": "derived_from",
+      "weight": 0.8,
+      "reasoning": "Neuroscience can map correlates but cannot explain why temporal lobe activity produces the subjective quality of religious experience"
+    },
+    {
+      "source": "00760444fdf4",
+      "target": "f280f61836d5",
+      "relation": "supports",
+      "weight": 0.9,
+      "reasoning": "The hard problem of consciousness extends directly to religious consciousness - we cannot bridge the explanatory gap between neural activity and subjective spiritual experience"
+    },
+    {
+      "source": "fc24cd369be8",
+      "target": "f280f61836d5",
+      "relation": "derived_from",
+      "weight": 0.7,
+      "reasoning": "Personal religious experience remains valid data that systematic neurobiological observation cannot fully account for or dismiss"
+    },
+    {
+      "source": "ec0a2762da8a",
+      "target": "18bda6418f79",
+      "relation": "derived_from",
+      "weight": 0.85,
+      "reasoning": "Shared genetic sequences demonstrate evolutionary continuity that contradicts special creation narratives but raises questions about the emergence of religious cognition"
+    },
+    {
+      "source": "3eb11f580944",
+      "target": "18bda6418f79",
+      "relation": "supports",
+      "weight": 0.75,
+      "reasoning": "Following the derivation chain requires asking why humans developed unique capacities for transcendent reasoning if we share common ancestry"
+    },
+    {
+      "source": "e8099bdcd20a",
+      "target": "ec99a0b262a6",
+      "relation": "derived_from",
+      "weight": 0.8,
+      "reasoning": "If religious claims must face archaeological contradictions, then naturalistic claims must face their own evidentiary gaps"
+    },
+    {
+      "source": "55b260f6733b",
+      "target": "ec99a0b262a6",
+      "relation": "questions",
+      "weight": 0.7,
+      "reasoning": "The claim that neurobiological explanations make divine command theories unnecessary must meet the same evidentiary standards applied to religious claims"
+    },
+    {
+      "source": "3eb11f580944",
+      "target": "ec99a0b262a6",
+      "relation": "supports",
+      "weight": 0.85,
+      "reasoning": "Rigorous derivation chains require following naturalistic explanations to their foundational assumptions and testing their explanatory adequacy"
+    },
+    {
+      "source": "fc24cd369be8",
+      "target": "539221ae5ead",
+      "relation": "derived_from",
+      "weight": 0.8,
+      "reasoning": "The principle that personal experience is valid data suggests it may access realities that systematic observation cannot capture"
+    },
+    {
+      "source": "00760444fdf4",
+      "target": "539221ae5ead",
+      "relation": "supports",
+      "weight": 0.75,
+      "reasoning": "The hard problem of consciousness suggests systematic materialist observation has inherent limitations in accessing subjective realities"
+    },
+    {
+      "source": "3240324b8861",
+      "target": "539221ae5ead",
+      "relation": "questions",
+      "weight": 0.6,
+      "reasoning": "If neuroscience can only map correlates of religious experience, it may not invalidate the experiential content itself"
+    },
+    {
+      "source": "543a48f2d39a",
+      "target": "547db715ae2c",
+      "relation": "derived_from",
+      "weight": 0.8,
+      "reasoning": "Equal conviction across contradictory claims demonstrates that psychological certainty doesn't correlate with truth"
+    },
+    {
+      "source": "a43c26d04871",
+      "target": "547db715ae2c",
+      "relation": "supports",
+      "weight": 0.7,
+      "reasoning": "Archaeological contradictions provide objective counter-evidence to subjective religious certainty"
+    },
+    {
+      "source": "87839aed3cc0",
+      "target": "547db715ae2c",
+      "relation": "questions",
+      "weight": 0.9,
+      "reasoning": "If a text contains historical inaccuracies, its claim to divine inspiration and ultimate authority becomes problematic"
+    },
+    {
+      "source": "0db02fa77c66",
+      "target": "5ef63ac414a7",
+      "relation": "derived_from",
+      "weight": 0.9,
+      "reasoning": "Analysis of prophecy timing and specificity reveals human rather than divine origins"
+    },
+    {
+      "source": "543a48f2d39a",
+      "target": "5ef63ac414a7",
+      "relation": "supports",
+      "weight": 0.6,
+      "reasoning": "Multiple religions claim fulfilled prophecies using similar post-hoc reasoning patterns"
+    },
+    {
+      "source": "d45192b5623a",
+      "target": "105f63b1c7df",
+      "relation": "derived_from",
+      "weight": 0.8,
+      "reasoning": "If faith transcends reason, it cannot make rational claims about empirically testable domains"
+    },
+    {
+      "source": "539221ae5ead",
+      "target": "105f63b1c7df",
+      "relation": "supports",
+      "weight": 0.7,
+      "reasoning": "This suggests complementary domains where religious and scientific epistemologies operate separately"
+    },
+    {
+      "source": "87839aed3cc0",
+      "target": "105f63b1c7df",
+      "relation": "questions",
+      "weight": 0.8,
+      "reasoning": "A text claiming ultimate authority over all truth cannot simultaneously retreat to trans-rational domains when contradicted by evidence"
+    },
+    {
+      "source": "18bda6418f79",
+      "target": "7b0059322b73",
+      "relation": "derived_from",
+      "weight": 0.9,
+      "reasoning": "This directly extends the observation about evolutionary continuity creating tension with anthropocentric religious views"
+    },
+    {
+      "source": "ec0a2762da8a",
+      "target": "7b0059322b73",
+      "relation": "supports",
+      "weight": 0.7,
+      "reasoning": "Genetic continuity with primates provides the evolutionary foundation for understanding human capacities as emergent rather than specially created"
+    },
+    {
+      "source": "87839aed3cc0",
+      "target": "7b0059322b73",
+      "relation": "contradicts",
+      "weight": 0.6,
+      "reasoning": "If humans are evolutionary products rather than special creations, claims of divinely inspired texts become more difficult to maintain"
+    }
+  ]
+}

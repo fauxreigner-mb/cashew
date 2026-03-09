@@ -1,0 +1,3644 @@
+{
+  "nodes": [
+    {
+      "id": "node_951b48dc",
+      "content": "Everything that begins to exist has a cause",
+      "node_type": "premise",
+      "source": "William Lane Craig",
+      "category": "cosmological"
+    },
+    {
+      "id": "node_6c57335e",
+      "content": "The universe began to exist",
+      "node_type": "premise",
+      "source": "William Lane Craig",
+      "category": "cosmological"
+    },
+    {
+      "id": "node_639eccea",
+      "content": "Therefore, the universe has a cause",
+      "node_type": "conclusion",
+      "source": "William Lane Craig",
+      "category": "cosmological"
+    },
+    {
+      "id": "node_86794f18",
+      "content": "If the universe has a cause, then an uncaused, personal Creator exists",
+      "node_type": "premise",
+      "source": "William Lane Craig",
+      "category": "cosmological"
+    },
+    {
+      "id": "node_b96a025f",
+      "content": "Therefore, an uncaused, personal Creator exists",
+      "node_type": "conclusion",
+      "source": "William Lane Craig",
+      "category": "cosmological"
+    },
+    {
+      "id": "node_621c3d04",
+      "content": "Quantum events appear uncaused (quantum indeterminacy)",
+      "node_type": "objection",
+      "source": "Paul Davies / Quantum Physics",
+      "category": "cosmological"
+    },
+    {
+      "id": "node_204eed66",
+      "content": "Quantum events have necessary conditions even if not sufficient causes",
+      "node_type": "response",
+      "source": "William Lane Craig",
+      "category": "cosmological"
+    },
+    {
+      "id": "node_065a7576",
+      "content": "Virtual particles emerge from quantum vacuum without cause",
+      "node_type": "objection",
+      "source": "Lawrence Krauss / Quentin Smith",
+      "category": "cosmological"
+    },
+    {
+      "id": "node_232c9bbf",
+      "content": "Quantum vacuum is not 'nothing' but energetic medium with physical laws",
+      "node_type": "response",
+      "source": "William Lane Craig",
+      "category": "cosmological"
+    },
+    {
+      "id": "node_6cfa57f7",
+      "content": "Effects without causes are conceivable (Hume)",
+      "node_type": "objection",
+      "source": "David Hume / J.L. Mackie",
+      "category": "cosmological"
+    },
+    {
+      "id": "node_c4816050",
+      "content": "Conceivability doesn't establish real possibility; Hume himself believed in causation",
+      "node_type": "response",
+      "source": "William Lane Craig",
+      "category": "cosmological"
+    },
+    {
+      "id": "node_4e6b3777",
+      "content": "Borde-Guth-Vilenkin theorem applies only to classical spacetime",
+      "node_type": "objection",
+      "source": "Sean Carroll",
+      "category": "cosmological"
+    },
+    {
+      "id": "node_81196ded",
+      "content": "Even quantum pre-classical regions cannot exist timelessly due to instability",
+      "node_type": "response",
+      "source": "William Lane Craig",
+      "category": "cosmological"
+    },
+    {
+      "id": "node_cfb9d84d",
+      "content": "Emergent/cyclic models avoid beginning",
+      "node_type": "objection",
+      "source": "Various cosmologists",
+      "category": "cosmological"
+    },
+    {
+      "id": "node_f18c6029",
+      "content": "Such models violate thermodynamics or remain subject to BGV theorem",
+      "node_type": "response",
+      "source": "William Lane Craig",
+      "category": "cosmological"
+    },
+    {
+      "id": "node_9d59eab6",
+      "content": "Causation requires time, but universe creates time",
+      "node_type": "objection",
+      "source": "Adolf Gr\u00fcnbaum",
+      "category": "cosmological"
+    },
+    {
+      "id": "node_e4ccf429",
+      "content": "Agent causation by timeless being can create first temporal effect",
+      "node_type": "response",
+      "source": "William Lane Craig",
+      "category": "cosmological"
+    },
+    {
+      "id": "node_0b3d579e",
+      "content": "Jesus claimed to be God",
+      "node_type": "assumption",
+      "source": "C.S. Lewis",
+      "category": "historical"
+    },
+    {
+      "id": "node_b695a503",
+      "content": "Jesus was either lying about being God, deluded about being God, or actually God",
+      "node_type": "premise",
+      "source": "C.S. Lewis",
+      "category": "historical"
+    },
+    {
+      "id": "node_395be228",
+      "content": "Jesus was not a liar (good moral character)",
+      "node_type": "premise",
+      "source": "C.S. Lewis",
+      "category": "historical"
+    },
+    {
+      "id": "node_fb55d83b",
+      "content": "Jesus was not a lunatic (rational teaching and behavior)",
+      "node_type": "premise",
+      "source": "C.S. Lewis",
+      "category": "historical"
+    },
+    {
+      "id": "node_248108f8",
+      "content": "Therefore, Jesus is God",
+      "node_type": "conclusion",
+      "source": "C.S. Lewis",
+      "category": "historical"
+    },
+    {
+      "id": "node_35587afe",
+      "content": "Fourth option: Jesus is legendary (claims invented by later Christians)",
+      "node_type": "objection",
+      "source": "Critical scholars / William Lane Craig",
+      "category": "historical"
+    },
+    {
+      "id": "node_79a7c185",
+      "content": "Gospel accounts are not legends based on literary analysis",
+      "node_type": "response",
+      "source": "C.S. Lewis",
+      "category": "historical"
+    },
+    {
+      "id": "node_87fe9472",
+      "content": "Scholarly consensus: Jesus did not claim to be God",
+      "node_type": "objection",
+      "source": "John Hick / Bart Ehrman",
+      "category": "historical"
+    },
+    {
+      "id": "node_1e48c824",
+      "content": "Conservative scholars disagree; Bible taken at face value shows divine claims",
+      "node_type": "response",
+      "source": "Donald Williams",
+      "category": "historical"
+    },
+    {
+      "id": "node_16bc874f",
+      "content": "Jesus could be a great prophet without being God",
+      "node_type": "objection",
+      "source": "Craig Evans",
+      "category": "historical"
+    },
+    {
+      "id": "node_e65e444c",
+      "content": "Divine claims preclude merely prophetic status",
+      "node_type": "response",
+      "source": "C.S. Lewis defenders",
+      "category": "historical"
+    },
+    {
+      "id": "node_ea7417a4",
+      "content": "If God does not exist, objective moral values do not exist",
+      "node_type": "premise",
+      "source": "William Lane Craig",
+      "category": "moral"
+    },
+    {
+      "id": "node_5bb7bb19",
+      "content": "Objective moral values do exist",
+      "node_type": "premise",
+      "source": "William Lane Craig",
+      "category": "moral"
+    },
+    {
+      "id": "node_7028e623",
+      "content": "Therefore, God exists",
+      "node_type": "conclusion",
+      "source": "William Lane Craig",
+      "category": "moral"
+    },
+    {
+      "id": "node_99b8be9d",
+      "content": "Evolution can ground objective morality",
+      "node_type": "objection",
+      "source": "Naturalistic ethicists",
+      "category": "moral"
+    },
+    {
+      "id": "node_ccefa5cc",
+      "content": "Evolution explains genesis of moral beliefs, not ontological foundation",
+      "node_type": "response",
+      "source": "William Lane Craig",
+      "category": "moral"
+    },
+    {
+      "id": "node_efa87b94",
+      "content": "Divine command theory faces Euthyphro dilemma",
+      "node_type": "objection",
+      "source": "Plato / Modern critics",
+      "category": "moral"
+    },
+    {
+      "id": "node_d0288232",
+      "content": "God's nature provides ontological foundation, commands provide epistemic access",
+      "node_type": "response",
+      "source": "William Lane Craig",
+      "category": "moral"
+    },
+    {
+      "id": "node_290e482f",
+      "content": "Belief in God can be properly basic (warrant without evidence)",
+      "node_type": "premise",
+      "source": "Alvin Plantinga",
+      "category": "epistemological"
+    },
+    {
+      "id": "node_0b7b0281",
+      "content": "Properly basic beliefs are rational if produced by properly functioning cognitive faculties",
+      "node_type": "premise",
+      "source": "Alvin Plantinga",
+      "category": "epistemological"
+    },
+    {
+      "id": "node_4cfacd16",
+      "content": "God designed cognitive faculties with sensus divinitatis",
+      "node_type": "premise",
+      "source": "Alvin Plantinga",
+      "category": "epistemological"
+    },
+    {
+      "id": "node_9680a6c4",
+      "content": "Therefore, belief in God can be rational without arguments",
+      "node_type": "conclusion",
+      "source": "Alvin Plantinga",
+      "category": "epistemological"
+    },
+    {
+      "id": "node_76e58eb2",
+      "content": "Great Pumpkin objection: any belief could be properly basic",
+      "node_type": "objection",
+      "source": "Critics",
+      "category": "epistemological"
+    },
+    {
+      "id": "node_d142aa30",
+      "content": "Objection assumes classical foundationalist criteria are exhaustive",
+      "node_type": "response",
+      "source": "Alvin Plantinga",
+      "category": "epistemological"
+    },
+    {
+      "id": "node_bf9de36c",
+      "content": "Naturalistic explanations exist for religious experience",
+      "node_type": "objection",
+      "source": "Justin Barrett",
+      "category": "epistemological"
+    },
+    {
+      "id": "node_60a9820e",
+      "content": "Genesis of belief doesn't undermine warrant if properly functioning",
+      "node_type": "response",
+      "source": "Alvin Plantinga",
+      "category": "epistemological"
+    },
+    {
+      "id": "node_6c08378a",
+      "content": "Some things are changing (potency to act)",
+      "node_type": "premise",
+      "source": "Thomas Aquinas",
+      "category": "cosmological"
+    },
+    {
+      "id": "node_8379b7dc",
+      "content": "Whatever is changing is being changed by something else",
+      "node_type": "premise",
+      "source": "Thomas Aquinas",
+      "category": "cosmological"
+    },
+    {
+      "id": "node_5c052d05",
+      "content": "Infinite regress of movers is impossible",
+      "node_type": "premise",
+      "source": "Thomas Aquinas",
+      "category": "cosmological"
+    },
+    {
+      "id": "node_9ecda6db",
+      "content": "Therefore, there must be a first unmoved mover (God)",
+      "node_type": "conclusion",
+      "source": "Thomas Aquinas",
+      "category": "cosmological"
+    },
+    {
+      "id": "node_b468d4e1",
+      "content": "Some things are caused",
+      "node_type": "premise",
+      "source": "Thomas Aquinas",
+      "category": "cosmological"
+    },
+    {
+      "id": "node_e9399d89",
+      "content": "Nothing can be the cause of itself",
+      "node_type": "premise",
+      "source": "Thomas Aquinas",
+      "category": "cosmological"
+    },
+    {
+      "id": "node_50300d37",
+      "content": "Infinite regress of efficient causes is impossible",
+      "node_type": "premise",
+      "source": "Thomas Aquinas",
+      "category": "cosmological"
+    },
+    {
+      "id": "node_c7353b06",
+      "content": "Therefore, there must be a first efficient cause (God)",
+      "node_type": "conclusion",
+      "source": "Thomas Aquinas",
+      "category": "cosmological"
+    },
+    {
+      "id": "node_5a972cb2",
+      "content": "Things exist that are possible-to-be and possible-not-to-be",
+      "node_type": "premise",
+      "source": "Thomas Aquinas",
+      "category": "cosmological"
+    },
+    {
+      "id": "node_d756be3b",
+      "content": "If everything were contingent, nothing would exist now",
+      "node_type": "premise",
+      "source": "Thomas Aquinas",
+      "category": "cosmological"
+    },
+    {
+      "id": "node_2b76829f",
+      "content": "Things exist now",
+      "node_type": "premise",
+      "source": "Thomas Aquinas",
+      "category": "cosmological"
+    },
+    {
+      "id": "node_abf8f24b",
+      "content": "Therefore, there must be a necessary being (God)",
+      "node_type": "conclusion",
+      "source": "Thomas Aquinas",
+      "category": "cosmological"
+    },
+    {
+      "id": "node_fa66a8d2",
+      "content": "Things have degrees of goodness, truth, and nobility",
+      "node_type": "premise",
+      "source": "Thomas Aquinas",
+      "category": "moral"
+    },
+    {
+      "id": "node_30b29efb",
+      "content": "Degrees imply a maximum standard",
+      "node_type": "premise",
+      "source": "Thomas Aquinas",
+      "category": "moral"
+    },
+    {
+      "id": "node_59ca7a85",
+      "content": "The maximum in a genus is the cause of all others in that genus",
+      "node_type": "premise",
+      "source": "Thomas Aquinas",
+      "category": "moral"
+    },
+    {
+      "id": "node_b2160107",
+      "content": "Therefore, there is a most perfect being (God)",
+      "node_type": "conclusion",
+      "source": "Thomas Aquinas",
+      "category": "moral"
+    },
+    {
+      "id": "node_967f0449",
+      "content": "Non-intelligent things behave toward ends/goals",
+      "node_type": "premise",
+      "source": "Thomas Aquinas",
+      "category": "teleological"
+    },
+    {
+      "id": "node_4d3dbee0",
+      "content": "Goal-directed behavior requires intelligence to set the goal",
+      "node_type": "premise",
+      "source": "Thomas Aquinas",
+      "category": "teleological"
+    },
+    {
+      "id": "node_fe6d7ec4",
+      "content": "Non-intelligent things cannot set their own goals",
+      "node_type": "premise",
+      "source": "Thomas Aquinas",
+      "category": "teleological"
+    },
+    {
+      "id": "node_16593b5d",
+      "content": "Therefore, there must be an intelligent designer (God)",
+      "node_type": "conclusion",
+      "source": "Thomas Aquinas",
+      "category": "teleological"
+    },
+    {
+      "id": "node_97d1a8a3",
+      "content": "Cannot infer causes beyond experience (Hume)",
+      "node_type": "objection",
+      "source": "David Hume",
+      "category": "cosmological"
+    },
+    {
+      "id": "node_120d8720",
+      "content": "Arguments reason from effects to logically necessary causes",
+      "node_type": "response",
+      "source": "Thomistic defenders",
+      "category": "cosmological"
+    },
+    {
+      "id": "node_902a0841",
+      "content": "Cannot know noumenal realm beyond phenomena (Kant)",
+      "node_type": "objection",
+      "source": "Immanuel Kant",
+      "category": "cosmological"
+    },
+    {
+      "id": "node_1bc926a8",
+      "content": "Thomistic metaphysics rejects Kantian phenomenal/noumenal distinction",
+      "node_type": "response",
+      "source": "Edward Feser",
+      "category": "cosmological"
+    },
+    {
+      "id": "c31076010408",
+      "content": "Jesus Christ rose bodily from the dead",
+      "node_type": "conclusion",
+      "source": "William Lane Craig",
+      "category": "resurrection"
+    },
+    {
+      "id": "6db26e84b0e1",
+      "content": "Jesus died by crucifixion",
+      "node_type": "premise",
+      "source": "Craig/Historical consensus",
+      "category": "resurrection"
+    },
+    {
+      "id": "d5b5e497b72d",
+      "content": "Jesus was buried in a tomb by Joseph of Arimathea and the tomb was found empty",
+      "node_type": "premise",
+      "source": "Craig/Gospel accounts",
+      "category": "resurrection"
+    },
+    {
+      "id": "8f8292c76695",
+      "content": "Multiple groups and individuals experienced post-mortem appearances of Jesus",
+      "node_type": "premise",
+      "source": "Craig/1 Cor 15:3-8",
+      "category": "resurrection"
+    },
+    {
+      "id": "b1783718036b",
+      "content": "The Christian faith originated and exploded in first-century Jerusalem",
+      "node_type": "premise",
+      "source": "Craig/Historical evidence",
+      "category": "resurrection"
+    },
+    {
+      "id": "330232c8714a",
+      "content": "Jesus didn't actually die but merely swooned and revived in the tomb",
+      "node_type": "objection",
+      "source": "Skeptics",
+      "category": "resurrection"
+    },
+    {
+      "id": "c2b6a249f80a",
+      "content": "Medical evidence shows crucifixion causes death; impossible to survive",
+      "node_type": "response",
+      "source": "Journal of American Medical Association",
+      "category": "resurrection"
+    },
+    {
+      "id": "d767cd6e07b4",
+      "content": "A half-dead Jesus could not inspire belief in glorious resurrection",
+      "node_type": "response",
+      "source": "David Friedrich Strauss",
+      "category": "resurrection"
+    },
+    {
+      "id": "9ad434376cbc",
+      "content": "The disciples stole Jesus' body and fabricated the resurrection story",
+      "node_type": "objection",
+      "source": "Jewish authorities/Matthew 28:11-15",
+      "category": "resurrection"
+    },
+    {
+      "id": "4a9826da10fa",
+      "content": "Disciples died as martyrs for resurrection belief; liars make poor martyrs",
+      "node_type": "response",
+      "source": "Historical evidence/Craig",
+      "category": "resurrection"
+    },
+    {
+      "id": "1ac04e04be59",
+      "content": "No expectation of individual resurrection before general resurrection in Jewish thought",
+      "node_type": "response",
+      "source": "N.T. Wright/Craig",
+      "category": "resurrection"
+    },
+    {
+      "id": "ccc82643a865",
+      "content": "The disciples experienced hallucinations, not real appearances of Jesus",
+      "node_type": "objection",
+      "source": "Gerd L\u00fcdemann/Skeptics",
+      "category": "resurrection"
+    },
+    {
+      "id": "c624afdfc95e",
+      "content": "Hallucinations are private experiences, cannot explain group appearances",
+      "node_type": "response",
+      "source": "Craig/Psychology",
+      "category": "resurrection"
+    },
+    {
+      "id": "ccb7e8685181",
+      "content": "Hallucinations cannot explain the empty tomb or converted skeptics",
+      "node_type": "response",
+      "source": "Craig/Kreeft",
+      "category": "resurrection"
+    },
+    {
+      "id": "55894ef3f478",
+      "content": "Jewish expectation would be visions of Jesus in heaven, not resurrection",
+      "node_type": "response",
+      "source": "Craig/Jewish beliefs",
+      "category": "resurrection"
+    },
+    {
+      "id": "0b4d2e48566c",
+      "content": "The women went to the wrong tomb and found it empty",
+      "node_type": "objection",
+      "source": "Kirsopp Lake",
+      "category": "resurrection"
+    },
+    {
+      "id": "2063550f20d4",
+      "content": "Jewish and Roman authorities could have produced the body from the correct tomb",
+      "node_type": "response",
+      "source": "Craig/Logic",
+      "category": "resurrection"
+    },
+    {
+      "id": "f191848d29d1",
+      "content": "The resurrection stories developed as legends over time",
+      "node_type": "objection",
+      "source": "Mythicist scholars",
+      "category": "resurrection"
+    },
+    {
+      "id": "7afda9e8ad0a",
+      "content": "1 Cor 15:3-8 creed dates to within 2-3 years of crucifixion; insufficient time for legend",
+      "node_type": "response",
+      "source": "Gerd L\u00fcdemann/Early dating",
+      "category": "resurrection"
+    },
+    {
+      "id": "dba7399fd8b0",
+      "content": "Old Testament prophecies were fulfilled in Jesus Christ, demonstrating divine foreknowledge",
+      "node_type": "conclusion",
+      "source": "Christian apologetics",
+      "category": "prophecy"
+    },
+    {
+      "id": "306cd8317999",
+      "content": "Psalm 22 describes crucifixion details: pierced hands/feet, casting lots for clothes, mocking",
+      "node_type": "premise",
+      "source": "Psalm 22/Gospel accounts",
+      "category": "prophecy"
+    },
+    {
+      "id": "c4816e0e037e",
+      "content": "Isaiah 53 describes suffering servant: pierced for transgressions, silent before accusers, buried with rich",
+      "node_type": "premise",
+      "source": "Isaiah 53/Gospel accounts",
+      "category": "prophecy"
+    },
+    {
+      "id": "aea54a06e0ab",
+      "content": "Micah 5:2 prophesies Messiah born in Bethlehem",
+      "node_type": "premise",
+      "source": "Micah 5:2/Matthew 2:1",
+      "category": "prophecy"
+    },
+    {
+      "id": "0c0527eac832",
+      "content": "Daniel 9:24-27 prophesies timing of Messiah's coming and death",
+      "node_type": "premise",
+      "source": "Daniel 9/Historical calculation",
+      "category": "prophecy"
+    },
+    {
+      "id": "f020e6abd023",
+      "content": "Prophecies were written after the events they claim to predict (vaticinium ex eventu)",
+      "node_type": "objection",
+      "source": "Critical scholars",
+      "category": "prophecy"
+    },
+    {
+      "id": "22e88184a177",
+      "content": "Dead Sea Scrolls confirm pre-Christian dating of Isaiah and other prophetic texts",
+      "node_type": "response",
+      "source": "Archaeological evidence",
+      "category": "prophecy"
+    },
+    {
+      "id": "63b0dadefe79",
+      "content": "Even late dating still predates Jesus for most prophecies",
+      "node_type": "response",
+      "source": "Textual criticism",
+      "category": "prophecy"
+    },
+    {
+      "id": "416237da5b8d",
+      "content": "Prophecies are too vague and could apply to many people or situations",
+      "node_type": "objection",
+      "source": "Skeptics",
+      "category": "prophecy"
+    },
+    {
+      "id": "e79646500417",
+      "content": "Many prophecies contain highly specific details that match Jesus precisely",
+      "node_type": "response",
+      "source": "Statistical analysis",
+      "category": "prophecy"
+    },
+    {
+      "id": "05150bcfaad8",
+      "content": "Christians cherry-pick verses while ignoring context and failed predictions",
+      "node_type": "objection",
+      "source": "Critical scholars",
+      "category": "prophecy"
+    },
+    {
+      "id": "21666b94c2d3",
+      "content": "Multiple independent prophecies from different authors and time periods converge on Jesus",
+      "node_type": "response",
+      "source": "Biblical scholars",
+      "category": "prophecy"
+    },
+    {
+      "id": "0ceacec694ab",
+      "content": "Isaiah 7:14 uses 'almah' (young woman) not 'bethulah' (virgin); prophecy mistranslated",
+      "node_type": "objection",
+      "source": "Hebrew scholars",
+      "category": "prophecy"
+    },
+    {
+      "id": "5a64ba76fe3d",
+      "content": "Isaiah 7:14 prophesies virgin birth: 'almah' will conceive and bear son called Immanuel",
+      "node_type": "premise",
+      "source": "Isaiah 7:14/Matthew 1:23",
+      "category": "prophecy"
+    },
+    {
+      "id": "6709d45922e8",
+      "content": "Septuagint translators used 'parthenos' (virgin); contemporary Jewish understanding supported virgin birth",
+      "node_type": "response",
+      "source": "Septuagint/Hebrew lexicons",
+      "category": "prophecy"
+    },
+    {
+      "id": "8f636ea34f1a",
+      "content": "If God is all-powerful, all-knowing, and perfectly good, evil should not exist",
+      "node_type": "objection",
+      "source": "Epicurus/Problem of Evil",
+      "category": "evil"
+    },
+    {
+      "id": "f36fb11be710",
+      "content": "God exists as perfectly good, omnipotent, and omniscient being",
+      "node_type": "premise",
+      "source": "Classical theism",
+      "category": "theism"
+    },
+    {
+      "id": "1e866169130f",
+      "content": "The existence of any evil is logically incompatible with an omnipotent, omniscient, perfectly good God",
+      "node_type": "objection",
+      "source": "J.L. Mackie/Logical argument",
+      "category": "evil"
+    },
+    {
+      "id": "e698a435ca32",
+      "content": "The amount and types of evil in the world provide strong evidence against God's existence",
+      "node_type": "objection",
+      "source": "William Rowe/Evidential argument",
+      "category": "evil"
+    },
+    {
+      "id": "e4cf2ca49564",
+      "content": "Natural disasters, diseases, and animal suffering occur without human moral agency",
+      "node_type": "premise",
+      "source": "Evidential problem/Rowe",
+      "category": "evil"
+    },
+    {
+      "id": "902b62e3c7ef",
+      "content": "Innocent children and animals suffer intensely without apparent greater good",
+      "node_type": "premise",
+      "source": "Evidential problem/Rowe",
+      "category": "evil"
+    },
+    {
+      "id": "9bb5e709076f",
+      "content": "God permits evil because free will is so valuable that a world with free creatures is better than a world without them, even if free creatures sometimes choose evil",
+      "node_type": "response",
+      "source": "Alvin Plantinga/Free Will Defense",
+      "category": "evil"
+    },
+    {
+      "id": "c21d2dd071fa",
+      "content": "God could have created free creatures who always freely choose good",
+      "node_type": "objection",
+      "source": "Critics of free will defense",
+      "category": "evil"
+    },
+    {
+      "id": "af6ebfdf4bd2",
+      "content": "It may be logically impossible for God to create creatures who are truly free but always choose good",
+      "node_type": "response",
+      "source": "Plantinga/Transworld depravity",
+      "category": "evil"
+    },
+    {
+      "id": "0e255d32b8b1",
+      "content": "Evil and suffering are necessary for spiritual growth and character development; this world is a 'soul-making' environment",
+      "node_type": "response",
+      "source": "John Hick/Irenaean theodicy",
+      "category": "evil"
+    },
+    {
+      "id": "4c274843c2f8",
+      "content": "Many people are crushed rather than improved by suffering",
+      "node_type": "objection",
+      "source": "Critics of Hick",
+      "category": "evil"
+    },
+    {
+      "id": "7897356ce2ea",
+      "content": "Excessive suffering exceeds what is necessary for character development",
+      "node_type": "objection",
+      "source": "Critics of Hick",
+      "category": "evil"
+    },
+    {
+      "id": "1fa388199738",
+      "content": "Character development may continue in afterlife; present suffering not final word",
+      "node_type": "response",
+      "source": "Hick/Eschatological verification",
+      "category": "evil"
+    },
+    {
+      "id": "1f71cec96fb1",
+      "content": "Epistemic distance requires genuine uncertainty and risk for meaningful choice",
+      "node_type": "response",
+      "source": "Hick/Epistemic distance",
+      "category": "evil"
+    },
+    {
+      "id": "7815c3e4b0e9",
+      "content": "God permits evil only when it serves a greater good that outweighs the evil",
+      "node_type": "response",
+      "source": "Traditional theodicy",
+      "category": "evil"
+    },
+    {
+      "id": "116b9b846d60",
+      "content": "No conceivable greater good could justify the worst instances of evil and suffering",
+      "node_type": "objection",
+      "source": "Rowe/Ivan Karamazov",
+      "category": "evil"
+    },
+    {
+      "id": "0ecd50b2e38d",
+      "content": "Human cognitive limitations prevent us from seeing how all evils fit into God's greater plan",
+      "node_type": "response",
+      "source": "Skeptical theism/Divine inscrutability",
+      "category": "evil"
+    },
+    {
+      "id": "adba3444e317",
+      "content": "Natural evils (earthquakes, diseases) cannot be explained by free will since they don't result from human choices",
+      "node_type": "objection",
+      "source": "Critics/Natural evil problem",
+      "category": "evil"
+    },
+    {
+      "id": "9ddd2c135865",
+      "content": "Natural evils may result from Satan's free choice or angelic rebellion",
+      "node_type": "response",
+      "source": "Christian theodicy",
+      "category": "evil"
+    },
+    {
+      "id": "e5945850e356",
+      "content": "Natural processes that sometimes cause harm are necessary for a law-like, predictable world where moral choices matter",
+      "node_type": "response",
+      "source": "Natural law theodicy",
+      "category": "evil"
+    },
+    {
+      "id": "dec2b6bc3d43",
+      "content": "If God exists and loves all people, He would make His existence obvious to everyone",
+      "node_type": "objection",
+      "source": "J.L. Schellenberg/Divine hiddenness",
+      "category": "hiddenness"
+    },
+    {
+      "id": "4cee801ed3ea",
+      "content": "Many reasonable, sincere people do not believe in God despite searching",
+      "node_type": "premise",
+      "source": "Schellenberg/Nonresistant nonbelief",
+      "category": "hiddenness"
+    },
+    {
+      "id": "55316022b61c",
+      "content": "God exists as perfectly loving, omnipotent, and omniscient being",
+      "node_type": "premise",
+      "source": "Classical theism",
+      "category": "hiddenness"
+    },
+    {
+      "id": "9e9a8280580b",
+      "content": "God maintains epistemic distance to preserve human freedom and enable authentic faith",
+      "node_type": "response",
+      "source": "John Hick/Reformed epistemology",
+      "category": "hiddenness"
+    },
+    {
+      "id": "589fa15a4ca5",
+      "content": "God has morally sufficient reasons for remaining hidden that we cannot fully comprehend",
+      "node_type": "response",
+      "source": "Skeptical theism",
+      "category": "hiddenness"
+    },
+    {
+      "id": "6eb8c8c4ad6e",
+      "content": "If God's existence were obvious, it would compromise genuine free choice and authentic relationship",
+      "node_type": "response",
+      "source": "C.S. Lewis/Free will theodicy",
+      "category": "hiddenness"
+    },
+    {
+      "id": "cb0bff5f9169",
+      "content": "God has revealed Himself through creation, conscience, and religious experience; hiddenness is not complete",
+      "node_type": "response",
+      "source": "Natural theology/Sensus divinitatis",
+      "category": "hiddenness"
+    },
+    {
+      "id": "27353c1401ee",
+      "content": "Some degree of evidence would not compromise freedom; complete hiddenness is excessive",
+      "node_type": "objection",
+      "source": "Schellenberg/Proportionality",
+      "category": "hiddenness"
+    },
+    {
+      "id": "842fa7b73e8c",
+      "content": "Any degree of divine evidence might compromise the kind of freedom God desires",
+      "node_type": "response",
+      "source": "Michael Murray/Reformed response",
+      "category": "hiddenness"
+    },
+    {
+      "id": "c15599d95902",
+      "content": "The earth is approximately 6,000 years old and was created in six literal days",
+      "node_type": "conclusion",
+      "source": "Ken Ham/Answers in Genesis",
+      "category": "young_earth"
+    },
+    {
+      "id": "42f5bc334f37",
+      "content": "Genesis 1-11 should be interpreted literally as historical narrative",
+      "node_type": "premise",
+      "source": "Biblical literalism/YEC",
+      "category": "young_earth"
+    },
+    {
+      "id": "8f5d7d948d93",
+      "content": "Biblical genealogies from Adam to Abraham span approximately 2,000 years",
+      "node_type": "premise",
+      "source": "Genesis 5 & 11/Chronology",
+      "category": "young_earth"
+    },
+    {
+      "id": "d823bce734ba",
+      "content": "Abraham lived approximately 2000 BC according to archaeological evidence",
+      "node_type": "premise",
+      "source": "Historical/Archaeological consensus",
+      "category": "young_earth"
+    },
+    {
+      "id": "743c04321414",
+      "content": "A global flood occurred approximately 4,400 years ago in Noah's time",
+      "node_type": "premise",
+      "source": "Genesis 6-9/Flood geology",
+      "category": "young_earth"
+    },
+    {
+      "id": "ca5f0fef7e6f",
+      "content": "Scientific claims about the ancient past cannot be observed directly and rely on unprovable assumptions",
+      "node_type": "premise",
+      "source": "Ken Ham/Observational vs. historical science",
+      "category": "young_earth"
+    },
+    {
+      "id": "fe4705b59f0e",
+      "content": "Radiometric dating consistently shows rocks millions and billions of years old",
+      "node_type": "objection",
+      "source": "Geological science",
+      "category": "young_earth"
+    },
+    {
+      "id": "aed832bcab5c",
+      "content": "Radioactive decay rates may have varied in the past due to different physical conditions",
+      "node_type": "response",
+      "source": "RATE project/AiG",
+      "category": "young_earth"
+    },
+    {
+      "id": "f25485515478",
+      "content": "Radiometric dating makes unprovable assumptions about initial conditions",
+      "node_type": "response",
+      "source": "YEC scientists",
+      "category": "young_earth"
+    },
+    {
+      "id": "a5af9b6e98d2",
+      "content": "The fossil record shows progressive development over millions of years",
+      "node_type": "objection",
+      "source": "Paleontology",
+      "category": "young_earth"
+    },
+    {
+      "id": "805bc5428fe6",
+      "content": "The fossil record was laid down rapidly during Noah's flood, not over millions of years",
+      "node_type": "response",
+      "source": "Henry Morris/Flood geology",
+      "category": "young_earth"
+    },
+    {
+      "id": "af1eb81a3217",
+      "content": "Continental drift and plate tectonics require millions of years",
+      "node_type": "objection",
+      "source": "Geology",
+      "category": "young_earth"
+    },
+    {
+      "id": "b096d99b8cb5",
+      "content": "Catastrophic plate tectonics during the flood could accomplish continental drift rapidly",
+      "node_type": "response",
+      "source": "John Baumgardner/CPT",
+      "category": "young_earth"
+    },
+    {
+      "id": "6ee2dd3596cb",
+      "content": "Genetic diversity and mutation rates require much longer than 6,000 years",
+      "node_type": "objection",
+      "source": "Population genetics",
+      "category": "young_earth"
+    },
+    {
+      "id": "99de7677b131",
+      "content": "God created the world with apparent age, just as Adam was created as a mature adult",
+      "node_type": "response",
+      "source": "Philip Gosse/Appearance of age",
+      "category": "young_earth"
+    },
+    {
+      "id": "9f5c817ff88b",
+      "content": "Creating with false appearance of age would make God deceptive",
+      "node_type": "objection",
+      "source": "Critics of appearance of age",
+      "category": "young_earth"
+    },
+    {
+      "id": "98f72504d1f9",
+      "content": "Created age is functional maturity, not deception; like wine from water at Cana",
+      "node_type": "response",
+      "source": "YEC apologists",
+      "category": "young_earth"
+    },
+    {
+      "id": "74c51c1f1cd7",
+      "content": "Hell is eternal conscious torment for the unrepentant wicked",
+      "node_type": "conclusion",
+      "source": "Traditional Christian doctrine",
+      "category": "hell"
+    },
+    {
+      "id": "3595bf2c9258",
+      "content": "The wicked are ultimately destroyed/annihilated rather than eternally tormented",
+      "node_type": "conclusion",
+      "source": "Annihilationist theology",
+      "category": "hell"
+    },
+    {
+      "id": "31b48e738900",
+      "content": "All people will eventually be saved and reconciled to God",
+      "node_type": "conclusion",
+      "source": "Universalist theology",
+      "category": "hell"
+    },
+    {
+      "id": "0e72ee6248ae",
+      "content": "Jesus spoke more about hell than heaven and described it as eternal punishment",
+      "node_type": "premise",
+      "source": "Matthew 25:46/Mark 9:43-48",
+      "category": "hell"
+    },
+    {
+      "id": "66ee91105f00",
+      "content": "Finite sins cannot deserve infinite punishment; eternal torment is unjust",
+      "node_type": "objection",
+      "source": "Moral objections to hell",
+      "category": "hell"
+    },
+    {
+      "id": "a7363ee8ebcc",
+      "content": "Sins against an infinite being (God) deserve infinite punishment",
+      "node_type": "response",
+      "source": "Anselm/Traditional theology",
+      "category": "hell"
+    },
+    {
+      "id": "88bb10b830f3",
+      "content": "Hell may involve ongoing rebellion rather than punishment for past finite sins",
+      "node_type": "response",
+      "source": "C.S. Lewis/The Great Divorce",
+      "category": "hell"
+    },
+    {
+      "id": "5a8d876f5428",
+      "content": "Eternal punishment for simple unbelief seems arbitrary and excessive",
+      "node_type": "objection",
+      "source": "Critics of traditional hell",
+      "category": "hell"
+    },
+    {
+      "id": "a541a943fb1a",
+      "content": "Hell is the natural consequence of free choice to reject God; God respects that choice",
+      "node_type": "response",
+      "source": "C.S. Lewis/Free will",
+      "category": "hell"
+    },
+    {
+      "id": "5dc8c2aa3675",
+      "content": "A loving God would not allow anyone to suffer eternally",
+      "node_type": "objection",
+      "source": "Critics/Appeal to divine love",
+      "category": "hell"
+    },
+    {
+      "id": "db1c956558e4",
+      "content": "Divine love ultimately wins and all will be reconciled to God",
+      "node_type": "response",
+      "source": "Universalist theology",
+      "category": "hell"
+    },
+    {
+      "id": "4a585f7c57f7",
+      "content": "God's love is balanced by His justice; mercy is offered but can be rejected",
+      "node_type": "response",
+      "source": "Traditional theology",
+      "category": "hell"
+    },
+    {
+      "id": "1b9caf9a36be",
+      "content": "Biblical language of 'destruction' and 'perishing' supports annihilation",
+      "node_type": "response",
+      "source": "Edward Fudge/Conditionalism",
+      "category": "hell"
+    },
+    {
+      "id": "f26d50f4d7ed",
+      "content": "Matthew 25:46 contrasts eternal punishment with eternal life; punishment must be ongoing",
+      "node_type": "objection",
+      "source": "Traditional theologians",
+      "category": "hell"
+    },
+    {
+      "id": "577fe3211697",
+      "content": "'Eternal punishment' refers to eternal result, not eternal process",
+      "node_type": "response",
+      "source": "Annihilationist interpretation",
+      "category": "hell"
+    },
+    {
+      "id": "9f96dbcedf28",
+      "content": "Jesus died as penal substitute, bearing God's wrath for human sin",
+      "node_type": "conclusion",
+      "source": "Reformed theology/Anselm",
+      "category": "atonement"
+    },
+    {
+      "id": "1b380497d303",
+      "content": "Jesus' death demonstrates God's love and influences moral transformation",
+      "node_type": "conclusion",
+      "source": "Peter Abelard/Liberal theology",
+      "category": "atonement"
+    },
+    {
+      "id": "734c72fce44c",
+      "content": "Jesus' death defeats Satan and the powers of evil",
+      "node_type": "conclusion",
+      "source": "Gustaf Aul\u00e9n/Early church",
+      "category": "atonement"
+    },
+    {
+      "id": "80abf9023fd8",
+      "content": "Isaiah 53:5 says 'he was pierced for our transgressions' and 'by his wounds we are healed'",
+      "node_type": "premise",
+      "source": "Isaiah 53/Biblical text",
+      "category": "atonement"
+    },
+    {
+      "id": "cd09d10dc69f",
+      "content": "2 Corinthians 5:21 says 'God made him who had no sin to be sin for us'",
+      "node_type": "premise",
+      "source": "2 Cor 5:21/Pauline theology",
+      "category": "atonement"
+    },
+    {
+      "id": "ad1a40fcecb3",
+      "content": "God punishing Jesus for others' sins resembles cosmic child abuse",
+      "node_type": "objection",
+      "source": "Feminist theology/Critics",
+      "category": "atonement"
+    },
+    {
+      "id": "42af1dfdad89",
+      "content": "Jesus voluntarily offered himself; it was not imposed punishment but willing sacrifice",
+      "node_type": "response",
+      "source": "Traditional theology",
+      "category": "atonement"
+    },
+    {
+      "id": "d269db267d4d",
+      "content": "The Trinity means God sacrificed himself, not that the Father punished a separate person",
+      "node_type": "response",
+      "source": "Trinitarian theology",
+      "category": "atonement"
+    },
+    {
+      "id": "63de5a11d1e3",
+      "content": "Why does God need to punish someone for forgiveness? Why not simply forgive?",
+      "node_type": "objection",
+      "source": "Critics of substitution",
+      "category": "atonement"
+    },
+    {
+      "id": "6b531032913a",
+      "content": "God's justice requires satisfaction; sin cannot simply be overlooked without consequence",
+      "node_type": "response",
+      "source": "Anselmian theology",
+      "category": "atonement"
+    },
+    {
+      "id": "3bcef583c990",
+      "content": "Christ's self-sacrificial love inspires moral transformation and response",
+      "node_type": "premise",
+      "source": "Abelardian theology",
+      "category": "atonement"
+    },
+    {
+      "id": "e18f0adb0579",
+      "content": "Moral example alone is insufficient to deal with objective guilt and divine wrath",
+      "node_type": "objection",
+      "source": "Critics of moral influence theory",
+      "category": "atonement"
+    },
+    {
+      "id": "bec179e0b3c8",
+      "content": "True transformation requires objective forgiveness, not just subjective inspiration",
+      "node_type": "response",
+      "source": "Evangelical theology",
+      "category": "atonement"
+    },
+    {
+      "id": "b1445a1ff299",
+      "content": "God exists as three persons (Father, Son, Spirit) in one essence",
+      "node_type": "conclusion",
+      "source": "Nicene Creed/Christian orthodoxy",
+      "category": "trinity"
+    },
+    {
+      "id": "32e0b41d7511",
+      "content": "Jesus Christ is both fully God and fully human in one person",
+      "node_type": "conclusion",
+      "source": "Chalcedonian Creed/Christology",
+      "category": "trinity"
+    },
+    {
+      "id": "15b6f0210ae2",
+      "content": "Scripture speaks of Father, Son, and Holy Spirit as distinct persons",
+      "node_type": "premise",
+      "source": "Matthew 28:19/2 Cor 13:14",
+      "category": "trinity"
+    },
+    {
+      "id": "b75759a7aecd",
+      "content": "Scripture affirms there is only one God",
+      "node_type": "premise",
+      "source": "Deuteronomy 6:4/1 Cor 8:6",
+      "category": "trinity"
+    },
+    {
+      "id": "58847925c8f5",
+      "content": "Scripture affirms Jesus is God",
+      "node_type": "premise",
+      "source": "John 1:1/John 20:28/Philippians 2:6",
+      "category": "trinity"
+    },
+    {
+      "id": "aca27532e27f",
+      "content": "One cannot be three; the Trinity is a logical contradiction",
+      "node_type": "objection",
+      "source": "Critics/Muslims/Unitarians",
+      "category": "trinity"
+    },
+    {
+      "id": "21fd181808ee",
+      "content": "God is one in essence but three in relations/persons; no contradiction",
+      "node_type": "response",
+      "source": "Cappadocian Fathers/Orthodox theology",
+      "category": "trinity"
+    },
+    {
+      "id": "459e0fe91532",
+      "content": "The Trinity is beyond human logic but not contrary to logic",
+      "node_type": "response",
+      "source": "Christian theology/Apophatic tradition",
+      "category": "trinity"
+    },
+    {
+      "id": "f47175ab6d67",
+      "content": "Like water exists as ice, liquid, and vapor, God exists in three forms",
+      "node_type": "premise",
+      "source": "Popular apologetics",
+      "category": "trinity"
+    },
+    {
+      "id": "2447487e39e5",
+      "content": "Water analogies promote modalism heresy (God changing modes rather than three persons)",
+      "node_type": "objection",
+      "source": "Orthodox theologians",
+      "category": "trinity"
+    },
+    {
+      "id": "e5c0b55198cd",
+      "content": "All analogies are imperfect; they illuminate aspects while failing in others",
+      "node_type": "response",
+      "source": "Theological methodology",
+      "category": "trinity"
+    },
+    {
+      "id": "c88c87bcbe8a",
+      "content": "Jesus is subordinate to the Father and therefore not equal God",
+      "node_type": "objection",
+      "source": "Arian theology/Jehovah's Witnesses",
+      "category": "trinity"
+    },
+    {
+      "id": "01ad288fd26e",
+      "content": "Jesus is economically subordinate in role but ontologically equal in essence",
+      "node_type": "response",
+      "source": "Nicene theology",
+      "category": "trinity"
+    },
+    {
+      "id": "202e7aef17ac",
+      "content": "How can one person have both divine and human natures without contradiction?",
+      "node_type": "objection",
+      "source": "Philosophical critics",
+      "category": "trinity"
+    },
+    {
+      "id": "1a039eb69bf4",
+      "content": "Two natures united in one person 'without confusion, without change, without division, without separation'",
+      "node_type": "response",
+      "source": "Council of Chalcedon",
+      "category": "trinity"
+    },
+    {
+      "id": "c987493c1b4c",
+      "content": "Historical and legal evidence demonstrates Jesus' death and resurrection",
+      "node_type": "conclusion",
+      "source": "Lee Strobel/The Case for Christ",
+      "category": "popular"
+    },
+    {
+      "id": "24a6358d26f6",
+      "content": "Medical evidence confirms Jesus actually died from crucifixion trauma",
+      "node_type": "premise",
+      "source": "Alexander Metherell/Medical analysis",
+      "category": "popular"
+    },
+    {
+      "id": "4b5f1a578762",
+      "content": "The Gospels are based on eyewitness testimony from apostles",
+      "node_type": "premise",
+      "source": "Craig Blomberg/Gospel reliability",
+      "category": "popular"
+    },
+    {
+      "id": "3b8a2333d189",
+      "content": "Multiple lines of evidence converge to support Christian truth claims",
+      "node_type": "conclusion",
+      "source": "Josh McDowell/Evidence That Demands a Verdict",
+      "category": "popular"
+    },
+    {
+      "id": "bdb94915f028",
+      "content": "New Testament has superior manuscript attestation compared to other ancient works",
+      "node_type": "premise",
+      "source": "F.F. Bruce/Textual criticism",
+      "category": "popular"
+    },
+    {
+      "id": "7c82e01ff0ea",
+      "content": "Archaeological discoveries consistently confirm biblical accounts",
+      "node_type": "premise",
+      "source": "William Albright/Biblical archaeology",
+      "category": "popular"
+    },
+    {
+      "id": "80f2a05d91ee",
+      "content": "Popular apologists only cite conservative scholars who agree with predetermined conclusions",
+      "node_type": "objection",
+      "source": "Critical scholars",
+      "category": "popular"
+    },
+    {
+      "id": "d37f4f2d5846",
+      "content": "Many cited scholars are mainstream academics, not just conservative Christians",
+      "node_type": "response",
+      "source": "Popular apologists",
+      "category": "popular"
+    },
+    {
+      "id": "a352e905ad0e",
+      "content": "Popular apologetics starts with conclusions and finds evidence to support them",
+      "node_type": "objection",
+      "source": "Methodological critics",
+      "category": "popular"
+    },
+    {
+      "id": "af72c719ce79",
+      "content": "Standard historical methods are applied; conclusions follow from evidence",
+      "node_type": "response",
+      "source": "Christian historians",
+      "category": "popular"
+    },
+    {
+      "id": "255587daade5",
+      "content": "Popular apologetics ignores or minimizes biblical contradictions and difficulties",
+      "node_type": "objection",
+      "source": "Critical scholars",
+      "category": "popular"
+    },
+    {
+      "id": "fe2786e04ed5",
+      "content": "Apparent contradictions can be resolved through careful exegesis and historical context",
+      "node_type": "response",
+      "source": "Conservative scholarship",
+      "category": "popular"
+    },
+    {
+      "id": "324407c815ce",
+      "content": "Early manuscripts show significant textual variants; later manuscripts are harmonized",
+      "node_type": "objection",
+      "source": "Bart Ehrman/Textual criticism",
+      "category": "popular"
+    },
+    {
+      "id": "811caf15eb5c",
+      "content": "Textual variants do not affect essential Christian doctrines or historical claims",
+      "node_type": "response",
+      "source": "Daniel Wallace/Textual scholarship",
+      "category": "popular"
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_951b48dc",
+      "target": "node_639eccea",
+      "relation": "supports",
+      "reasoning": "First premise supports conclusion via universal causal principle"
+    },
+    {
+      "source": "node_6c57335e",
+      "target": "node_639eccea",
+      "relation": "supports",
+      "reasoning": "Second premise supports conclusion by establishing universe's beginning"
+    },
+    {
+      "source": "node_639eccea",
+      "target": "node_86794f18",
+      "relation": "supports",
+      "reasoning": "First conclusion feeds into conceptual analysis"
+    },
+    {
+      "source": "node_86794f18",
+      "target": "node_b96a025f",
+      "relation": "supports",
+      "reasoning": "Conceptual analysis yields personal Creator"
+    },
+    {
+      "source": "node_621c3d04",
+      "target": "node_951b48dc",
+      "relation": "if_objection",
+      "reasoning": "Challenges universal causation principle"
+    },
+    {
+      "source": "node_951b48dc",
+      "target": "node_204eed66",
+      "relation": "then_response",
+      "reasoning": "Response to quantum objection"
+    },
+    {
+      "source": "node_065a7576",
+      "target": "node_951b48dc",
+      "relation": "if_objection",
+      "reasoning": "Vacuum fluctuations as counterexample"
+    },
+    {
+      "source": "node_951b48dc",
+      "target": "node_232c9bbf",
+      "relation": "then_response",
+      "reasoning": "Vacuum is not true nothing"
+    },
+    {
+      "source": "node_6cfa57f7",
+      "target": "node_951b48dc",
+      "relation": "if_objection",
+      "reasoning": "Challenges necessary connection between cause and effect"
+    },
+    {
+      "source": "node_951b48dc",
+      "target": "node_c4816050",
+      "relation": "then_response",
+      "reasoning": "Conceivability vs. real possibility distinction"
+    },
+    {
+      "source": "node_4e6b3777",
+      "target": "node_6c57335e",
+      "relation": "if_objection",
+      "reasoning": "BGV theorem limitations"
+    },
+    {
+      "source": "node_6c57335e",
+      "target": "node_81196ded",
+      "relation": "then_response",
+      "reasoning": "Quantum instability argument"
+    },
+    {
+      "source": "node_cfb9d84d",
+      "target": "node_6c57335e",
+      "relation": "if_objection",
+      "reasoning": "Alternative cosmological models"
+    },
+    {
+      "source": "node_6c57335e",
+      "target": "node_f18c6029",
+      "relation": "then_response",
+      "reasoning": "Thermodynamic and BGV constraints"
+    },
+    {
+      "source": "node_9d59eab6",
+      "target": "node_639eccea",
+      "relation": "if_objection",
+      "reasoning": "Temporal causation paradox"
+    },
+    {
+      "source": "node_639eccea",
+      "target": "node_e4ccf429",
+      "relation": "then_response",
+      "reasoning": "Agent causation solution"
+    },
+    {
+      "source": "node_e4ccf429",
+      "target": "node_86794f18",
+      "relation": "circular_dep",
+      "reasoning": "Agent causation response assumes personal causation"
+    },
+    {
+      "source": "node_0b3d579e",
+      "target": "node_b695a503",
+      "relation": "requires",
+      "reasoning": "Trilemma depends on divinity claims"
+    },
+    {
+      "source": "node_b695a503",
+      "target": "node_248108f8",
+      "relation": "supports",
+      "reasoning": "Elimination leads to divine conclusion"
+    },
+    {
+      "source": "node_395be228",
+      "target": "node_248108f8",
+      "relation": "supports",
+      "reasoning": "Eliminates liar option"
+    },
+    {
+      "source": "node_fb55d83b",
+      "target": "node_248108f8",
+      "relation": "supports",
+      "reasoning": "Eliminates lunatic option"
+    },
+    {
+      "source": "node_35587afe",
+      "target": "node_b695a503",
+      "relation": "if_objection",
+      "reasoning": "Additional option breaks trilemma"
+    },
+    {
+      "source": "node_b695a503",
+      "target": "node_79a7c185",
+      "relation": "then_response",
+      "reasoning": "Literary genre defense"
+    },
+    {
+      "source": "node_87fe9472",
+      "target": "node_0b3d579e",
+      "relation": "if_objection",
+      "reasoning": "Challenges fundamental assumption"
+    },
+    {
+      "source": "node_0b3d579e",
+      "target": "node_1e48c824",
+      "relation": "then_response",
+      "reasoning": "Conservative biblical interpretation"
+    },
+    {
+      "source": "node_1e48c824",
+      "target": "node_0b3d579e",
+      "relation": "circular_dep",
+      "reasoning": "Response assumes biblical accuracy which assumes divine claims"
+    },
+    {
+      "source": "node_16bc874f",
+      "target": "node_b695a503",
+      "relation": "if_objection",
+      "reasoning": "Additional option: great prophet"
+    },
+    {
+      "source": "node_b695a503",
+      "target": "node_e65e444c",
+      "relation": "then_response",
+      "reasoning": "Claims too extreme for prophet"
+    },
+    {
+      "source": "node_ea7417a4",
+      "target": "node_7028e623",
+      "relation": "supports",
+      "reasoning": "Modus tollens: if no God, no objective morality"
+    },
+    {
+      "source": "node_5bb7bb19",
+      "target": "node_7028e623",
+      "relation": "supports",
+      "reasoning": "Objective morality exists"
+    },
+    {
+      "source": "node_99b8be9d",
+      "target": "node_ea7417a4",
+      "relation": "if_objection",
+      "reasoning": "Naturalistic alternative to theistic grounding"
+    },
+    {
+      "source": "node_ea7417a4",
+      "target": "node_ccefa5cc",
+      "relation": "then_response",
+      "reasoning": "Genesis vs ontology distinction"
+    },
+    {
+      "source": "node_efa87b94",
+      "target": "node_ea7417a4",
+      "relation": "if_objection",
+      "reasoning": "Problems with divine command theory"
+    },
+    {
+      "source": "node_ea7417a4",
+      "target": "node_d0288232",
+      "relation": "then_response",
+      "reasoning": "Nature vs command distinction"
+    },
+    {
+      "source": "node_290e482f",
+      "target": "node_9680a6c4",
+      "relation": "supports",
+      "reasoning": "Basic belief status confers rationality"
+    },
+    {
+      "source": "node_0b7b0281",
+      "target": "node_9680a6c4",
+      "relation": "supports",
+      "reasoning": "Proper function theory"
+    },
+    {
+      "source": "node_4cfacd16",
+      "target": "node_0b7b0281",
+      "relation": "supports",
+      "reasoning": "Design plan includes divine awareness"
+    },
+    {
+      "source": "node_76e58eb2",
+      "target": "node_290e482f",
+      "relation": "if_objection",
+      "reasoning": "Unlimited basicality problem"
+    },
+    {
+      "source": "node_290e482f",
+      "target": "node_d142aa30",
+      "relation": "then_response",
+      "reasoning": "Classical foundationalism critique"
+    },
+    {
+      "source": "node_bf9de36c",
+      "target": "node_4cfacd16",
+      "relation": "if_objection",
+      "reasoning": "Natural origins of religious belief"
+    },
+    {
+      "source": "node_4cfacd16",
+      "target": "node_60a9820e",
+      "relation": "then_response",
+      "reasoning": "Warrant independent of genesis"
+    },
+    {
+      "source": "node_4cfacd16",
+      "target": "node_9680a6c4",
+      "relation": "circular_dep",
+      "reasoning": "Design assumption requires theism to warrant theistic belief"
+    },
+    {
+      "source": "node_6c08378a",
+      "target": "node_9ecda6db",
+      "relation": "supports",
+      "reasoning": "Observation of change"
+    },
+    {
+      "source": "node_8379b7dc",
+      "target": "node_9ecda6db",
+      "relation": "supports",
+      "reasoning": "Causal principle for change"
+    },
+    {
+      "source": "node_5c052d05",
+      "target": "node_9ecda6db",
+      "relation": "supports",
+      "reasoning": "Infinite regress impossibility"
+    },
+    {
+      "source": "node_b468d4e1",
+      "target": "node_c7353b06",
+      "relation": "supports",
+      "reasoning": "Observation of causation"
+    },
+    {
+      "source": "node_e9399d89",
+      "target": "node_c7353b06",
+      "relation": "supports",
+      "reasoning": "Self-causation impossibility"
+    },
+    {
+      "source": "node_50300d37",
+      "target": "node_c7353b06",
+      "relation": "supports",
+      "reasoning": "Infinite regress impossibility"
+    },
+    {
+      "source": "node_5a972cb2",
+      "target": "node_abf8f24b",
+      "relation": "supports",
+      "reasoning": "Observation of contingent beings"
+    },
+    {
+      "source": "node_d756be3b",
+      "target": "node_abf8f24b",
+      "relation": "supports",
+      "reasoning": "Contingency leads to nothing"
+    },
+    {
+      "source": "node_2b76829f",
+      "target": "node_abf8f24b",
+      "relation": "supports",
+      "reasoning": "Something exists"
+    },
+    {
+      "source": "node_fa66a8d2",
+      "target": "node_b2160107",
+      "relation": "supports",
+      "reasoning": "Observation of gradations"
+    },
+    {
+      "source": "node_30b29efb",
+      "target": "node_b2160107",
+      "relation": "supports",
+      "reasoning": "Degrees require maximum"
+    },
+    {
+      "source": "node_59ca7a85",
+      "target": "node_b2160107",
+      "relation": "supports",
+      "reasoning": "Maximum as cause"
+    },
+    {
+      "source": "node_967f0449",
+      "target": "node_16593b5d",
+      "relation": "supports",
+      "reasoning": "Observation of natural regularity"
+    },
+    {
+      "source": "node_4d3dbee0",
+      "target": "node_16593b5d",
+      "relation": "supports",
+      "reasoning": "Intelligence required for goals"
+    },
+    {
+      "source": "node_fe6d7ec4",
+      "target": "node_16593b5d",
+      "relation": "supports",
+      "reasoning": "Non-intelligent can't self-direct"
+    },
+    {
+      "source": "node_97d1a8a3",
+      "target": "node_9ecda6db",
+      "relation": "if_objection",
+      "reasoning": "Challenges inference to transcendent cause"
+    },
+    {
+      "source": "node_9ecda6db",
+      "target": "node_120d8720",
+      "relation": "then_response",
+      "reasoning": "Logical necessity defense"
+    },
+    {
+      "source": "node_902a0841",
+      "target": "node_9ecda6db",
+      "relation": "if_objection",
+      "reasoning": "Challenges knowability of God"
+    },
+    {
+      "source": "node_9ecda6db",
+      "target": "node_1bc926a8",
+      "relation": "then_response",
+      "reasoning": "Metaphysical realism defense"
+    },
+    {
+      "source": "node_97d1a8a3",
+      "target": "node_c7353b06",
+      "relation": "if_objection",
+      "reasoning": "Challenges inference to transcendent cause"
+    },
+    {
+      "source": "node_c7353b06",
+      "target": "node_120d8720",
+      "relation": "then_response",
+      "reasoning": "Logical necessity defense"
+    },
+    {
+      "source": "node_902a0841",
+      "target": "node_c7353b06",
+      "relation": "if_objection",
+      "reasoning": "Challenges knowability of God"
+    },
+    {
+      "source": "node_c7353b06",
+      "target": "node_1bc926a8",
+      "relation": "then_response",
+      "reasoning": "Metaphysical realism defense"
+    },
+    {
+      "source": "node_97d1a8a3",
+      "target": "node_abf8f24b",
+      "relation": "if_objection",
+      "reasoning": "Challenges inference to transcendent cause"
+    },
+    {
+      "source": "node_abf8f24b",
+      "target": "node_120d8720",
+      "relation": "then_response",
+      "reasoning": "Logical necessity defense"
+    },
+    {
+      "source": "node_902a0841",
+      "target": "node_abf8f24b",
+      "relation": "if_objection",
+      "reasoning": "Challenges knowability of God"
+    },
+    {
+      "source": "node_abf8f24b",
+      "target": "node_1bc926a8",
+      "relation": "then_response",
+      "reasoning": "Metaphysical realism defense"
+    },
+    {
+      "source": "6db26e84b0e1",
+      "target": "c31076010408",
+      "relation": "supports",
+      "reasoning": "Death prerequisite for resurrection"
+    },
+    {
+      "source": "d5b5e497b72d",
+      "target": "c31076010408",
+      "relation": "supports",
+      "reasoning": "Empty tomb indicates body was raised"
+    },
+    {
+      "source": "8f8292c76695",
+      "target": "c31076010408",
+      "relation": "supports",
+      "reasoning": "Appearances indicate Jesus was alive again"
+    },
+    {
+      "source": "b1783718036b",
+      "target": "c31076010408",
+      "relation": "supports",
+      "reasoning": "Origin of Christianity requires adequate explanation"
+    },
+    {
+      "source": "330232c8714a",
+      "target": "6db26e84b0e1",
+      "relation": "if_objection",
+      "reasoning": "Challenges the death of Jesus"
+    },
+    {
+      "source": "c2b6a249f80a",
+      "target": "330232c8714a",
+      "relation": "then_response",
+      "reasoning": "Medical impossibility refutes swoon theory"
+    },
+    {
+      "source": "d767cd6e07b4",
+      "target": "330232c8714a",
+      "relation": "then_response",
+      "reasoning": "Psychological implausibility refutes swoon theory"
+    },
+    {
+      "source": "9ad434376cbc",
+      "target": "d5b5e497b72d",
+      "relation": "if_objection",
+      "reasoning": "Alternative explanation for empty tomb"
+    },
+    {
+      "source": "4a9826da10fa",
+      "target": "9ad434376cbc",
+      "relation": "then_response",
+      "reasoning": "Martyrdom incompatible with conscious deception"
+    },
+    {
+      "source": "1ac04e04be59",
+      "target": "9ad434376cbc",
+      "relation": "then_response",
+      "reasoning": "Culturally implausible motivation"
+    },
+    {
+      "source": "ccc82643a865",
+      "target": "8f8292c76695",
+      "relation": "if_objection",
+      "reasoning": "Alternative explanation for appearances"
+    },
+    {
+      "source": "c624afdfc95e",
+      "target": "ccc82643a865",
+      "relation": "then_response",
+      "reasoning": "Group experiences rule out hallucinations"
+    },
+    {
+      "source": "ccb7e8685181",
+      "target": "ccc82643a865",
+      "relation": "then_response",
+      "reasoning": "Insufficient explanatory scope"
+    },
+    {
+      "source": "55894ef3f478",
+      "target": "ccc82643a865",
+      "relation": "then_response",
+      "reasoning": "Wrong conceptual framework"
+    },
+    {
+      "source": "0b4d2e48566c",
+      "target": "d5b5e497b72d",
+      "relation": "if_objection",
+      "reasoning": "Alternative explanation for empty tomb"
+    },
+    {
+      "source": "2063550f20d4",
+      "target": "0b4d2e48566c",
+      "relation": "then_response",
+      "reasoning": "Authorities had motivation and means to correct error"
+    },
+    {
+      "source": "f191848d29d1",
+      "target": "8f8292c76695",
+      "relation": "if_objection",
+      "reasoning": "Alternative explanation for appearance accounts"
+    },
+    {
+      "source": "7afda9e8ad0a",
+      "target": "f191848d29d1",
+      "relation": "then_response",
+      "reasoning": "Early dating precludes legendary development"
+    },
+    {
+      "source": "306cd8317999",
+      "target": "dba7399fd8b0",
+      "relation": "supports",
+      "reasoning": "Detailed prediction fulfilled precisely"
+    },
+    {
+      "source": "c4816e0e037e",
+      "target": "dba7399fd8b0",
+      "relation": "supports",
+      "reasoning": "Suffering servant prophecy fulfilled"
+    },
+    {
+      "source": "aea54a06e0ab",
+      "target": "dba7399fd8b0",
+      "relation": "supports",
+      "reasoning": "Birthplace correctly prophesied"
+    },
+    {
+      "source": "0c0527eac832",
+      "target": "dba7399fd8b0",
+      "relation": "supports",
+      "reasoning": "Timing prophecy fulfilled"
+    },
+    {
+      "source": "f020e6abd023",
+      "target": "c4816e0e037e",
+      "relation": "if_objection",
+      "reasoning": "Questions dating of Isaiah"
+    },
+    {
+      "source": "f020e6abd023",
+      "target": "0c0527eac832",
+      "relation": "if_objection",
+      "reasoning": "Questions dating of Daniel"
+    },
+    {
+      "source": "22e88184a177",
+      "target": "f020e6abd023",
+      "relation": "then_response",
+      "reasoning": "Manuscript evidence confirms early dating"
+    },
+    {
+      "source": "63b0dadefe79",
+      "target": "f020e6abd023",
+      "relation": "then_response",
+      "reasoning": "Sufficient time gap remains"
+    },
+    {
+      "source": "416237da5b8d",
+      "target": "306cd8317999",
+      "relation": "if_objection",
+      "reasoning": "Questions specificity"
+    },
+    {
+      "source": "416237da5b8d",
+      "target": "c4816e0e037e",
+      "relation": "if_objection",
+      "reasoning": "Questions specificity"
+    },
+    {
+      "source": "e79646500417",
+      "target": "416237da5b8d",
+      "relation": "then_response",
+      "reasoning": "Specificity argues against coincidence"
+    },
+    {
+      "source": "05150bcfaad8",
+      "target": "dba7399fd8b0",
+      "relation": "if_objection",
+      "reasoning": "Questions methodology"
+    },
+    {
+      "source": "21666b94c2d3",
+      "target": "05150bcfaad8",
+      "relation": "then_response",
+      "reasoning": "Pattern across multiple sources argues against cherry-picking"
+    },
+    {
+      "source": "5a64ba76fe3d",
+      "target": "dba7399fd8b0",
+      "relation": "supports",
+      "reasoning": "Miraculous sign of divine intervention"
+    },
+    {
+      "source": "0ceacec694ab",
+      "target": "5a64ba76fe3d",
+      "relation": "if_objection",
+      "reasoning": "Questions Hebrew translation"
+    },
+    {
+      "source": "6709d45922e8",
+      "target": "0ceacec694ab",
+      "relation": "then_response",
+      "reasoning": "Ancient translation supports virgin interpretation"
+    },
+    {
+      "source": "8f636ea34f1a",
+      "target": "f36fb11be710",
+      "relation": "if_objection",
+      "reasoning": "Evil appears incompatible with perfect God"
+    },
+    {
+      "source": "1e866169130f",
+      "target": "8f636ea34f1a",
+      "relation": "supports",
+      "reasoning": "Stronger form of the argument"
+    },
+    {
+      "source": "e698a435ca32",
+      "target": "8f636ea34f1a",
+      "relation": "supports",
+      "reasoning": "Probabilistic form of the argument"
+    },
+    {
+      "source": "e4cf2ca49564",
+      "target": "e698a435ca32",
+      "relation": "supports",
+      "reasoning": "Evil not caused by free will"
+    },
+    {
+      "source": "902b62e3c7ef",
+      "target": "e698a435ca32",
+      "relation": "supports",
+      "reasoning": "Suffering without moral agency or growth"
+    },
+    {
+      "source": "9bb5e709076f",
+      "target": "1e866169130f",
+      "relation": "then_response",
+      "reasoning": "Logical compatibility established"
+    },
+    {
+      "source": "c21d2dd071fa",
+      "target": "9bb5e709076f",
+      "relation": "if_objection",
+      "reasoning": "Questions necessity of evil for free will"
+    },
+    {
+      "source": "af6ebfdf4bd2",
+      "target": "c21d2dd071fa",
+      "relation": "then_response",
+      "reasoning": "Logical impossibility argument"
+    },
+    {
+      "source": "0e255d32b8b1",
+      "target": "e698a435ca32",
+      "relation": "then_response",
+      "reasoning": "Evil serves greater purpose of spiritual development"
+    },
+    {
+      "source": "4c274843c2f8",
+      "target": "0e255d32b8b1",
+      "relation": "if_objection",
+      "reasoning": "Empirical counterexamples"
+    },
+    {
+      "source": "7897356ce2ea",
+      "target": "0e255d32b8b1",
+      "relation": "if_objection",
+      "reasoning": "Proportionality problem"
+    },
+    {
+      "source": "1fa388199738",
+      "target": "4c274843c2f8",
+      "relation": "then_response",
+      "reasoning": "Afterlife completes development"
+    },
+    {
+      "source": "1f71cec96fb1",
+      "target": "7897356ce2ea",
+      "relation": "then_response",
+      "reasoning": "Uncertainty necessary for genuine choice"
+    },
+    {
+      "source": "7815c3e4b0e9",
+      "target": "e698a435ca32",
+      "relation": "then_response",
+      "reasoning": "Evil justified by greater goods"
+    },
+    {
+      "source": "116b9b846d60",
+      "target": "7815c3e4b0e9",
+      "relation": "if_objection",
+      "reasoning": "Some evils appear gratuitous"
+    },
+    {
+      "source": "0ecd50b2e38d",
+      "target": "116b9b846d60",
+      "relation": "then_response",
+      "reasoning": "Limited perspective argument"
+    },
+    {
+      "source": "adba3444e317",
+      "target": "9bb5e709076f",
+      "relation": "if_objection",
+      "reasoning": "Free will defense insufficient for natural evil"
+    },
+    {
+      "source": "9ddd2c135865",
+      "target": "adba3444e317",
+      "relation": "then_response",
+      "reasoning": "Supernatural agency explanation"
+    },
+    {
+      "source": "e5945850e356",
+      "target": "adba3444e317",
+      "relation": "then_response",
+      "reasoning": "Natural law necessity argument"
+    },
+    {
+      "source": "4cee801ed3ea",
+      "target": "dec2b6bc3d43",
+      "relation": "supports",
+      "reasoning": "Evidence that God is hidden"
+    },
+    {
+      "source": "dec2b6bc3d43",
+      "target": "55316022b61c",
+      "relation": "if_objection",
+      "reasoning": "Hiddenness incompatible with loving God"
+    },
+    {
+      "source": "9e9a8280580b",
+      "target": "dec2b6bc3d43",
+      "relation": "then_response",
+      "reasoning": "Hiddenness serves greater good of freedom"
+    },
+    {
+      "source": "589fa15a4ca5",
+      "target": "dec2b6bc3d43",
+      "relation": "then_response",
+      "reasoning": "Divine inscrutability argument"
+    },
+    {
+      "source": "6eb8c8c4ad6e",
+      "target": "dec2b6bc3d43",
+      "relation": "then_response",
+      "reasoning": "Coercion vs. freedom concern"
+    },
+    {
+      "source": "cb0bff5f9169",
+      "target": "dec2b6bc3d43",
+      "relation": "then_response",
+      "reasoning": "God is revealed, not hidden"
+    },
+    {
+      "source": "27353c1401ee",
+      "target": "9e9a8280580b",
+      "relation": "if_objection",
+      "reasoning": "Questions necessity of complete hiddenness"
+    },
+    {
+      "source": "842fa7b73e8c",
+      "target": "27353c1401ee",
+      "relation": "then_response",
+      "reasoning": "Binary nature of freedom argument"
+    },
+    {
+      "source": "42f5bc334f37",
+      "target": "c15599d95902",
+      "relation": "supports",
+      "reasoning": "Literal interpretation supports young earth"
+    },
+    {
+      "source": "8f5d7d948d93",
+      "target": "c15599d95902",
+      "relation": "supports",
+      "reasoning": "Chronological calculation"
+    },
+    {
+      "source": "d823bce734ba",
+      "target": "c15599d95902",
+      "relation": "supports",
+      "reasoning": "Fixed historical reference point"
+    },
+    {
+      "source": "743c04321414",
+      "target": "c15599d95902",
+      "relation": "supports",
+      "reasoning": "Explains geological formations rapidly"
+    },
+    {
+      "source": "ca5f0fef7e6f",
+      "target": "c15599d95902",
+      "relation": "supports",
+      "reasoning": "Questions reliability of old-earth evidence"
+    },
+    {
+      "source": "fe4705b59f0e",
+      "target": "c15599d95902",
+      "relation": "if_objection",
+      "reasoning": "Physical evidence contradicts young earth"
+    },
+    {
+      "source": "aed832bcab5c",
+      "target": "fe4705b59f0e",
+      "relation": "then_response",
+      "reasoning": "Physical constants may not be constant"
+    },
+    {
+      "source": "f25485515478",
+      "target": "fe4705b59f0e",
+      "relation": "then_response",
+      "reasoning": "Assumption-dependent measurements"
+    },
+    {
+      "source": "a5af9b6e98d2",
+      "target": "c15599d95902",
+      "relation": "if_objection",
+      "reasoning": "Biological evidence contradicts young earth"
+    },
+    {
+      "source": "805bc5428fe6",
+      "target": "a5af9b6e98d2",
+      "relation": "then_response",
+      "reasoning": "Catastrophic formation explanation"
+    },
+    {
+      "source": "af1eb81a3217",
+      "target": "c15599d95902",
+      "relation": "if_objection",
+      "reasoning": "Geological processes require vast time"
+    },
+    {
+      "source": "b096d99b8cb5",
+      "target": "af1eb81a3217",
+      "relation": "then_response",
+      "reasoning": "Rapid geological processes"
+    },
+    {
+      "source": "6ee2dd3596cb",
+      "target": "c15599d95902",
+      "relation": "if_objection",
+      "reasoning": "Biological evidence contradicts timeline"
+    },
+    {
+      "source": "99de7677b131",
+      "target": "6ee2dd3596cb",
+      "relation": "then_response",
+      "reasoning": "Supernatural creation explanation"
+    },
+    {
+      "source": "9f5c817ff88b",
+      "target": "99de7677b131",
+      "relation": "if_objection",
+      "reasoning": "Questions God's truthfulness"
+    },
+    {
+      "source": "98f72504d1f9",
+      "target": "9f5c817ff88b",
+      "relation": "then_response",
+      "reasoning": "Functional vs. deceptive distinction"
+    },
+    {
+      "source": "0e72ee6248ae",
+      "target": "74c51c1f1cd7",
+      "relation": "supports",
+      "reasoning": "Jesus' teaching supports traditional view"
+    },
+    {
+      "source": "66ee91105f00",
+      "target": "74c51c1f1cd7",
+      "relation": "if_objection",
+      "reasoning": "Proportionality problem"
+    },
+    {
+      "source": "a7363ee8ebcc",
+      "target": "66ee91105f00",
+      "relation": "then_response",
+      "reasoning": "Magnitude based on target of offense"
+    },
+    {
+      "source": "88bb10b830f3",
+      "target": "66ee91105f00",
+      "relation": "then_response",
+      "reasoning": "Continuing rather than finished sin"
+    },
+    {
+      "source": "5a8d876f5428",
+      "target": "74c51c1f1cd7",
+      "relation": "if_objection",
+      "reasoning": "Questions justice of punishment"
+    },
+    {
+      "source": "a541a943fb1a",
+      "target": "5a8d876f5428",
+      "relation": "then_response",
+      "reasoning": "Self-chosen consequence"
+    },
+    {
+      "source": "5dc8c2aa3675",
+      "target": "74c51c1f1cd7",
+      "relation": "if_objection",
+      "reasoning": "Incompatible with divine love"
+    },
+    {
+      "source": "db1c956558e4",
+      "target": "5dc8c2aa3675",
+      "relation": "then_response",
+      "reasoning": "Love triumphs over judgment"
+    },
+    {
+      "source": "db1c956558e4",
+      "target": "31b48e738900",
+      "relation": "supports",
+      "reasoning": "Love requires universal salvation"
+    },
+    {
+      "source": "4a585f7c57f7",
+      "target": "5dc8c2aa3675",
+      "relation": "then_response",
+      "reasoning": "Divine attributes in balance"
+    },
+    {
+      "source": "1b9caf9a36be",
+      "target": "66ee91105f00",
+      "relation": "then_response",
+      "reasoning": "Proportionate punishment through annihilation"
+    },
+    {
+      "source": "1b9caf9a36be",
+      "target": "3595bf2c9258",
+      "relation": "supports",
+      "reasoning": "Biblical language supports conditional immortality"
+    },
+    {
+      "source": "f26d50f4d7ed",
+      "target": "3595bf2c9258",
+      "relation": "if_objection",
+      "reasoning": "Biblical evidence for ongoing punishment"
+    },
+    {
+      "source": "577fe3211697",
+      "target": "f26d50f4d7ed",
+      "relation": "then_response",
+      "reasoning": "Eternal consequences vs. eternal process"
+    },
+    {
+      "source": "80abf9023fd8",
+      "target": "9f96dbcedf28",
+      "relation": "supports",
+      "reasoning": "Prophetic prediction of substitution"
+    },
+    {
+      "source": "cd09d10dc69f",
+      "target": "9f96dbcedf28",
+      "relation": "supports",
+      "reasoning": "Apostolic teaching of substitution"
+    },
+    {
+      "source": "ad1a40fcecb3",
+      "target": "9f96dbcedf28",
+      "relation": "if_objection",
+      "reasoning": "Questions morality of substitutionary punishment"
+    },
+    {
+      "source": "42af1dfdad89",
+      "target": "ad1a40fcecb3",
+      "relation": "then_response",
+      "reasoning": "Voluntary vs. imposed suffering"
+    },
+    {
+      "source": "d269db267d4d",
+      "target": "ad1a40fcecb3",
+      "relation": "then_response",
+      "reasoning": "Divine self-sacrifice, not external punishment"
+    },
+    {
+      "source": "63de5a11d1e3",
+      "target": "9f96dbcedf28",
+      "relation": "if_objection",
+      "reasoning": "Questions necessity of substitution"
+    },
+    {
+      "source": "6b531032913a",
+      "target": "63de5a11d1e3",
+      "relation": "then_response",
+      "reasoning": "Divine justice requires satisfaction"
+    },
+    {
+      "source": "3bcef583c990",
+      "target": "1b380497d303",
+      "relation": "supports",
+      "reasoning": "Love motivates moral change"
+    },
+    {
+      "source": "e18f0adb0579",
+      "target": "1b380497d303",
+      "relation": "if_objection",
+      "reasoning": "Inadequate for objective problem of sin"
+    },
+    {
+      "source": "bec179e0b3c8",
+      "target": "e18f0adb0579",
+      "relation": "then_response",
+      "reasoning": "Objective reality needed for subjective change"
+    },
+    {
+      "source": "15b6f0210ae2",
+      "target": "b1445a1ff299",
+      "relation": "supports",
+      "reasoning": "Distinct persons evidenced in Scripture"
+    },
+    {
+      "source": "b75759a7aecd",
+      "target": "b1445a1ff299",
+      "relation": "supports",
+      "reasoning": "Monotheism maintained"
+    },
+    {
+      "source": "58847925c8f5",
+      "target": "b1445a1ff299",
+      "relation": "supports",
+      "reasoning": "Christ's divinity established"
+    },
+    {
+      "source": "58847925c8f5",
+      "target": "32e0b41d7511",
+      "relation": "supports",
+      "reasoning": "Divine nature of Christ"
+    },
+    {
+      "source": "aca27532e27f",
+      "target": "b1445a1ff299",
+      "relation": "if_objection",
+      "reasoning": "Mathematical impossibility claim"
+    },
+    {
+      "source": "21fd181808ee",
+      "target": "aca27532e27f",
+      "relation": "then_response",
+      "reasoning": "Different aspects avoid contradiction"
+    },
+    {
+      "source": "459e0fe91532",
+      "target": "aca27532e27f",
+      "relation": "then_response",
+      "reasoning": "Trans-logical vs. illogical"
+    },
+    {
+      "source": "f47175ab6d67",
+      "target": "b1445a1ff299",
+      "relation": "supports",
+      "reasoning": "Analogy aids understanding"
+    },
+    {
+      "source": "2447487e39e5",
+      "target": "f47175ab6d67",
+      "relation": "if_objection",
+      "reasoning": "Analogy misleads about distinct persons"
+    },
+    {
+      "source": "e5c0b55198cd",
+      "target": "2447487e39e5",
+      "relation": "then_response",
+      "reasoning": "Analogy limitations acknowledged"
+    },
+    {
+      "source": "c88c87bcbe8a",
+      "target": "58847925c8f5",
+      "relation": "if_objection",
+      "reasoning": "Questions full divinity of Christ"
+    },
+    {
+      "source": "01ad288fd26e",
+      "target": "c88c87bcbe8a",
+      "relation": "then_response",
+      "reasoning": "Functional vs. essential distinction"
+    },
+    {
+      "source": "202e7aef17ac",
+      "target": "32e0b41d7511",
+      "relation": "if_objection",
+      "reasoning": "Questions possibility of dual natures"
+    },
+    {
+      "source": "1a039eb69bf4",
+      "target": "202e7aef17ac",
+      "relation": "then_response",
+      "reasoning": "Orthodox christological formulation"
+    },
+    {
+      "source": "24a6358d26f6",
+      "target": "c987493c1b4c",
+      "relation": "supports",
+      "reasoning": "Medical expertise confirms death"
+    },
+    {
+      "source": "4b5f1a578762",
+      "target": "c987493c1b4c",
+      "relation": "supports",
+      "reasoning": "Eyewitness testimony foundation"
+    },
+    {
+      "source": "bdb94915f028",
+      "target": "3b8a2333d189",
+      "relation": "supports",
+      "reasoning": "Textual reliability established"
+    },
+    {
+      "source": "7c82e01ff0ea",
+      "target": "3b8a2333d189",
+      "relation": "supports",
+      "reasoning": "External confirmation of biblical claims"
+    },
+    {
+      "source": "80f2a05d91ee",
+      "target": "c987493c1b4c",
+      "relation": "if_objection",
+      "reasoning": "Selection bias in expert testimony"
+    },
+    {
+      "source": "80f2a05d91ee",
+      "target": "3b8a2333d189",
+      "relation": "if_objection",
+      "reasoning": "Biased scholarship selection"
+    },
+    {
+      "source": "d37f4f2d5846",
+      "target": "80f2a05d91ee",
+      "relation": "then_response",
+      "reasoning": "Diverse scholarly representation"
+    },
+    {
+      "source": "a352e905ad0e",
+      "target": "3b8a2333d189",
+      "relation": "if_objection",
+      "reasoning": "Questions objectivity of investigation"
+    },
+    {
+      "source": "af72c719ce79",
+      "target": "a352e905ad0e",
+      "relation": "then_response",
+      "reasoning": "Proper methodology defended"
+    },
+    {
+      "source": "255587daade5",
+      "target": "4b5f1a578762",
+      "relation": "if_objection",
+      "reasoning": "Questions reliability of sources"
+    },
+    {
+      "source": "fe2786e04ed5",
+      "target": "255587daade5",
+      "relation": "then_response",
+      "reasoning": "Resolution through scholarship"
+    },
+    {
+      "source": "324407c815ce",
+      "target": "bdb94915f028",
+      "relation": "if_objection",
+      "reasoning": "Early variants question reliability"
+    },
+    {
+      "source": "811caf15eb5c",
+      "target": "324407c815ce",
+      "relation": "then_response",
+      "reasoning": "Core message unaffected by variants"
+    },
+    {
+      "source": "c4816e0e037e",
+      "target": "c31076010408",
+      "relation": "supports",
+      "reasoning": "Suffering servant prophecy predicts death and resurrection"
+    },
+    {
+      "source": "9bb5e709076f",
+      "target": "a541a943fb1a",
+      "relation": "supports",
+      "reasoning": "Free will defense applies to hell as chosen consequence"
+    },
+    {
+      "source": "9bb5e709076f",
+      "target": "9e9a8280580b",
+      "relation": "supports",
+      "reasoning": "Free will requires epistemic distance from God"
+    },
+    {
+      "source": "node_951b48dc",
+      "target": "cb0bff5f9169",
+      "relation": "supports",
+      "reasoning": "Cosmological evidence supports natural revelation"
+    },
+    {
+      "source": "node_6c57335e",
+      "target": "cb0bff5f9169",
+      "relation": "supports",
+      "reasoning": "Cosmological evidence supports natural revelation"
+    },
+    {
+      "source": "node_639eccea",
+      "target": "cb0bff5f9169",
+      "relation": "supports",
+      "reasoning": "Cosmological evidence supports natural revelation"
+    },
+    {
+      "source": "b1445a1ff299",
+      "target": "32e0b41d7511",
+      "relation": "requires",
+      "reasoning": "Trinity doctrine necessary for incarnation doctrine"
+    },
+    {
+      "source": "1b380497d303",
+      "target": "9f96dbcedf28",
+      "relation": "if_objection",
+      "reasoning": "Moral influence challenges necessity of penal substitution"
+    },
+    {
+      "source": "734c72fce44c",
+      "target": "9f96dbcedf28",
+      "relation": "supports",
+      "reasoning": "Victory over Satan complements penal satisfaction"
+    },
+    {
+      "source": "c31076010408",
+      "target": "9f96dbcedf28",
+      "relation": "supports",
+      "reasoning": "Resurrection vindicates atoning sacrifice"
+    },
+    {
+      "source": "74c51c1f1cd7",
+      "target": "8f636ea34f1a",
+      "relation": "supports",
+      "reasoning": "Eternal punishment adds to problem of evil"
+    },
+    {
+      "source": "c15599d95902",
+      "target": "e4cf2ca49564",
+      "relation": "if_objection",
+      "reasoning": "Young earth makes natural evil timeline more problematic"
+    },
+    {
+      "source": "ccc82643a865",
+      "target": "f191848d29d1",
+      "relation": "supports",
+      "reasoning": "Hallucinations could lead to legendary development"
+    },
+    {
+      "source": "f191848d29d1",
+      "target": "ccc82643a865",
+      "relation": "supports",
+      "reasoning": "Legends could create expectation leading to hallucinations"
+    },
+    {
+      "source": "bdb94915f028",
+      "target": "c31076010408",
+      "relation": "supports",
+      "reasoning": "Manuscript reliability supports resurrection accounts"
+    },
+    {
+      "source": "bdb94915f028",
+      "target": "dba7399fd8b0",
+      "relation": "supports",
+      "reasoning": "Textual reliability supports prophecy accounts"
+    },
+    {
+      "source": "80f2a05d91ee",
+      "target": "c31076010408",
+      "relation": "if_objection",
+      "reasoning": "Scholar selection bias questions resurrection argument"
+    },
+    {
+      "source": "80f2a05d91ee",
+      "target": "dba7399fd8b0",
+      "relation": "if_objection",
+      "reasoning": "Scholar selection bias questions prophecy fulfillment"
+    },
+    {
+      "source": "c15599d95902",
+      "target": "c15599d95902",
+      "relation": "assumes",
+      "reasoning": "Young earth creationism assumes literal biblical interpretation"
+    },
+    {
+      "source": "dba7399fd8b0",
+      "target": "c15599d95902",
+      "relation": "assumes",
+      "reasoning": "Prophecy argument assumes reliable biblical text"
+    },
+    {
+      "source": "8f636ea34f1a",
+      "target": "node_ea7417a4",
+      "relation": "if_objection",
+      "reasoning": "Problem of evil challenges objective moral standard"
+    },
+    {
+      "source": "8f636ea34f1a",
+      "target": "node_5bb7bb19",
+      "relation": "if_objection",
+      "reasoning": "Problem of evil challenges objective moral standard"
+    },
+    {
+      "source": "8f636ea34f1a",
+      "target": "node_7028e623",
+      "relation": "if_objection",
+      "reasoning": "Problem of evil challenges objective moral standard"
+    },
+    {
+      "source": "9bb5e709076f",
+      "target": "74c51c1f1cd7",
+      "relation": "supports",
+      "reasoning": "Free will defense used in hell justification"
+    },
+    {
+      "source": "9bb5e709076f",
+      "target": "3595bf2c9258",
+      "relation": "supports",
+      "reasoning": "Free will defense used in hell justification"
+    },
+    {
+      "source": "9bb5e709076f",
+      "target": "31b48e738900",
+      "relation": "supports",
+      "reasoning": "Free will defense used in hell justification"
+    },
+    {
+      "source": "9bb5e709076f",
+      "target": "0e72ee6248ae",
+      "relation": "supports",
+      "reasoning": "Free will defense used in hell justification"
+    },
+    {
+      "source": "9bb5e709076f",
+      "target": "66ee91105f00",
+      "relation": "supports",
+      "reasoning": "Free will defense used in hell justification"
+    },
+    {
+      "source": "9bb5e709076f",
+      "target": "dec2b6bc3d43",
+      "relation": "supports",
+      "reasoning": "Free will requires epistemic freedom"
+    },
+    {
+      "source": "9bb5e709076f",
+      "target": "4cee801ed3ea",
+      "relation": "supports",
+      "reasoning": "Free will requires epistemic freedom"
+    },
+    {
+      "source": "9bb5e709076f",
+      "target": "55316022b61c",
+      "relation": "supports",
+      "reasoning": "Free will requires epistemic freedom"
+    },
+    {
+      "source": "9bb5e709076f",
+      "target": "589fa15a4ca5",
+      "relation": "supports",
+      "reasoning": "Free will requires epistemic freedom"
+    },
+    {
+      "source": "adba3444e317",
+      "target": "74c51c1f1cd7",
+      "relation": "supports",
+      "reasoning": "Free will defense used in hell justification"
+    },
+    {
+      "source": "adba3444e317",
+      "target": "3595bf2c9258",
+      "relation": "supports",
+      "reasoning": "Free will defense used in hell justification"
+    },
+    {
+      "source": "adba3444e317",
+      "target": "31b48e738900",
+      "relation": "supports",
+      "reasoning": "Free will defense used in hell justification"
+    },
+    {
+      "source": "adba3444e317",
+      "target": "0e72ee6248ae",
+      "relation": "supports",
+      "reasoning": "Free will defense used in hell justification"
+    },
+    {
+      "source": "adba3444e317",
+      "target": "66ee91105f00",
+      "relation": "supports",
+      "reasoning": "Free will defense used in hell justification"
+    },
+    {
+      "source": "adba3444e317",
+      "target": "dec2b6bc3d43",
+      "relation": "supports",
+      "reasoning": "Free will requires epistemic freedom"
+    },
+    {
+      "source": "adba3444e317",
+      "target": "4cee801ed3ea",
+      "relation": "supports",
+      "reasoning": "Free will requires epistemic freedom"
+    },
+    {
+      "source": "adba3444e317",
+      "target": "55316022b61c",
+      "relation": "supports",
+      "reasoning": "Free will requires epistemic freedom"
+    },
+    {
+      "source": "adba3444e317",
+      "target": "9e9a8280580b",
+      "relation": "supports",
+      "reasoning": "Free will requires epistemic freedom"
+    },
+    {
+      "source": "adba3444e317",
+      "target": "589fa15a4ca5",
+      "relation": "supports",
+      "reasoning": "Free will requires epistemic freedom"
+    },
+    {
+      "source": "bdb94915f028",
+      "target": "6db26e84b0e1",
+      "relation": "supports",
+      "reasoning": "Biblical reliability undergirds resurrection claims"
+    },
+    {
+      "source": "bdb94915f028",
+      "target": "d5b5e497b72d",
+      "relation": "supports",
+      "reasoning": "Biblical reliability undergirds resurrection claims"
+    },
+    {
+      "source": "bdb94915f028",
+      "target": "8f8292c76695",
+      "relation": "supports",
+      "reasoning": "Biblical reliability undergirds resurrection claims"
+    },
+    {
+      "source": "bdb94915f028",
+      "target": "b1783718036b",
+      "relation": "supports",
+      "reasoning": "Biblical reliability undergirds resurrection claims"
+    },
+    {
+      "source": "bdb94915f028",
+      "target": "306cd8317999",
+      "relation": "supports",
+      "reasoning": "Biblical reliability undergirds prophecy claims"
+    },
+    {
+      "source": "bdb94915f028",
+      "target": "c4816e0e037e",
+      "relation": "supports",
+      "reasoning": "Biblical reliability undergirds prophecy claims"
+    },
+    {
+      "source": "bdb94915f028",
+      "target": "aea54a06e0ab",
+      "relation": "supports",
+      "reasoning": "Biblical reliability undergirds prophecy claims"
+    },
+    {
+      "source": "bdb94915f028",
+      "target": "0c0527eac832",
+      "relation": "supports",
+      "reasoning": "Biblical reliability undergirds prophecy claims"
+    },
+    {
+      "source": "324407c815ce",
+      "target": "c31076010408",
+      "relation": "supports",
+      "reasoning": "Biblical reliability undergirds resurrection claims"
+    },
+    {
+      "source": "324407c815ce",
+      "target": "6db26e84b0e1",
+      "relation": "supports",
+      "reasoning": "Biblical reliability undergirds resurrection claims"
+    },
+    {
+      "source": "324407c815ce",
+      "target": "d5b5e497b72d",
+      "relation": "supports",
+      "reasoning": "Biblical reliability undergirds resurrection claims"
+    },
+    {
+      "source": "324407c815ce",
+      "target": "8f8292c76695",
+      "relation": "supports",
+      "reasoning": "Biblical reliability undergirds resurrection claims"
+    },
+    {
+      "source": "324407c815ce",
+      "target": "b1783718036b",
+      "relation": "supports",
+      "reasoning": "Biblical reliability undergirds resurrection claims"
+    },
+    {
+      "source": "324407c815ce",
+      "target": "dba7399fd8b0",
+      "relation": "supports",
+      "reasoning": "Biblical reliability undergirds prophecy claims"
+    },
+    {
+      "source": "324407c815ce",
+      "target": "306cd8317999",
+      "relation": "supports",
+      "reasoning": "Biblical reliability undergirds prophecy claims"
+    },
+    {
+      "source": "324407c815ce",
+      "target": "c4816e0e037e",
+      "relation": "supports",
+      "reasoning": "Biblical reliability undergirds prophecy claims"
+    },
+    {
+      "source": "324407c815ce",
+      "target": "aea54a06e0ab",
+      "relation": "supports",
+      "reasoning": "Biblical reliability undergirds prophecy claims"
+    },
+    {
+      "source": "324407c815ce",
+      "target": "0c0527eac832",
+      "relation": "supports",
+      "reasoning": "Biblical reliability undergirds prophecy claims"
+    },
+    {
+      "source": "8f5d7d948d93",
+      "target": "c31076010408",
+      "relation": "supports",
+      "reasoning": "Biblical reliability undergirds resurrection claims"
+    },
+    {
+      "source": "8f5d7d948d93",
+      "target": "6db26e84b0e1",
+      "relation": "supports",
+      "reasoning": "Biblical reliability undergirds resurrection claims"
+    },
+    {
+      "source": "8f5d7d948d93",
+      "target": "d5b5e497b72d",
+      "relation": "supports",
+      "reasoning": "Biblical reliability undergirds resurrection claims"
+    },
+    {
+      "source": "8f5d7d948d93",
+      "target": "8f8292c76695",
+      "relation": "supports",
+      "reasoning": "Biblical reliability undergirds resurrection claims"
+    },
+    {
+      "source": "8f5d7d948d93",
+      "target": "b1783718036b",
+      "relation": "supports",
+      "reasoning": "Biblical reliability undergirds resurrection claims"
+    },
+    {
+      "source": "8f5d7d948d93",
+      "target": "dba7399fd8b0",
+      "relation": "supports",
+      "reasoning": "Biblical reliability undergirds prophecy claims"
+    },
+    {
+      "source": "8f5d7d948d93",
+      "target": "306cd8317999",
+      "relation": "supports",
+      "reasoning": "Biblical reliability undergirds prophecy claims"
+    },
+    {
+      "source": "8f5d7d948d93",
+      "target": "c4816e0e037e",
+      "relation": "supports",
+      "reasoning": "Biblical reliability undergirds prophecy claims"
+    },
+    {
+      "source": "8f5d7d948d93",
+      "target": "aea54a06e0ab",
+      "relation": "supports",
+      "reasoning": "Biblical reliability undergirds prophecy claims"
+    },
+    {
+      "source": "8f5d7d948d93",
+      "target": "0c0527eac832",
+      "relation": "supports",
+      "reasoning": "Biblical reliability undergirds prophecy claims"
+    },
+    {
+      "source": "1b9caf9a36be",
+      "target": "c31076010408",
+      "relation": "supports",
+      "reasoning": "Biblical reliability undergirds resurrection claims"
+    },
+    {
+      "source": "1b9caf9a36be",
+      "target": "6db26e84b0e1",
+      "relation": "supports",
+      "reasoning": "Biblical reliability undergirds resurrection claims"
+    },
+    {
+      "source": "1b9caf9a36be",
+      "target": "d5b5e497b72d",
+      "relation": "supports",
+      "reasoning": "Biblical reliability undergirds resurrection claims"
+    },
+    {
+      "source": "1b9caf9a36be",
+      "target": "8f8292c76695",
+      "relation": "supports",
+      "reasoning": "Biblical reliability undergirds resurrection claims"
+    },
+    {
+      "source": "1b9caf9a36be",
+      "target": "b1783718036b",
+      "relation": "supports",
+      "reasoning": "Biblical reliability undergirds resurrection claims"
+    },
+    {
+      "source": "1b9caf9a36be",
+      "target": "dba7399fd8b0",
+      "relation": "supports",
+      "reasoning": "Biblical reliability undergirds prophecy claims"
+    },
+    {
+      "source": "1b9caf9a36be",
+      "target": "306cd8317999",
+      "relation": "supports",
+      "reasoning": "Biblical reliability undergirds prophecy claims"
+    },
+    {
+      "source": "1b9caf9a36be",
+      "target": "c4816e0e037e",
+      "relation": "supports",
+      "reasoning": "Biblical reliability undergirds prophecy claims"
+    },
+    {
+      "source": "1b9caf9a36be",
+      "target": "aea54a06e0ab",
+      "relation": "supports",
+      "reasoning": "Biblical reliability undergirds prophecy claims"
+    },
+    {
+      "source": "1b9caf9a36be",
+      "target": "0c0527eac832",
+      "relation": "supports",
+      "reasoning": "Biblical reliability undergirds prophecy claims"
+    },
+    {
+      "source": "7c82e01ff0ea",
+      "target": "c31076010408",
+      "relation": "supports",
+      "reasoning": "Biblical reliability undergirds resurrection claims"
+    },
+    {
+      "source": "7c82e01ff0ea",
+      "target": "6db26e84b0e1",
+      "relation": "supports",
+      "reasoning": "Biblical reliability undergirds resurrection claims"
+    },
+    {
+      "source": "7c82e01ff0ea",
+      "target": "d5b5e497b72d",
+      "relation": "supports",
+      "reasoning": "Biblical reliability undergirds resurrection claims"
+    },
+    {
+      "source": "7c82e01ff0ea",
+      "target": "8f8292c76695",
+      "relation": "supports",
+      "reasoning": "Biblical reliability undergirds resurrection claims"
+    },
+    {
+      "source": "7c82e01ff0ea",
+      "target": "b1783718036b",
+      "relation": "supports",
+      "reasoning": "Biblical reliability undergirds resurrection claims"
+    },
+    {
+      "source": "7c82e01ff0ea",
+      "target": "dba7399fd8b0",
+      "relation": "supports",
+      "reasoning": "Biblical reliability undergirds prophecy claims"
+    },
+    {
+      "source": "7c82e01ff0ea",
+      "target": "306cd8317999",
+      "relation": "supports",
+      "reasoning": "Biblical reliability undergirds prophecy claims"
+    },
+    {
+      "source": "7c82e01ff0ea",
+      "target": "c4816e0e037e",
+      "relation": "supports",
+      "reasoning": "Biblical reliability undergirds prophecy claims"
+    },
+    {
+      "source": "7c82e01ff0ea",
+      "target": "aea54a06e0ab",
+      "relation": "supports",
+      "reasoning": "Biblical reliability undergirds prophecy claims"
+    },
+    {
+      "source": "7c82e01ff0ea",
+      "target": "0c0527eac832",
+      "relation": "supports",
+      "reasoning": "Biblical reliability undergirds prophecy claims"
+    },
+    {
+      "source": "8f636ea34f1a",
+      "target": "dec2b6bc3d43",
+      "relation": "supports",
+      "reasoning": "Problem of evil compounds divine hiddenness"
+    },
+    {
+      "source": "8f636ea34f1a",
+      "target": "4cee801ed3ea",
+      "relation": "supports",
+      "reasoning": "Problem of evil compounds divine hiddenness"
+    },
+    {
+      "source": "8f636ea34f1a",
+      "target": "55316022b61c",
+      "relation": "supports",
+      "reasoning": "Problem of evil compounds divine hiddenness"
+    },
+    {
+      "source": "8f636ea34f1a",
+      "target": "9e9a8280580b",
+      "relation": "supports",
+      "reasoning": "Problem of evil compounds divine hiddenness"
+    },
+    {
+      "source": "8f636ea34f1a",
+      "target": "589fa15a4ca5",
+      "relation": "supports",
+      "reasoning": "Problem of evil compounds divine hiddenness"
+    },
+    {
+      "source": "8f636ea34f1a",
+      "target": "74c51c1f1cd7",
+      "relation": "supports",
+      "reasoning": "Problem of evil extends to eternal punishment"
+    },
+    {
+      "source": "8f636ea34f1a",
+      "target": "3595bf2c9258",
+      "relation": "supports",
+      "reasoning": "Problem of evil extends to eternal punishment"
+    },
+    {
+      "source": "8f636ea34f1a",
+      "target": "31b48e738900",
+      "relation": "supports",
+      "reasoning": "Problem of evil extends to eternal punishment"
+    },
+    {
+      "source": "8f636ea34f1a",
+      "target": "0e72ee6248ae",
+      "relation": "supports",
+      "reasoning": "Problem of evil extends to eternal punishment"
+    },
+    {
+      "source": "8f636ea34f1a",
+      "target": "66ee91105f00",
+      "relation": "supports",
+      "reasoning": "Problem of evil extends to eternal punishment"
+    },
+    {
+      "source": "1e866169130f",
+      "target": "dec2b6bc3d43",
+      "relation": "supports",
+      "reasoning": "Problem of evil compounds divine hiddenness"
+    },
+    {
+      "source": "1e866169130f",
+      "target": "4cee801ed3ea",
+      "relation": "supports",
+      "reasoning": "Problem of evil compounds divine hiddenness"
+    },
+    {
+      "source": "1e866169130f",
+      "target": "55316022b61c",
+      "relation": "supports",
+      "reasoning": "Problem of evil compounds divine hiddenness"
+    },
+    {
+      "source": "1e866169130f",
+      "target": "9e9a8280580b",
+      "relation": "supports",
+      "reasoning": "Problem of evil compounds divine hiddenness"
+    },
+    {
+      "source": "1e866169130f",
+      "target": "589fa15a4ca5",
+      "relation": "supports",
+      "reasoning": "Problem of evil compounds divine hiddenness"
+    },
+    {
+      "source": "1e866169130f",
+      "target": "74c51c1f1cd7",
+      "relation": "supports",
+      "reasoning": "Problem of evil extends to eternal punishment"
+    },
+    {
+      "source": "1e866169130f",
+      "target": "3595bf2c9258",
+      "relation": "supports",
+      "reasoning": "Problem of evil extends to eternal punishment"
+    },
+    {
+      "source": "1e866169130f",
+      "target": "31b48e738900",
+      "relation": "supports",
+      "reasoning": "Problem of evil extends to eternal punishment"
+    },
+    {
+      "source": "1e866169130f",
+      "target": "0e72ee6248ae",
+      "relation": "supports",
+      "reasoning": "Problem of evil extends to eternal punishment"
+    },
+    {
+      "source": "1e866169130f",
+      "target": "66ee91105f00",
+      "relation": "supports",
+      "reasoning": "Problem of evil extends to eternal punishment"
+    },
+    {
+      "source": "e698a435ca32",
+      "target": "dec2b6bc3d43",
+      "relation": "supports",
+      "reasoning": "Problem of evil compounds divine hiddenness"
+    },
+    {
+      "source": "e698a435ca32",
+      "target": "4cee801ed3ea",
+      "relation": "supports",
+      "reasoning": "Problem of evil compounds divine hiddenness"
+    },
+    {
+      "source": "e698a435ca32",
+      "target": "55316022b61c",
+      "relation": "supports",
+      "reasoning": "Problem of evil compounds divine hiddenness"
+    },
+    {
+      "source": "e698a435ca32",
+      "target": "9e9a8280580b",
+      "relation": "supports",
+      "reasoning": "Problem of evil compounds divine hiddenness"
+    },
+    {
+      "source": "e698a435ca32",
+      "target": "589fa15a4ca5",
+      "relation": "supports",
+      "reasoning": "Problem of evil compounds divine hiddenness"
+    },
+    {
+      "source": "e698a435ca32",
+      "target": "74c51c1f1cd7",
+      "relation": "supports",
+      "reasoning": "Problem of evil extends to eternal punishment"
+    },
+    {
+      "source": "e698a435ca32",
+      "target": "3595bf2c9258",
+      "relation": "supports",
+      "reasoning": "Problem of evil extends to eternal punishment"
+    },
+    {
+      "source": "e698a435ca32",
+      "target": "31b48e738900",
+      "relation": "supports",
+      "reasoning": "Problem of evil extends to eternal punishment"
+    },
+    {
+      "source": "e698a435ca32",
+      "target": "0e72ee6248ae",
+      "relation": "supports",
+      "reasoning": "Problem of evil extends to eternal punishment"
+    },
+    {
+      "source": "e698a435ca32",
+      "target": "66ee91105f00",
+      "relation": "supports",
+      "reasoning": "Problem of evil extends to eternal punishment"
+    },
+    {
+      "source": "0e255d32b8b1",
+      "target": "dec2b6bc3d43",
+      "relation": "supports",
+      "reasoning": "Problem of evil compounds divine hiddenness"
+    },
+    {
+      "source": "0e255d32b8b1",
+      "target": "4cee801ed3ea",
+      "relation": "supports",
+      "reasoning": "Problem of evil compounds divine hiddenness"
+    },
+    {
+      "source": "0e255d32b8b1",
+      "target": "55316022b61c",
+      "relation": "supports",
+      "reasoning": "Problem of evil compounds divine hiddenness"
+    },
+    {
+      "source": "0e255d32b8b1",
+      "target": "9e9a8280580b",
+      "relation": "supports",
+      "reasoning": "Problem of evil compounds divine hiddenness"
+    },
+    {
+      "source": "0e255d32b8b1",
+      "target": "589fa15a4ca5",
+      "relation": "supports",
+      "reasoning": "Problem of evil compounds divine hiddenness"
+    },
+    {
+      "source": "0e255d32b8b1",
+      "target": "74c51c1f1cd7",
+      "relation": "supports",
+      "reasoning": "Problem of evil extends to eternal punishment"
+    },
+    {
+      "source": "0e255d32b8b1",
+      "target": "3595bf2c9258",
+      "relation": "supports",
+      "reasoning": "Problem of evil extends to eternal punishment"
+    },
+    {
+      "source": "0e255d32b8b1",
+      "target": "31b48e738900",
+      "relation": "supports",
+      "reasoning": "Problem of evil extends to eternal punishment"
+    },
+    {
+      "source": "0e255d32b8b1",
+      "target": "0e72ee6248ae",
+      "relation": "supports",
+      "reasoning": "Problem of evil extends to eternal punishment"
+    },
+    {
+      "source": "0e255d32b8b1",
+      "target": "66ee91105f00",
+      "relation": "supports",
+      "reasoning": "Problem of evil extends to eternal punishment"
+    },
+    {
+      "source": "f36fb11be710",
+      "target": "e4cf2ca49564",
+      "relation": "requires",
+      "reasoning": "Assumes divine attributes"
+    },
+    {
+      "source": "f36fb11be710",
+      "target": "902b62e3c7ef",
+      "relation": "requires",
+      "reasoning": "Assumes divine attributes"
+    },
+    {
+      "source": "f36fb11be710",
+      "target": "4cee801ed3ea",
+      "relation": "requires",
+      "reasoning": "Assumes divine attributes"
+    },
+    {
+      "source": "f36fb11be710",
+      "target": "55316022b61c",
+      "relation": "requires",
+      "reasoning": "Assumes divine attributes"
+    },
+    {
+      "source": "f36fb11be710",
+      "target": "0e72ee6248ae",
+      "relation": "requires",
+      "reasoning": "Assumes divine attributes"
+    },
+    {
+      "source": "f36fb11be710",
+      "target": "80abf9023fd8",
+      "relation": "requires",
+      "reasoning": "Assumes divine attributes"
+    },
+    {
+      "source": "f36fb11be710",
+      "target": "cd09d10dc69f",
+      "relation": "requires",
+      "reasoning": "Assumes divine attributes"
+    },
+    {
+      "source": "f36fb11be710",
+      "target": "3bcef583c990",
+      "relation": "requires",
+      "reasoning": "Assumes divine attributes"
+    },
+    {
+      "source": "1e866169130f",
+      "target": "e4cf2ca49564",
+      "relation": "requires",
+      "reasoning": "Assumes divine attributes"
+    },
+    {
+      "source": "1e866169130f",
+      "target": "902b62e3c7ef",
+      "relation": "requires",
+      "reasoning": "Assumes divine attributes"
+    },
+    {
+      "source": "1e866169130f",
+      "target": "4cee801ed3ea",
+      "relation": "requires",
+      "reasoning": "Assumes divine attributes"
+    },
+    {
+      "source": "1e866169130f",
+      "target": "55316022b61c",
+      "relation": "requires",
+      "reasoning": "Assumes divine attributes"
+    },
+    {
+      "source": "1e866169130f",
+      "target": "0e72ee6248ae",
+      "relation": "requires",
+      "reasoning": "Assumes divine attributes"
+    },
+    {
+      "source": "1e866169130f",
+      "target": "80abf9023fd8",
+      "relation": "requires",
+      "reasoning": "Assumes divine attributes"
+    },
+    {
+      "source": "1e866169130f",
+      "target": "cd09d10dc69f",
+      "relation": "requires",
+      "reasoning": "Assumes divine attributes"
+    },
+    {
+      "source": "1e866169130f",
+      "target": "3bcef583c990",
+      "relation": "requires",
+      "reasoning": "Assumes divine attributes"
+    },
+    {
+      "source": "55316022b61c",
+      "target": "e4cf2ca49564",
+      "relation": "requires",
+      "reasoning": "Assumes divine attributes"
+    },
+    {
+      "source": "55316022b61c",
+      "target": "902b62e3c7ef",
+      "relation": "requires",
+      "reasoning": "Assumes divine attributes"
+    },
+    {
+      "source": "55316022b61c",
+      "target": "4cee801ed3ea",
+      "relation": "requires",
+      "reasoning": "Assumes divine attributes"
+    },
+    {
+      "source": "55316022b61c",
+      "target": "55316022b61c",
+      "relation": "requires",
+      "reasoning": "Assumes divine attributes"
+    },
+    {
+      "source": "55316022b61c",
+      "target": "0e72ee6248ae",
+      "relation": "requires",
+      "reasoning": "Assumes divine attributes"
+    },
+    {
+      "source": "55316022b61c",
+      "target": "80abf9023fd8",
+      "relation": "requires",
+      "reasoning": "Assumes divine attributes"
+    },
+    {
+      "source": "55316022b61c",
+      "target": "cd09d10dc69f",
+      "relation": "requires",
+      "reasoning": "Assumes divine attributes"
+    },
+    {
+      "source": "55316022b61c",
+      "target": "3bcef583c990",
+      "relation": "requires",
+      "reasoning": "Assumes divine attributes"
+    },
+    {
+      "source": "af72c719ce79",
+      "target": "c31076010408",
+      "relation": "supports",
+      "reasoning": "Historical method applied to resurrection"
+    },
+    {
+      "source": "af72c719ce79",
+      "target": "6db26e84b0e1",
+      "relation": "supports",
+      "reasoning": "Historical method applied to resurrection"
+    },
+    {
+      "source": "af72c719ce79",
+      "target": "d5b5e497b72d",
+      "relation": "supports",
+      "reasoning": "Historical method applied to resurrection"
+    },
+    {
+      "source": "af72c719ce79",
+      "target": "8f8292c76695",
+      "relation": "supports",
+      "reasoning": "Historical method applied to resurrection"
+    },
+    {
+      "source": "af72c719ce79",
+      "target": "b1783718036b",
+      "relation": "supports",
+      "reasoning": "Historical method applied to resurrection"
+    },
+    {
+      "source": "node_86794f18",
+      "target": "node_ea7417a4",
+      "relation": "supports",
+      "reasoning": "Creator established moral framework"
+    },
+    {
+      "source": "node_86794f18",
+      "target": "node_5bb7bb19",
+      "relation": "supports",
+      "reasoning": "Creator established moral framework"
+    },
+    {
+      "source": "node_86794f18",
+      "target": "node_7028e623",
+      "relation": "supports",
+      "reasoning": "Creator established moral framework"
+    },
+    {
+      "source": "node_86794f18",
+      "target": "node_99b8be9d",
+      "relation": "supports",
+      "reasoning": "Creator established moral framework"
+    },
+    {
+      "source": "node_86794f18",
+      "target": "node_ccefa5cc",
+      "relation": "supports",
+      "reasoning": "Creator established moral framework"
+    },
+    {
+      "source": "node_b96a025f",
+      "target": "node_ea7417a4",
+      "relation": "supports",
+      "reasoning": "Creator established moral framework"
+    },
+    {
+      "source": "node_b96a025f",
+      "target": "node_5bb7bb19",
+      "relation": "supports",
+      "reasoning": "Creator established moral framework"
+    },
+    {
+      "source": "node_b96a025f",
+      "target": "node_7028e623",
+      "relation": "supports",
+      "reasoning": "Creator established moral framework"
+    },
+    {
+      "source": "node_b96a025f",
+      "target": "node_99b8be9d",
+      "relation": "supports",
+      "reasoning": "Creator established moral framework"
+    },
+    {
+      "source": "node_b96a025f",
+      "target": "node_ccefa5cc",
+      "relation": "supports",
+      "reasoning": "Creator established moral framework"
+    }
+  ],
+  "metrics": {
+    "cyclomatic_complexity": 176,
+    "total_nodes": 204,
+    "total_edges": 366,
+    "edge_node_ratio": 1.79,
+    "connected_components": 7,
+    "branching_nodes": 38,
+    "max_branching": 19,
+    "escape_hatches": 73,
+    "circular_dependencies": 3,
+    "objection_nodes": 54,
+    "response_nodes": 69,
+    "defense_ratio": 60.3
+  }
+}

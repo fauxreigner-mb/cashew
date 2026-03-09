@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🥜 cashew · Apologetics Complexity Analysis</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro', sans-serif;
+            background: #0a0a0a; color: #e0e0e0;
+            padding: 16px; max-width: 1600px; margin: 0 auto;
+            line-height: 1.6;
+        }
+        h1 { color: #f5c542; font-size: 24px; margin-bottom: 4px; }
+        .subtitle { color: #666; font-size: 14px; margin-bottom: 24px; }
+        
+        .metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; margin-bottom: 20px; }
+        .metric {
+            background: #111; border: 1px solid #1a1a1a; border-radius: 10px;
+            padding: 14px; text-align: center; transition: border-color 0.2s;
+        }
+        .metric:hover { border-color: #333; }
+        .metric .value { font-size: 28px; font-weight: 700; color: #f5c542; }
+        .metric .label { font-size: 10px; color: #666; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 4px; }
+        .metric.danger .value { color: #ff6b6b; }
+        .metric.warn .value { color: #ffa94d; }
+        
+        .gauge-container { 
+            background: #111; border: 1px solid #1a1a1a; border-radius: 10px;
+            padding: 20px; margin-bottom: 20px; text-align: center;
+        }
+        .gauge-title { color: #999; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+        .gauge-bar { height: 20px; background: #1a1a1a; border-radius: 10px; overflow: hidden; margin: 0 auto; max-width: 600px; }
+        .gauge-fill { height: 100%; border-radius: 10px; transition: width 1s ease-out; }
+        .gauge-labels { display: flex; justify-content: space-between; max-width: 600px; margin: 6px auto 0; }
+        .gauge-labels span { font-size: 10px; color: #555; }
+        .gauge-score { font-size: 48px; font-weight: 800; margin: 6px 0; color: #ff6b6b; }
+        .gauge-verdict { font-size: 13px; color: #999; }
+        
+        .comparison {
+            background: rgba(255,107,107,0.05); border: 1px solid rgba(255,107,107,0.2);
+            border-radius: 10px; padding: 16px; margin-bottom: 20px;
+        }
+        .comparison h3 { color: #ff6b6b; font-size: 14px; margin-bottom: 10px; }
+        .comparison table { width: 100%; border-collapse: collapse; }
+        .comparison th { text-align: left; color: #666; font-size: 11px; text-transform: uppercase; padding: 5px 8px; border-bottom: 1px solid #222; }
+        .comparison td { padding: 5px 8px; font-size: 13px; border-bottom: 1px solid #1a1a1a; }
+        .comparison .score { font-weight: 700; }
+        .green { color: #51cf66; } .yellow { color: #f5c542; } .red { color: #ff6b6b; }
+        
+        /* Layout: graph + sidebar */
+        .graph-layout { display: flex; gap: 12px; margin-bottom: 20px; }
+        .graph-main { flex: 1; min-width: 0; }
+        .graph-sidebar { width: 320px; flex-shrink: 0; }
+        @media (max-width: 900px) { .graph-layout { flex-direction: column; } .graph-sidebar { width: 100%; } }
+        
+        #graph-container {
+            background: #0d0d0d; border: 1px solid #1a1a1a; border-radius: 10px;
+            width: 100%; height: 650px; position: relative; overflow: hidden;
+        }
+        
+        /* Controls bar */
+        .controls { 
+            display: flex; gap: 6px; margin-bottom: 8px; flex-wrap: wrap; align-items: center;
+        }
+        .ctrl-btn {
+            padding: 5px 12px; border-radius: 14px; font-size: 11px;
+            border: 1px solid #333; background: transparent; color: #999;
+            cursor: pointer; transition: all 0.2s;
+        }
+        .ctrl-btn:hover { border-color: #555; color: #ccc; }
+        .ctrl-btn.active { border-color: #f5c542; color: #f5c542; background: rgba(245,197,66,0.1); }
+        .ctrl-group { display: flex; gap: 3px; }
+        .ctrl-sep { width: 1px; background: #222; margin: 0 6px; align-self: stretch; }
+        
+        /* Search */
+        .search-box {
+            background: #111; border: 1px solid #222; border-radius: 14px;
+            padding: 5px 12px; font-size: 12px; color: #ccc; outline: none;
+            width: 200px; transition: border-color 0.2s;
+        }
+        .search-box:focus { border-color: #f5c542; }
+        .search-box::placeholder { color: #444; }
+        
+        /* Sidebar panels */
+        .panel {
+            background: #111; border: 1px solid #1a1a1a; border-radius: 10px;
+            padding: 14px; margin-bottom: 10px; max-height: 300px; overflow-y: auto;
+        }
+        .panel::-webkit-scrollbar { width: 4px; }
+        .panel::-webkit-scrollbar-thumb { background: #333; border-radius: 2px; }
+        .panel-title { font-size: 12px; color: #f5c542; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+        
+        /* Selected node detail */
+        .node-detail { display: none; }
+        .node-detail.visible { display: block; }
+        .nd-type { font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+        .nd-content { font-size: 13px; color: #ccc; margin-bottom: 8px; line-height: 1.5; }
+        .nd-source { font-size: 11px; color: #666; margin-bottom: 8px; }
+        .nd-connections { list-style: none; }
+        .nd-connections li {
+            font-size: 12px; padding: 5px 8px; margin-bottom: 3px;
+            background: #0d0d0d; border-radius: 6px; cursor: pointer;
+            transition: background 0.15s; display: flex; align-items: center; gap: 6px;
+        }
+        .nd-connections li:hover { background: #1a1a1a; }
+        .nd-connections .rel-tag {
+            font-size: 9px; padding: 1px 5px; border-radius: 3px;
+            background: #1a1a1a; color: #888; white-space: nowrap;
+        }
+        .nd-connections .conn-text { color: #aaa; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        
+        /* Node list */
+        .node-list-item {
+            font-size: 12px; padding: 5px 8px; margin-bottom: 2px;
+            border-radius: 6px; cursor: pointer; transition: background 0.15s;
+            display: flex; align-items: center; gap: 6px;
+        }
+        .node-list-item:hover { background: #1a1a1a; }
+        .node-list-item .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+        .node-list-item .text { color: #aaa; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
+        
+        /* Breadcrumb trail */
+        .breadcrumb { 
+            display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 8px; 
+            min-height: 24px; align-items: center;
+        }
+        .crumb {
+            font-size: 10px; padding: 2px 8px; border-radius: 10px;
+            background: #1a1a1a; color: #999; cursor: pointer; transition: all 0.15s;
+        }
+        .crumb:hover { background: #222; color: #ccc; }
+        .crumb.current { background: rgba(245,197,66,0.15); color: #f5c542; }
+        .crumb-arrow { color: #333; font-size: 10px; }
+        
+        /* Node labels on graph */
+        .node-label {
+            font-size: 9px; fill: #666; pointer-events: none;
+            text-anchor: middle; dominant-baseline: central;
+        }
+        .node-label.highlighted { fill: #ccc; font-size: 10px; }
+        
+        /* Legend */
+        .legend { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 8px; }
+        .legend-item { display: flex; align-items: center; gap: 4px; font-size: 10px; color: #666; }
+        .legend-dot { width: 8px; height: 8px; border-radius: 50%; }
+        
+        .section-title { color: #f5c542; font-size: 15px; font-weight: 600; margin: 20px 0 10px; }
+        .section-note { color: #555; font-size: 12px; margin-bottom: 10px; }
+        
+        .type-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; margin-bottom: 20px; }
+        .type-card { background: #111; border: 1px solid #1a1a1a; border-radius: 8px; padding: 10px; text-align: center; }
+        .type-card .count { font-size: 22px; font-weight: 700; }
+        .type-card .name { font-size: 10px; color: #666; text-transform: uppercase; }
+        
+        .categories { margin-bottom: 20px; }
+        .cat-row { display: flex; align-items: center; padding: 6px 10px; border-bottom: 1px solid #1a1a1a; font-size: 12px; cursor: pointer; transition: background 0.15s; }
+        .cat-row:hover { background: #111; }
+        .cat-name { width: 120px; color: #ccc; }
+        .cat-bar-container { flex: 1; height: 16px; background: #1a1a1a; border-radius: 3px; margin: 0 10px; overflow: hidden; }
+        .cat-bar { height: 100%; border-radius: 3px; transition: width 0.5s; }
+        .cat-count { width: 30px; text-align: right; color: #666; font-size: 11px; }
+
+        /* Tooltip */
+        .tooltip {
+            position: absolute; background: #1a1a1a; border: 1px solid #333;
+            border-radius: 8px; padding: 10px 14px; max-width: 350px;
+            font-size: 12px; pointer-events: none; opacity: 0;
+            transition: opacity 0.15s; z-index: 100;
+        }
+        .tooltip .tt-type { font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 3px; }
+        .tooltip .tt-content { color: #ccc; margin-bottom: 4px; }
+        .tooltip .tt-source { color: #666; font-size: 11px; }
+        .tooltip .tt-edges { color: #f5c542; font-size: 11px; margin-top: 3px; }
+        .tt-hint { color: #444; font-size: 10px; margin-top: 4px; font-style: italic; }
+    </style>
+</head>
+<body>
+
+<h1>🥜 cashew · Apologetics Complexity Analysis</h1>
+<div class="subtitle">Cyclomatic complexity analysis of Christian apologetics — an engineer's code review of 2000 years of patches</div>
+
+<div class="gauge-container">
+    <div class="gauge-title">Cyclomatic Complexity Score</div>
+    <div class="gauge-score" id="cc-score">—</div>
+    <div class="gauge-bar">
+        <div class="gauge-fill" id="cc-fill" style="width: 0%; background: linear-gradient(90deg, #51cf66, #f5c542, #ff6b6b);"></div>
+    </div>
+    <div class="gauge-labels">
+        <span>1 (simple)</span><span>10 (complex)</span><span>50 (untestable)</span><span>200+</span>
+    </div>
+    <div class="gauge-verdict" id="cc-verdict"></div>
+</div>
+
+<div class="comparison">
+    <h3>⚠️ In Software Engineering, This Would Fail Code Review</h3>
+    <table>
+        <tr><th>Complexity</th><th>Rating</th><th>What It Means</th></tr>
+        <tr><td class="score green">1-10</td><td>Simple</td><td>Easy to understand, test, and maintain</td></tr>
+        <tr><td class="score yellow">11-20</td><td>Moderate</td><td>Needs attention — refactor candidate</td></tr>
+        <tr><td class="score yellow">21-50</td><td>High</td><td>Difficult to test, high defect probability</td></tr>
+        <tr><td class="score red">50+</td><td>Untestable</td><td>Cannot be reliably verified</td></tr>
+        <tr><td class="score red" id="apol-cc-row">—</td><td><strong>Christian Apologetics</strong></td><td id="apol-cc-desc">Loading...</td></tr>
+    </table>
+</div>
+
+<div class="metrics" id="metrics-grid"></div>
+
+<div class="section-title">Argument Composition</div>
+<div class="section-note">What percentage of apologetics is defense vs. positive claims?</div>
+<div class="type-grid" id="type-grid"></div>
+
+<div class="section-title">Arguments by Category</div>
+<div class="section-note">Click a category to filter the graph</div>
+<div class="categories" id="categories"></div>
+
+<div class="section-title">Argument Graph</div>
+<div class="section-note">Click a node to inspect it. Navigate through connections in the sidebar. Use scroll to zoom, drag to pan.</div>
+
+<div class="legend" id="legend"></div>
+
+<div class="controls">
+    <input type="text" class="search-box" id="search" placeholder="Search arguments...">
+    <div class="ctrl-sep"></div>
+    <div class="ctrl-group" id="type-filters"></div>
+    <div class="ctrl-sep"></div>
+    <button class="ctrl-btn" id="btn-labels" title="Toggle labels">Labels</button>
+    <button class="ctrl-btn" id="btn-reset" title="Reset view">Reset</button>
+    <button class="ctrl-btn" id="btn-fullscreen" title="Fullscreen">⛶</button>
+</div>
+
+<div class="breadcrumb" id="breadcrumb"></div>
+
+<div class="graph-layout">
+    <div class="graph-main">
+        <div id="graph-container">
+            <div class="tooltip" id="tooltip"></div>
+        </div>
+    </div>
+    <div class="graph-sidebar">
+        <div class="panel node-detail" id="node-detail">
+            <div class="panel-title">Selected Node</div>
+            <div class="nd-type" id="nd-type"></div>
+            <div class="nd-content" id="nd-content"></div>
+            <div class="nd-source" id="nd-source"></div>
+            <div class="panel-title" style="margin-top:8px">Connections</div>
+            <ul class="nd-connections" id="nd-connections"></ul>
+        </div>
+        <div class="panel" id="node-list-panel">
+            <div class="panel-title">All Arguments <span id="node-count" style="color:#666"></span></div>
+            <input type="text" class="search-box" id="sidebar-search" placeholder="Filter..." style="width:100%;margin-bottom:8px">
+            <div id="node-list"></div>
+        </div>
+    </div>
+</div>
+
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<script>
+const TYPE_COLORS = { premise:'#4dabf7', conclusion:'#51cf66', objection:'#ff6b6b', response:'#ffa94d', assumption:'#da77f2' };
+const CAT_COLORS = { cosmological:'#4dabf7', moral:'#51cf66', historical:'#ffa94d', epistemological:'#da77f2', teleological:'#20c997', resurrection:'#ff6b6b', evil:'#e64980', prophecy:'#fab005', hiddenness:'#845ef7', 'young earth':'#ff922b', hell:'#c92a2a', atonement:'#d6336c', trinity:'#7048e8', popular:'#15aabf', theism:'#f5c542' };
+
+let allNodes, allEdges, simNodes, simLinks, sim, node, link, labels, svg, g;
+let selectedNode = null;
+let breadcrumbTrail = [];
+let showLabels = false;
+let activeTypeFilter = 'all';
+let activeCatFilter = 'all';
+
+async function init() {
+    const data = await (await fetch('./data/apologetics-graph.json')).json();
+    allNodes = data.nodes; allEdges = data.edges; const metrics = data.metrics;
+    
+    // Gauge
+    const cc = metrics.cyclomatic_complexity;
+    document.getElementById('cc-score').textContent = cc;
+    setTimeout(() => document.getElementById('cc-fill').style.width = Math.min(cc/200*100,100) + '%', 100);
+    document.getElementById('cc-verdict').textContent = `${cc} independent paths. In software: untestable, unreviewable, ship-blocking.`;
+    document.getElementById('apol-cc-row').textContent = cc;
+    document.getElementById('apol-cc-desc').textContent = `${cc} logical paths · ${metrics.escape_hatches} escape hatches · ${metrics.defense_ratio}% defensive`;
+    
+    // Metrics
+    const md = [
+        {value:metrics.total_nodes, label:'Arguments', cls:''},
+        {value:metrics.total_edges, label:'Dependencies', cls:''},
+        {value:metrics.escape_hatches, label:'Escape Hatches', cls:'warn'},
+        {value:metrics.circular_dependencies, label:'Circular Deps', cls:'danger'},
+        {value:metrics.branching_nodes, label:'Branch Points', cls:'warn'},
+        {value:metrics.defense_ratio+'%', label:'Defensive Code', cls:'danger'},
+    ];
+    document.getElementById('metrics-grid').innerHTML = md.map(m => `<div class="metric ${m.cls}"><div class="value">${m.value}</div><div class="label">${m.label}</div></div>`).join('');
+    
+    // Type grid
+    const tc = {}; allNodes.forEach(n => tc[n.node_type] = (tc[n.node_type]||0)+1);
+    document.getElementById('type-grid').innerHTML = Object.entries(tc).sort((a,b)=>b[1]-a[1]).map(([t,c]) => `<div class="type-card"><div class="count" style="color:${TYPE_COLORS[t]||'#666'}">${c}</div><div class="name">${t}s</div></div>`).join('');
+    
+    // Categories
+    const catCounts = {}; allNodes.forEach(n => catCounts[n.category] = (catCounts[n.category]||0)+1);
+    const maxCat = Math.max(...Object.values(catCounts));
+    document.getElementById('categories').innerHTML = Object.entries(catCounts).sort((a,b)=>b[1]-a[1]).map(([cat,count]) => `<div class="cat-row" data-cat="${cat}"><div class="cat-name">${cat}</div><div class="cat-bar-container"><div class="cat-bar" style="width:${count/maxCat*100}%;background:${CAT_COLORS[cat]||'#666'}"></div></div><div class="cat-count">${count}</div></div>`).join('');
+    document.querySelectorAll('.cat-row').forEach(row => row.addEventListener('click', () => filterByCategory(row.dataset.cat)));
+    
+    // Legend
+    document.getElementById('legend').innerHTML = Object.entries(TYPE_COLORS).map(([t,c]) => `<div class="legend-item"><div class="legend-dot" style="background:${c}"></div>${t}</div>`).join('') + '<div class="legend-item"><div class="legend-dot" style="background:#ff6b6b;border:1px dashed #ff6b6b"></div>circular dep</div>';
+    
+    // Type filter buttons
+    document.getElementById('type-filters').innerHTML = ['all',...Object.keys(TYPE_COLORS)].map(t => `<button class="ctrl-btn ${t==='all'?'active':''}" data-type="${t}">${t}</button>`).join('');
+    document.querySelectorAll('#type-filters .ctrl-btn').forEach(btn => btn.addEventListener('click', () => filterByType(btn.dataset.type)));
+    
+    // Build graph
+    buildGraph();
+    
+    // Node list
+    renderNodeList(allNodes);
+    document.getElementById('node-count').textContent = `(${allNodes.length})`;
+    
+    // Search
+    document.getElementById('search').addEventListener('input', e => searchGraph(e.target.value));
+    document.getElementById('sidebar-search').addEventListener('input', e => {
+        const q = e.target.value.toLowerCase();
+        const filtered = q ? allNodes.filter(n => n.content.toLowerCase().includes(q) || n.source.toLowerCase().includes(q)) : allNodes;
+        renderNodeList(filtered);
+    });
+    
+    // Controls
+    document.getElementById('btn-labels').addEventListener('click', () => { showLabels = !showLabels; toggleLabels(); document.getElementById('btn-labels').classList.toggle('active', showLabels); });
+    document.getElementById('btn-reset').addEventListener('click', resetView);
+    document.getElementById('btn-fullscreen').addEventListener('click', () => {
+        const el = document.getElementById('graph-container');
+        if (!document.fullscreenElement) el.requestFullscreen(); else document.exitFullscreen();
+    });
+}
+
+function buildGraph() {
+    const container = document.getElementById('graph-container');
+    container.querySelectorAll('svg').forEach(s => s.remove());
+    const width = container.clientWidth, height = container.clientHeight;
+    
+    svg = d3.select('#graph-container').append('svg').attr('width', width).attr('height', height);
+    g = svg.append('g');
+    svg.call(d3.zoom().scaleExtent([0.1, 8]).on('zoom', e => g.attr('transform', e.transform)));
+    
+    const nodeMap = new Map(allNodes.map(n => [n.id, n]));
+    simLinks = allEdges.filter(e => nodeMap.has(e.source) && nodeMap.has(e.target)).map(e => ({...e}));
+    simNodes = allNodes.map(n => ({...n}));
+    
+    sim = d3.forceSimulation(simNodes)
+        .force('link', d3.forceLink(simLinks).id(d => d.id).distance(50).strength(0.5))
+        .force('charge', d3.forceManyBody().strength(-100))
+        .force('center', d3.forceCenter(width/2, height/2))
+        .force('collision', d3.forceCollide(10))
+        .force('x', d3.forceX(width/2).strength(0.03))
+        .force('y', d3.forceY(height/2).strength(0.03));
+    
+    // Arrows
+    svg.append('defs').selectAll('marker').data(['arrow']).join('marker')
+        .attr('id', 'arrow').attr('viewBox', '0 -3 6 6').attr('refX', 14).attr('refY', 0)
+        .attr('markerWidth', 5).attr('markerHeight', 5).attr('orient', 'auto')
+        .append('path').attr('d', 'M0,-3L6,0L0,3').attr('fill', '#333');
+    
+    link = g.append('g').selectAll('line').data(simLinks).join('line')
+        .attr('stroke', d => d.relation==='circular_dep'?'#ff6b6b': d.relation==='if_objection'?'rgba(255,107,107,0.3)': d.relation==='then_response'?'rgba(255,169,77,0.3)': 'rgba(255,255,255,0.08)')
+        .attr('stroke-width', d => d.relation==='circular_dep'?2.5:1)
+        .attr('stroke-dasharray', d => d.relation==='circular_dep'?'5,3':'none')
+        .attr('marker-end', 'url(#arrow)');
+    
+    node = g.append('g').selectAll('circle').data(simNodes).join('circle')
+        .attr('r', d => {
+            const edges = allEdges.filter(e => e.source===d.id || e.target===d.id).length;
+            return Math.max(4, Math.min(12, 3 + edges * 0.5));
+        })
+        .attr('fill', d => TYPE_COLORS[d.node_type]||'#666')
+        .attr('stroke', '#0a0a0a').attr('stroke-width', 1.5)
+        .attr('opacity', 0.85)
+        .attr('cursor', 'pointer')
+        .call(d3.drag()
+            .on('start', (e,d) => { if(!e.active) sim.alphaTarget(0.3).restart(); d.fx=d.x; d.fy=d.y; })
+            .on('drag', (e,d) => { d.fx=e.x; d.fy=e.y; })
+            .on('end', (e,d) => { if(!e.active) sim.alphaTarget(0); d.fx=null; d.fy=null; }));
+    
+    // Labels
+    labels = g.append('g').selectAll('text').data(simNodes).join('text')
+        .attr('class', 'node-label')
+        .attr('dy', d => -10 - (allEdges.filter(e => e.source===d.id || e.target===d.id).length * 0.3))
+        .text(d => d.content.substring(0, 25) + (d.content.length > 25 ? '…' : ''))
+        .attr('display', 'none');
+    
+    // Click to select
+    node.on('click', (e, d) => { e.stopPropagation(); selectNode(d.id); });
+    
+    // Hover tooltip
+    const tooltip = document.getElementById('tooltip');
+    node.on('mouseover', (e, d) => {
+        if (selectedNode) return;
+        const conns = allEdges.filter(edge => edge.source===d.id || edge.target===d.id || (edge.source?.id===d.id) || (edge.target?.id===d.id));
+        tooltip.innerHTML = `<div class="tt-type" style="color:${TYPE_COLORS[d.node_type]}">${d.node_type} · ${d.category}</div><div class="tt-content">${d.content}</div><div class="tt-source">— ${d.source}</div><div class="tt-edges">${conns.length} connections</div><div class="tt-hint">Click to inspect</div>`;
+        tooltip.style.opacity = 1;
+        tooltip.style.left = Math.min(e.offsetX + 15, document.getElementById('graph-container').clientWidth - 370) + 'px';
+        tooltip.style.top = (e.offsetY - 10) + 'px';
+        highlightConnected(d.id, 0.1);
+    }).on('mouseout', () => {
+        if (selectedNode) return;
+        tooltip.style.opacity = 0;
+        resetHighlight();
+    });
+    
+    // Click background to deselect
+    svg.on('click', () => { deselectNode(); });
+    
+    sim.on('tick', () => {
+        link.attr('x1',d=>d.source.x).attr('y1',d=>d.source.y).attr('x2',d=>d.target.x).attr('y2',d=>d.target.y);
+        node.attr('cx',d=>d.x).attr('cy',d=>d.y);
+        labels.attr('x',d=>d.x).attr('y',d=>d.y);
+    });
+}
+
+function highlightConnected(nodeId, dimOpacity) {
+    const connected = new Set([nodeId]);
+    allEdges.forEach(e => {
+        const s = typeof e.source==='object'?e.source.id:e.source;
+        const t = typeof e.target==='object'?e.target.id:e.target;
+        if (s===nodeId) connected.add(t);
+        if (t===nodeId) connected.add(s);
+    });
+    node.attr('opacity', n => connected.has(n.id) ? 1 : dimOpacity);
+    link.attr('opacity', l => {
+        const s = typeof l.source==='object'?l.source.id:l.source;
+        const t = typeof l.target==='object'?l.target.id:l.target;
+        return s===nodeId||t===nodeId ? 1 : 0.03;
+    });
+    labels.attr('display', d => connected.has(d.id) && showLabels ? null : 'none')
+        .classed('highlighted', d => d.id === nodeId);
+}
+
+function resetHighlight() {
+    node.attr('opacity', 0.85);
+    link.attr('opacity', 1);
+    labels.attr('display', showLabels ? null : 'none').classed('highlighted', false);
+}
+
+function selectNode(nodeId) {
+    selectedNode = nodeId;
+    const n = allNodes.find(n => n.id === nodeId);
+    if (!n) return;
+    
+    document.getElementById('tooltip').style.opacity = 0;
+    highlightConnected(nodeId, 0.08);
+    
+    // Pulse selected
+    node.attr('stroke', d => d.id===nodeId ? '#f5c542' : '#0a0a0a')
+        .attr('stroke-width', d => d.id===nodeId ? 3 : 1.5);
+    
+    // Show detail panel
+    const detail = document.getElementById('node-detail');
+    detail.classList.add('visible');
+    document.getElementById('nd-type').style.color = TYPE_COLORS[n.node_type]||'#666';
+    document.getElementById('nd-type').textContent = `${n.node_type} · ${n.category}`;
+    document.getElementById('nd-content').textContent = n.content;
+    document.getElementById('nd-source').textContent = `— ${n.source}`;
+    
+    // Connections
+    const conns = [];
+    allEdges.forEach(e => {
+        const s = typeof e.source==='object'?e.source.id:e.source;
+        const t = typeof e.target==='object'?e.target.id:e.target;
+        if (s===nodeId) { const tn = allNodes.find(n=>n.id===t); if(tn) conns.push({node:tn, rel:e.relation, dir:'→'}); }
+        if (t===nodeId) { const sn = allNodes.find(n=>n.id===s); if(sn) conns.push({node:sn, rel:e.relation, dir:'←'}); }
+    });
+    document.getElementById('nd-connections').innerHTML = conns.map(c => `<li data-id="${c.node.id}"><span class="rel-tag">${c.dir} ${c.rel}</span><span class="conn-text" style="color:${TYPE_COLORS[c.node.node_type]||'#666'}">${c.node.content.substring(0,60)}${c.node.content.length>60?'…':''}</span></li>`).join('');
+    document.querySelectorAll('#nd-connections li').forEach(li => li.addEventListener('click', () => selectNode(li.dataset.id)));
+    
+    // Breadcrumb
+    const idx = breadcrumbTrail.findIndex(b => b.id === nodeId);
+    if (idx >= 0) breadcrumbTrail = breadcrumbTrail.slice(0, idx + 1);
+    else { breadcrumbTrail.push({id: nodeId, label: n.content.substring(0,20)+'…'}); if(breadcrumbTrail.length > 8) breadcrumbTrail.shift(); }
+    renderBreadcrumb();
+}
+
+function deselectNode() {
+    selectedNode = null;
+    resetHighlight();
+    node.attr('stroke', '#0a0a0a').attr('stroke-width', 1.5);
+    document.getElementById('node-detail').classList.remove('visible');
+}
+
+function renderBreadcrumb() {
+    document.getElementById('breadcrumb').innerHTML = breadcrumbTrail.map((b,i) => `${i>0?'<span class="crumb-arrow">→</span>':''}<span class="crumb ${i===breadcrumbTrail.length-1?'current':''}" data-id="${b.id}">${b.label}</span>`).join('');
+    document.querySelectorAll('.crumb').forEach(c => c.addEventListener('click', () => selectNode(c.dataset.id)));
+}
+
+function renderNodeList(nodes) {
+    document.getElementById('node-list').innerHTML = nodes.slice(0, 100).map(n => `<div class="node-list-item" data-id="${n.id}"><div class="dot" style="background:${TYPE_COLORS[n.node_type]||'#666'}"></div><div class="text">${n.content.substring(0,50)}${n.content.length>50?'…':''}</div></div>`).join('');
+    document.querySelectorAll('.node-list-item').forEach(item => item.addEventListener('click', () => selectNode(item.dataset.id)));
+}
+
+function searchGraph(query) {
+    if (!query) { resetHighlight(); return; }
+    const q = query.toLowerCase();
+    const matches = new Set(allNodes.filter(n => n.content.toLowerCase().includes(q) || n.source.toLowerCase().includes(q)).map(n => n.id));
+    node.attr('opacity', n => matches.has(n.id) ? 1 : 0.05);
+    link.attr('opacity', 0.03);
+    labels.attr('display', d => matches.has(d.id) ? null : 'none');
+}
+
+function filterByType(type) {
+    activeTypeFilter = type;
+    document.querySelectorAll('#type-filters .ctrl-btn').forEach(b => b.classList.toggle('active', b.dataset.type === type));
+    applyFilters();
+}
+
+function filterByCategory(cat) {
+    activeCatFilter = activeCatFilter === cat ? 'all' : cat;
+    document.querySelectorAll('.cat-row').forEach(r => r.style.background = r.dataset.cat === activeCatFilter ? '#1a1a1a' : '');
+    applyFilters();
+}
+
+function applyFilters() {
+    node.attr('opacity', d => {
+        const typeOk = activeTypeFilter === 'all' || d.node_type === activeTypeFilter;
+        const catOk = activeCatFilter === 'all' || d.category === activeCatFilter;
+        return typeOk && catOk ? 0.85 : 0.05;
+    });
+    link.attr('opacity', l => {
+        const s = typeof l.source==='object'?l.source:simNodes.find(n=>n.id===l.source);
+        const t = typeof l.target==='object'?l.target:simNodes.find(n=>n.id===l.target);
+        if (!s || !t) return 0.03;
+        const sOk = (activeTypeFilter==='all'||s.node_type===activeTypeFilter) && (activeCatFilter==='all'||s.category===activeCatFilter);
+        const tOk = (activeTypeFilter==='all'||t.node_type===activeTypeFilter) && (activeCatFilter==='all'||t.category===activeCatFilter);
+        return sOk || tOk ? 0.5 : 0.03;
+    });
+}
+
+function toggleLabels() { labels.attr('display', showLabels ? null : 'none'); }
+
+function resetView() {
+    deselectNode();
+    activeTypeFilter = 'all'; activeCatFilter = 'all';
+    document.querySelectorAll('#type-filters .ctrl-btn').forEach(b => b.classList.toggle('active', b.dataset.type==='all'));
+    document.querySelectorAll('.cat-row').forEach(r => r.style.background = '');
+    document.getElementById('search').value = '';
+    resetHighlight();
+    svg.transition().duration(500).call(d3.zoom().transform, d3.zoomIdentity);
+    breadcrumbTrail = [];
+    renderBreadcrumb();
+}
+
+init();
+</script>
+</body>
+</html>
