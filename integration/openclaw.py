@@ -49,7 +49,7 @@ def _create_anthropic_model_fn():
         """Call Anthropic API with the given prompt"""
         try:
             response = client.messages.create(
-                model="claude-3-5-sonnet-20241022",  # Using the correct model ID
+                model="claude-sonnet-4-20250514",
                 max_tokens=1024,
                 messages=[{
                     "role": "user",
