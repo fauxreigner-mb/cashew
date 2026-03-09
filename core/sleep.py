@@ -424,12 +424,20 @@ class SleepProtocol:
             metric = metrics[node_id]
             
             # Don't decay seeds or core memories
-            cursor.execute("SELECT node_type FROM thought_nodes WHERE id = ?", (node_id,))
-            node_type = cursor.fetchone()
-            if node_type and node_type[0] in ("seed", "core_memory"):
+            cursor.execute("SELECT node_type, source_file FROM thought_nodes WHERE id = ?", (node_id,))
+            row = cursor.fetchone()
+            if not row:
+                continue
+            node_type, source_file = row
+            if node_type in ("seed", "core_memory"):
                 continue
             
-            if metric.composite_fitness < self.gc_threshold:
+            # Think cycle nodes get a higher decay threshold — 
+            # they need to earn their place more than human-extracted knowledge
+            is_think_cycle = source_file and "think_cycle" in str(source_file)
+            effective_threshold = self.gc_threshold * 1.5 if is_think_cycle else self.gc_threshold
+            
+            if metric.composite_fitness < effective_threshold:
                 # Mark as decayed
                 cursor.execute("UPDATE thought_nodes SET decayed = 1 WHERE id = ?", (node_id,))
                 decayed_nodes.append(node_id)

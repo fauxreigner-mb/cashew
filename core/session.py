@@ -577,18 +577,34 @@ JSON format:
                 pass
         
         if not new_thoughts:
-            # Fallback: create a simple synthesis
-            new_thoughts = [{
-                "content": f"Think cycle synthesis of {len(nodes_info)} related concepts",
-                "type": "insight", 
-                "confidence": 0.6
-            }]
+            # No valid thoughts generated — don't insert placeholder noise
+            logging.info("Think cycle produced no parseable insights, skipping insertion")
+            return ThinkResult(
+                new_nodes=[],
+                new_edges=[],
+                cluster_topic=cluster_topic
+            )
         
-        # Create new nodes
+        # Filter by confidence threshold — not all thoughts are insights
+        THINK_CONFIDENCE_THRESHOLD = 0.75
+        filtered = [t for t in new_thoughts if t.get("confidence", 0.5) >= THINK_CONFIDENCE_THRESHOLD]
+        skipped = len(new_thoughts) - len(filtered)
+        if skipped > 0:
+            logging.info(f"Think cycle: filtered out {skipped}/{len(new_thoughts)} thoughts below confidence {THINK_CONFIDENCE_THRESHOLD}")
+        
+        if not filtered:
+            logging.info("Think cycle: all thoughts below confidence threshold, nothing to insert")
+            return ThinkResult(
+                new_nodes=[],
+                new_edges=[],
+                cluster_topic=cluster_topic
+            )
+        
+        # Create new nodes (only high-confidence thoughts)
         new_nodes = []
         new_edges = []
         
-        for thought in new_thoughts:
+        for thought in filtered:
             if not thought.get("content"):
                 continue
             

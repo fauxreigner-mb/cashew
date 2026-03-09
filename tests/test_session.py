@@ -48,7 +48,8 @@ class TestSessionIntegration:
                 metadata TEXT DEFAULT '{}',
                 decayed INTEGER DEFAULT 0,
                 last_accessed TEXT,
-                access_count INTEGER DEFAULT 0
+                access_count INTEGER DEFAULT 0,
+                domain TEXT DEFAULT 'raj'
             )
         """)
         
