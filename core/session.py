@@ -350,36 +350,49 @@ def end_session(db_path: str, session_id: str, conversation_text: str,
     
     if model_fn:
         # Use LLM for structured extraction
-        extraction_prompt = f"""
-Analyze this conversation and extract key information. Identify:
+        extraction_prompt = f"""You are extracting knowledge from a conversation into a personal thought graph. Extract ONLY genuinely new, specific, substantive knowledge — not summaries or meta-comments.
 
-1. NEW FACTUAL INFORMATION (who, what, when, where)
-2. DECISIONS OR COMMITMENTS made  
-3. BELIEFS OR OPINIONS expressed
-4. INSIGHTS OR PATTERNS discovered
-5. EMOTIONAL CONTEXT or confidence levels
+For each item, classify as:
+- "belief": a held opinion or conviction
+- "insight": a non-obvious connection or pattern discovered  
+- "decision": a commitment or choice made
+- "observation": a factual pattern noticed
+- "fact": a concrete verifiable fact
 
-For each item, provide:
-- content: The actual information
-- type: one of 'observation', 'belief', 'decision', 'insight', 'fact'
-- confidence: 0.0-1.0 confidence score
+Each content field must be a specific, standalone statement that makes sense without the conversation context.
 
-Format as JSON array:
-[{{"content": "...", "type": "...", "confidence": 0.8}}]
+BAD: "They discussed embeddings" (meta-comment)
+BAD: "The conversation covered several topics" (summary)
+GOOD: "Local embedding models (all-MiniLM-L6-v2) are sufficient for graphs under 100K nodes — brute force cosine similarity stays under 50ms"
+GOOD: "Extraction should be triggered by context fullness monitoring, not left to manual memory — don't let compaction happen to you"
 
-Conversation:
+Respond with ONLY a JSON array. No markdown, no explanation, no code fences.
+
+[{{"content": "specific knowledge here", "type": "belief|insight|decision|observation|fact", "confidence": 0.7}}]
+
+Conversation to extract from:
 {conversation_text}
 """
         
         try:
             response = model_fn(extraction_prompt)
-            # Try to parse JSON response
-            if response.strip().startswith('['):
-                import json
-                extractions = json.loads(response)
+            # Try to parse JSON response — handle markdown code fences
+            import json as _json
+            cleaned = response.strip()
+            # Strip markdown code fences if present
+            if cleaned.startswith('```'):
+                lines = cleaned.split('\n')
+                lines = [l for l in lines if not l.strip().startswith('```')]
+                cleaned = '\n'.join(lines).strip()
+            # Find JSON array in response
+            start = cleaned.find('[')
+            end = cleaned.rfind(']')
+            if start != -1 and end != -1:
+                json_str = cleaned[start:end+1]
+                extractions = _json.loads(json_str)
+                logging.info(f"Extracted {len(extractions)} items via LLM")
             else:
-                # Fallback if LLM didn't return JSON
-                logging.warning("LLM response was not JSON, using heuristics")
+                logging.warning("No JSON array found in LLM response, using heuristics")
                 extractions = _extract_with_heuristics(conversation_text)
         
         except Exception as e:
