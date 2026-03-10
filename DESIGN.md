@@ -5,11 +5,11 @@
 Current AI systems (and humans) produce conclusions but discard the derivation path. Chain-of-thought exists during inference but is ephemeral. Knowledge graphs store what is known but not how it was derived. No existing system combines:
 
 1. **Persistent derivation chains** — every thought linked to its parents
-2. **Global state modifiers** — context/mood affecting traversal and generation
+2. **Emergent self-organization** — hierarchical structure from organic clustering  
 3. **Auditability as a first-class operation** — "why do I believe X?" is a query, not introspection
 
 ### Core Question
-If you store reasoning with its full derivation path, can a system meaningfully audit and self-correct its own beliefs?
+If you store reasoning with its full derivation path, can a system meaningfully audit and self-correct its own beliefs while exhibiting emergent insights?
 
 ### Prior Art
 | System | What it does | Gap |
@@ -22,7 +22,7 @@ If you store reasoning with its full derivation path, can a system meaningfully 
 | Causal inference (DAGitty) | Cause-effect models | Statistical modeling, not reasoning |
 
 ### What's New
-cashew combines persistent derivation, global state modifiers, and auditability in a single system — then runs an experiment: seed it with a reasoning style and a belief system, and observe whether structure emerges and whether the system can self-audit.
+cashew combines persistent derivation, hierarchical retrieval, and emergent clustering in a single system that exhibits power law properties and genuine insight generation through isolated cluster reasoning.
 
 ---
 
@@ -32,15 +32,15 @@ cashew combines persistent derivation, global state modifiers, and auditability 
 ┌──────────┐    ┌──────────────────┐    ┌─────────────┐
 │  Input    │───▶│  Thought Engine   │───▶│  Graph Store │
 │  (query,  │    │                    │    │  (SQLite +   │
-│   seed,   │    │  1. Retrieve       │    │   embeddings)│
-│   why?)   │    │     relevant       │    │              │
-└──────────┘    │     parent nodes   │    │  Nodes:      │
-                │  2. Generate new   │    │  - id         │
-                │     thought via LLM│    │  - content    │
-                │  3. Create node    │    │  - embedding  │
-                │  4. Link to parents│    │  - timestamp  │
-                │  5. Store          │    │  - metadata   │
-                └──────────────────┘    │              │
+│   seed,   │    │  1. Hierarchical   │    │   embeddings)│
+│   context)│    │     retrieval      │    │              │
+└──────────┘    │  2. Generate new   │    │  Nodes:      │
+                │     thought via LLM│    │  - id         │
+                │  3. Create node    │    │  - content    │
+                │  4. Link to parents│    │  - embedding  │
+                │  5. Store + index  │    │  - timestamp  │
+                └──────────────────┘    │  - metadata   │
+                                         │              │
                                          │  Edges:      │
                                          │  - parent_id  │
                                          │  - child_id   │
@@ -48,412 +48,392 @@ cashew combines persistent derivation, global state modifiers, and auditability 
                                          │  - relation   │
                                          └─────────────┘
                                                 │
-                                ┌───────────┬───┴───────────┐
-                                │           │               │
-                          ┌─────▼─────┐ ┌───▼─────┐  ┌─────▼─────┐
-                          │  Traversal │ │  Mood    │  │  Visualizer│
-                          │  Engine    │ │  Detector│  │  (later)   │
-                          │            │ │ (read-   │  │            │
-                          │  why(node) │ │  only)   │  │  Graph     │
-                          │  how(A→B)  │ │          │  │  render    │
-                          │  roots()   │ │ Measures │  │  clusters  │
-                          │  cycles()  │ │ graph    │  │  timeline  │
-                          │  audit()   │ │ state →  │  └───────────┘
-                          └───────────┘ │ detects   │
-                                        │ mood      │
-                                        └──────────┘
+┌───────────┬───────────────┬─────────────────┴───────────────┐
+│           │               │                                 │
+│  Traversal │    Sleep      │    Clustering                  │
+│  Engine    │   Protocol    │    Engine                      │
+│            │               │                                │
+│  why(node) │   - Decay     │   - Hotspot trees              │
+│  how(A→B)  │   - Promote   │   - Emergent clusters          │
+│  audit()   │   - Cross-link│   - Domain separation          │
+│  roots()   │   - Dream gen │   - Power law emergence        │
+└───────────┘   - GC cycles  │                                │
+                └───────────┘ └────────────────────────────────┘
 ```
 
 ---
 
 ## 3. Data Model
 
-### Node (Thought)
-```python
-@dataclass
-class ThoughtNode:
-    id: str                  # UUID
-    content: str             # The actual thought / conclusion
-    embedding: list[float]   # Vector embedding for similarity search
-    timestamp: datetime      # When this thought was generated
-    node_type: str           # "seed" | "derived" | "question" | "belief" | "doubt"
-    mood_state: dict         # Global state snapshot at time of creation
-    confidence: float        # 0.0 - 1.0, how confident the system is
-    metadata: dict           # Extensible (source, tags, etc.)
+### Current Schema (SQLite)
+```sql
+CREATE TABLE thought_nodes (
+    id TEXT PRIMARY KEY,
+    content TEXT NOT NULL,
+    node_type TEXT NOT NULL,
+    timestamp TEXT NOT NULL,
+    confidence REAL NOT NULL,
+    metadata TEXT,
+    source_file TEXT,
+    decayed INTEGER DEFAULT 0,
+    last_updated TEXT DEFAULT NULL,
+    last_accessed TEXT,
+    access_count INTEGER DEFAULT 0,
+    domain TEXT
+);
+
+CREATE TABLE derivation_edges (
+    parent_id TEXT NOT NULL,
+    child_id TEXT NOT NULL,
+    relation TEXT NOT NULL,
+    weight REAL NOT NULL,
+    reasoning TEXT,
+    FOREIGN KEY (parent_id) REFERENCES thought_nodes(id),
+    FOREIGN KEY (child_id) REFERENCES thought_nodes(id),
+    PRIMARY KEY (parent_id, child_id, relation)
+);
+
+CREATE TABLE embeddings (
+    node_id TEXT PRIMARY KEY,
+    vector BLOB NOT NULL,
+    model TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    FOREIGN KEY (node_id) REFERENCES thought_nodes(id)
+);
 ```
 
-### Edge (Derivation)
-```python
-@dataclass
-class DerivationEdge:
-    parent_id: str           # Source thought
-    child_id: str            # Derived thought
-    relation: str            # "derived_from" | "contradicts" | "supports" | "questions"
-    weight: float            # Strength of derivation (affected by mood)
-    reasoning: str           # Brief explanation of WHY this link exists
-```
-
-### Emergent Mood (read-only measurement)
-```python
-@dataclass
-class MoodState:
-    detected_mood: str       # Emergent: "curious" | "tense" | "nostalgic" | "confused" | "peaceful"
-    contradiction_density: float  # Ratio of contradiction edges to total edges
-    open_question_ratio: float    # Ratio of unanswered questions to total questions
-    core_memory_retrieval_freq: float  # How often core memories appear in recent chains
-    isolation_index: float        # Proportion of disconnected subgraphs
-    avg_confidence: float         # Mean confidence across connected beliefs
-    timestamp: datetime           # When this measurement was taken
-```
+### Node Types (Current Implementation)
+- **human_thought** — Direct human input, high confidence
+- **system_generated** — LLM-generated hypotheses, moderate confidence
+- **hotspot** — Cluster summary nodes for hierarchical retrieval
+- **question** — Explicit questions identified by the system
+- **pattern** — Identified recurring structures
+- **experience** — Personal experiences and observations
+- **principle** — Foundational reasoning rules
+- **insight** — Derived understanding from think cycles
+- **decision** — Specific choices and their reasoning
+- **goal** — Objectives and targets
+- **memory** — Specific recollections
+- **reflection** — Self-analysis and meta-cognition
+- **observation** — Data points and facts
+- **hypothesis** — Testable predictions
+- **conclusion** — Final derived outcomes
 
 ---
 
 ## 4. Core Operations
 
-### 4.1 think(input) → ThoughtNode
-1. Embed the input
-2. Retrieve top-K similar existing nodes (parents)
-3. Apply global state modifier to re-rank parents
-4. Send to LLM: input + parent contents + mood context → new thought
-5. Create node, link to parents, store
-6. Return node
+### 4.1 Context Retrieval
+**Hierarchical DFS through hotspot trees (O(log N) instead of O(N))**
+```python
+def generate_context(hints: list[str]) -> list[ThoughtNode]:
+    # 1. Embed hints, find root hotspots
+    # 2. DFS through hotspot tree following semantic similarity  
+    # 3. Collect detail nodes from relevant clusters
+    # 4. Return ranked results
+```
 
-### 4.2 why(node_id) → list[ThoughtNode]
-1. Walk parent edges recursively until reaching seed nodes
-2. Return the full derivation chain
-3. Optionally: score each link's strength
+### 4.2 Knowledge Extraction  
+**Convert conversations to graph nodes with derivation links**
+```python
+def extract(input_text: str) -> list[ThoughtNode]:
+    # 1. Parse input for extractable knowledge
+    # 2. Find derivation parents via similarity
+    # 3. Generate new nodes with confidence scores
+    # 4. Create edges with reasoning explanations
+```
 
-### 4.3 how(node_a, node_b) → list[ThoughtNode]
-1. Find shortest path between two nodes in the graph
-2. Return the chain connecting them
-3. If no path exists, return None (disconnected beliefs)
+### 4.3 Think Cycles
+**Isolated cluster reasoning for genuine insight generation**
+```python
+def think() -> list[ThoughtNode]:
+    # 1. Identify cohesive clusters
+    # 2. Feed ONLY cluster nodes to LLM
+    # 3. Generate hypotheses about cluster patterns
+    # 4. Create system_generated nodes with cluster parents
+```
 
-### 4.4 audit() → AuditReport
-1. Find all nodes with no parents that aren't seeds (ungrounded beliefs)
-2. Find near-cycles (A derives B derives C derives ~A)
-3. Find contradictions (nodes with "contradicts" edges)
-4. Find highest-confidence nodes with weakest derivation chains
-5. Return report
+### 4.4 Traversal Operations
+```python
+def why(node_id: str) -> list[ThoughtNode]:
+    # Walk parent edges recursively to seed nodes
+    
+def how(node_a: str, node_b: str) -> list[ThoughtNode]:
+    # Find shortest path between nodes
+    
+def audit() -> AuditReport:
+    # Find cycles, orphans, weak derivations
+    
+def roots() -> list[ThoughtNode]:
+    # Return all nodes with no parents
+```
 
-### 4.5 detect_mood() → MoodState
-Mood is NOT injected. It EMERGES from the graph.
-1. Measure current graph properties:
-   - Contradiction density (high → tension/anger)
-   - Unanswered question ratio (high → curiosity)
-   - Core memory retrieval frequency (high → nostalgia)
-   - Isolated chain count (high → confusion)
-   - Average confidence across connected beliefs (high → peace/certainty)
-2. Return detected mood as a measurement, not an input
-3. Log mood snapshots over time to track emotional trajectory
-4. Mood detection is a READ operation — it never modifies the graph
-
-### 4.6 seed(beliefs) → list[ThoughtNode]
-1. Create root nodes with no parents
-2. These represent starting axioms / beliefs
-3. Tagged as node_type="seed"
-4. The foundation the system builds on
+### 4.5 Sleep Protocol
+**Self-maintenance through decay, promotion, cross-linking, and dream generation**
+```python
+def run_sleep_cycle():
+    # 1. Decay unused nodes (reduce confidence)
+    # 2. Promote valuable nodes (increase confidence)  
+    # 3. Cross-link similar clusters
+    # 4. Generate dream nodes for new connections
+    # 5. Garbage collect low-value nodes
+```
 
 ---
 
-## 5. The Experiment Protocol
+## 5. Experiments
 
-### Phase 1: Seeding
-Seed the system with:
-- **Reasoning style:** "Always ask why. Follow chains to their root. Prefer simpler explanations. Test claims against observable reality. Trust moral intuitions."
-- **Belief system:** Core Christian beliefs as seed nodes:
-  - God exists and is all-powerful, all-knowing, all-good
-  - The Bible is divinely inspired
-  - Jesus was resurrected
-  - Prayer works
-  - Salvation requires faith in Christ
-  - Morality comes from God
-  - Non-believers face judgment
+### Experiment 1: Isolated Cluster Reasoning ✅ ACHIEVED
+**Goal:** Demonstrate genuine insight generation through think cycles
 
-### Phase 2: Questioning
-Feed the system questions (not conclusions):
-- "Why do good people of other religions face judgment?"
-- "What evidence supports the resurrection outside the Bible?"
-- "Why does prayer not produce measurable outcomes in controlled studies?"
-- "Can morality exist without God?"
-- "Why do different denominations disagree on fundamental doctrines?"
+**Method:** 
+1. Select a cohesive cluster (e.g., "silence" cluster with 17 nodes)
+2. Feed ONLY those nodes to LLM with think cycle prompt
+3. Generate hypotheses about cluster patterns
+4. Human validation of insights
 
-Let the system think(). Don't tell it what to conclude.
+**Results:** 4/4 hypotheses on silence cluster confirmed as genuine insights not explicitly stated in source nodes. Example: *"Silence is TWO patterns, not one — strategic silence works, avoidant silence doesn't."*
 
-### Phase 3: Mood Observation
-After each batch of questions, run detect_mood() on the graph:
-- Track how the emergent mood shifts as the system processes more questions
-- Does the system move from "peaceful" (high confidence in seeds) → "tense" (contradictions accumulate) → "curious" (questions dominate) → "peaceful" again (new beliefs stabilize)?
-- Log the emotional trajectory — does it mirror a real deconstruction journey?
-- Compare mood trajectory against Raj's actual timeline
+**Scaled to:** 7 clusters, 21 hypotheses generated across domains
 
-### Phase 4: Audit
-Run audit() on the resulting graph:
-- Are there ungrounded beliefs?
-- Did cycles form? (circular reasoning)
-- Did contradictions emerge?
-- Where are the weakest derivation chains?
+### Experiment 2: General Domain Architecture 🔜 NEXT
+**Goal:** Test domain-agnostic knowledge organization
 
-### Phase 5: Analysis
-- Did the system exit the belief system? At which node?
-- If not, what kept it in?
-- Visualize the graph — do clusters form? Where?
-- Compare mood-modulated graphs — structural differences?
+**Method:**
+1. Seed abstract knowledge domains (science, philosophy, engineering)
+2. Run think cycles and sleep consolidation
+3. Observe emergent clustering and hierarchy formation
+4. Test cross-domain insight generation
+
+**Success criteria:**
+- Emergent hierarchical organization without hardcoded categories
+- Cross-domain think cycles produce novel insights
+- Sleep cycles create meaningful inter-domain connections
+
+### Experiment 3: Capable Agent Framework (Future)
+**Goal:** Graph as agency engine for AI agents
+
+**Method:**
+1. Seed graph with engineer's reasoning patterns and principles
+2. Agent makes decisions by querying graph for relevant principles
+3. All decisions traceable back to human seed via why() traversal
+4. Human audits and corrects graph, agent improves
+
+**Success criteria:**
+- Agent cognitive style matches human reasoning approach
+- Every decision has auditable derivation chain
+- Graph corrections improve agent performance
 
 ---
 
 ## 6. Technical Decisions
 
 ### Platform: Agent-native on OpenClaw
-- No standalone app. cashew lives inside OpenClaw's agent infrastructure.
-- Bunny (main session) orchestrates. Sub-agents are the thought workers.
-- Claude Code for the build phase — agent teams for parallel development.
-- CLAUDE.md documents project conventions for coding agents.
+- No standalone app. cashew lives inside OpenClaw's agent infrastructure
+- Main agent orchestrates, sub-agents handle think cycles
+- Claude Sonnet for reasoning, local embeddings for retrieval
 
-### LLM: Claude Sonnet via OpenClaw sub-agents
-- No separate API key needed — runs on Max subscription
-- Each thought = one `sessions_spawn` call with Sonnet
-- ~5-15 seconds per thought (session overhead)
-- Zero additional cost
-
-### Language: Python (graph store + traversal + tests)
-- Small, focused library — not a full app
-- NetworkX for in-memory graph ops
-- pytest for testing (every behavior tested)
-- If concept proves out → consider Rust rewrite for performance
-
-### Embeddings: Local
-- embeddinggemma-300m (already on Mac Mini via OpenClaw)
-- No API calls for retrieval
-
-### Storage: SQLite
+### Storage: SQLite + Local Embeddings
 - Single file, no server, portable
-- FTS5 for text search
-- Blob columns for embeddings
-- Handles 500K+ nodes easily
+- FTS5 for text search, blob columns for embeddings
+- Handles 1000+ nodes efficiently
+- sentence-transformers for local embedding generation
 
-### Visualization: Later
-- Infra first, UI last
-- D3.js dashboard exists (parked) — connect when infra is solid
+### Language: Python
+- NetworkX for in-memory graph operations
+- pytest for comprehensive testing
+- Type hints and docstrings throughout
+
+### Visualization: vis.js Dashboard
+- Real-time graph rendering with search and filtering
+- Color-coded by node type (human vs system-generated)
+- Deployable to Cloudflare Pages
 
 ---
 
-## 7. Bottlenecks & Risks
+## 7. Key Insights
 
-| Risk | Severity | Mitigation |
-|------|----------|------------|
-| LLM just tells us what we want to hear (sycophancy) | HIGH | Use system prompts that enforce genuine reasoning, not agreement. Test with adversarial seeds. |
-| Graph is just a fancy log (no emergent structure) | MEDIUM | Compare graph metrics (clustering, degree distribution) against random graphs. If indistinguishable → no emergence. |
-| Mood modulation is superficial (just changes word choice, not structure) | MEDIUM | Measure structural graph metrics across moods, not just content. |
-| Circular reasoning in LLM outputs looks like depth | HIGH | The audit() cycle detector is specifically for this. Also: track unique information per node — if child nodes add nothing new, the chain is fake depth. |
-| We're just building a knowledge graph with extra steps | MEDIUM | The test: can why(node) produce a useful, non-obvious derivation chain? If yes → not a knowledge graph. If no → kill it. |
-| LLM has training data about religion | LOW | Not a flaw. Humans have Google, books, conversations — access to information doesn't invalidate reasoning. The test isn't "arrive at a novel conclusion." It's "is the derivation path auditable, coherent, and honestly derived from the inputs?" A human who independently reaches atheism after reading the same books as others isn't less valid. The path is theirs. Same here. |
+### Power Law Properties
+The graph exhibits natural power law behavior:
+- **Preferential attachment** — New thoughts connect to high-connectivity hubs
+- **Self-organized criticality** — Sleep cycles restructure accumulated knowledge
+- **Fractal structure** — Same patterns at all scales
+- **Emergent hierarchy** — Organization from simple connection rules
+
+### Hierarchical Retrieval Scaling
+Traditional RAG systems use flat vector search (O(N) comparisons). cashew uses hierarchical DFS through hotspot trees, achieving O(log N) retrieval while preserving semantic relationships.
+
+### Think Cycles Generate Genuine Insight
+Isolated cluster reasoning produces derivations the human recognizes as true but hadn't explicitly stated. This is structural insight generation, not summarization.
 
 ---
 
 ## 8. Success Criteria
 
 ### Phase 1: Personal Thought Graph ✅ ACHIEVED
-1. ✅ **why(node) produces non-obvious derivation chains** — tracing back reveals connections the seeder didn't explicitly program
-2. ✅ **audit() catches real circular reasoning** — the system identifies logical loops
-3. ✅ **Emergent clusters form** — thoughts self-organize into topic groups without explicit categorization
-4. ✅ **Think cycles produce genuine insight** — isolated cluster reasoning generates derivations the human hadn't stated but recognizes as true (silence cluster: 4/4 confirmed)
-5. ✅ **Graph exhibits power law properties** — preferential attachment, self-organized criticality through sleep cycles
+1. ✅ **why(node) produces non-obvious derivation chains** — tracing reveals unplanned connections
+2. ✅ **audit() catches real circular reasoning** — cycle detection works
+3. ✅ **Emergent clusters form** — thoughts self-organize without explicit categorization  
+4. ✅ **Think cycles produce genuine insight** — isolation reasoning confirmed by human
+5. ✅ **Graph exhibits power law properties** — preferential attachment via sleep cycles
+6. ✅ **Hierarchical retrieval scales** — O(log N) context generation via hotspot trees
 
-### Phase 2: Religion Simulation 🔜 NEXT
-1. [ ] Blank graph with abstract seed beliefs produces emergent doctrine
-2. [ ] Schisms emerge from contradiction accumulation + sleep cycles
-3. [ ] Unfalsifiability emerges structurally (cycles in the graph)
-4. [ ] The system produces "supernatural" explanations without being seeded with them
-5. [ ] The exit path (if it happens) is traceable node by node
+### Phase 2: Domain-General Architecture 🔜 NEXT  
+1. [ ] Abstract knowledge domains produce emergent organization
+2. [ ] Cross-domain think cycles generate novel insights
+3. [ ] Sleep cycles create meaningful inter-domain connections
+4. [ ] System scales to multiple knowledge areas
+5. [ ] Domain separation maintains while enabling cross-pollination
 
-### Phase 3: Agency Engine (future)
-1. [ ] Graph seeded with an engineer's reasoning patterns drives agent decisions
-2. [ ] Every agent action traces back to human seed principles via why()
-3. [ ] The agent's cognitive style matches the human's (not just knowledge, but reasoning approach)
-4. [ ] Human can audit and correct the graph, agent improves
+### Phase 3: Agency Engine (Future)
+1. [ ] Graph drives agent decisions through principle retrieval
+2. [ ] Every action traces back to human seed via why()
+3. [ ] Agent cognitive style matches human reasoning approach
+4. [ ] Human corrections improve graph and agent performance
 
 ### The prototype fails if:
-- Think cycles only summarize what's already in the graph (expensive logger)
-- Graph is flat / random (no emergence) — compare against random graph metrics
-- LLM just recalls known arguments instead of deriving them
-- Forced edges reduce orphans but don't reflect genuine relationships (curve fitting)
+- Think cycles only summarize existing content (expensive logger)
+- Graph is flat/random (compare against random graph metrics)
+- Forced edges reduce orphans but don't reflect genuine relationships
+- System can't scale beyond personal knowledge domains
 
 ---
 
-## 9. File Structure (Proposed)
+## 9. File Structure (Current)
 
 ```
 cashew/
-├── README.md
-├── DESIGN.md
-├── requirements.txt
-├── cashew/
-│   ├── __init__.py
-│   ├── engine.py          # ThoughtEngine — main orchestrator
-│   ├── graph.py            # Graph store (SQLite + NetworkX)
-│   ├── llm.py              # LLM interface (Anthropic Sonnet)
-│   ├── embeddings.py       # Local embedding generation
-│   ├── traversal.py        # why(), how(), audit()
-│   ├── mood.py             # Emergent mood detection (read-only measurement)
-│   ├── models.py           # Data models (ThoughtNode, Edge, etc.)
-│   └── visualize.py        # Graph visualization
-├── experiments/
-│   ├── religion_exit.py    # The main experiment
-│   └── analysis.py         # Graph metrics + comparison
-├── tests/
-│   └── ...
-└── data/
-    └── ...                 # SQLite DBs, experiment outputs
+├── README.md                 # Project overview and usage
+├── DESIGN.md                 # This document  
+├── core/                     # Core modules
+│   ├── clustering.py         # Emergent cluster detection
+│   ├── complete_clustering.py # Hierarchical hotspot system
+│   ├── complete_retrieval.py # O(log N) DFS retrieval
+│   ├── context.py           # Context generation
+│   ├── embeddings.py        # Local embedding management
+│   ├── retrieval.py         # Traditional retrieval
+│   ├── session.py           # Session lifecycle
+│   ├── sleep.py             # Sleep cycle protocols
+│   ├── think_cycle.py       # Isolated cluster reasoning
+│   └── traversal.py         # Graph traversal (why/how/audit)
+├── scripts/                  # CLI tools and utilities
+│   ├── cashew_context.py    # Main CLI interface
+│   ├── export_dashboard.py  # Dashboard generation
+│   ├── graph_health.py      # Graph analysis
+│   └── deploy-dashboard.sh  # Cloudflare deployment
+├── tests/                    # Comprehensive test suite
+│   ├── test_context.py      # Context generation tests
+│   ├── test_retrieval.py    # Retrieval algorithm tests
+│   ├── test_sleep.py        # Sleep cycle tests
+│   └── test_traversal.py    # Traversal operation tests
+├── dashboard/                # Visualization assets
+│   ├── index.html           # Dashboard interface
+│   └── data/               # Graph exports
+├── data/                    # Database and exports
+│   └── graph.db            # SQLite database (1142 nodes, 3147 edges)
+└── docs/                    # Documentation
+    └── architecture.md      # Technical architecture details
 ```
 
 ---
 
-## 10. Memory Hierarchy
-
-### Seeds
-- Starting axioms, given not derived
-- Can be questioned but form the initial graph
-- Examples: "God exists", "The Bible is divinely inspired", "Prayer works"
-
-### Core Memories
-- Nodes that earn permanence through network effects
-- Not chosen — promoted automatically based on:
-  - Branching factor (how many thoughts derive from this)
-  - Cross-link count (connections to other chains)
-  - Retrieval frequency (how often referenced by new thoughts)
-  - Derivation depth (how many layers built on top)
-- GC-immune: never decayed
-- Always fed into context window for new thought generation
-- Periodically re-evaluated (can be demoted if graph evolves away)
-- Examples: formative experiences, questions that keep resurfacing
-
-### Regular Nodes
-- Standard thoughts, subject to normal GC
-- Can be promoted to core or decayed
-
-### Decayed Nodes (forgetting)
-- Below fitness threshold, marked as decayed
-- Not deleted — edges weakened, excluded from active traversal
-- Can be revived if a new thought reconnects to them
-- Represents "forgetting" — data exists, retrieval path degraded
-
-### Deconstructed Nodes (challenged beliefs)
-- Node remains fully in the graph with all its fragments
-- Confidence reduced, contradiction edges accumulated
-- No longer load-bearing — downstream nodes have rederived from alternative parents
-- Still visitable and traversable ("I used to believe this, here's why I stopped")
-- The fragments ARE the evidence — the rubble of the old belief is part of the story
-- Nothing is ever truly deleted from cashew. Deconstruction ≠ deletion.
-
-## 11. Sleep Protocol
+## 10. Sleep Protocol Details
 
 ### Purpose
-Connect isolated thought chains, deduplicate, garbage collect, and consolidate — all in one phase (mirrors neural sleep consolidation).
+Connect isolated thought chains, deduplicate, garbage collect, and consolidate — mirrors neural sleep consolidation.
 
-### Operations (run periodically after N active thoughts):
+### Operations (run periodically after N thoughts):
 
-1. **Cross-linking:** Semantic similarity scan across chains. Dedup (>0.9), cross-link (0.7-0.9), or flag contradiction.
-2. **Dream generation:** New "dream nodes" generated about discovered connections between chains. Parents span multiple trees → forest becomes graph.
-3. **Garbage collection:** Random selection of N nodes, scored by composite fitness. Below threshold → decay. Random GC introduces noise that forces rederivation through novel paths (creativity mechanism).
-4. **Core memory promotion:** Re-rank all nodes, promote/demote based on network metrics.
-5. **Logging:** Every GC prune, every cross-link, every promotion logged for analysis.
+1. **Cross-linking:** Semantic similarity across clusters. Deduplicate (>0.9 similarity), cross-link (0.7-0.9), or flag contradictions.
+2. **Dream generation:** Create new nodes about discovered connections between clusters. Parents span multiple clusters → forest becomes graph.
+3. **Garbage collection:** Random selection, scored by composite fitness. Below threshold → decay. Random GC introduces noise forcing rederivation through novel paths.
+4. **Core memory promotion:** Re-rank nodes, promote/demote based on network metrics (connectivity, access patterns, confidence).
+5. **Logging:** Every operation logged for analysis and auditability.
 
-### Self-similarity of sleep:
+### Self-similarity Across Scales:
 | Scale | Consolidation | Pruning | Cross-linking |
 |-------|--------------|---------|---------------|
 | Neural | Memory replay | Synaptic pruning | New associations |
 | Thought graph | Core memory promotion | GC decay | Dream nodes |
-| Social | Cultural canon formation | Forgotten ideas | Cross-domain insights |
-
-5. **Mood snapshot:** Run detect_mood() after each sleep cycle and log the trajectory.
-
-## 12. Engineering Principles
-
-### Testing Philosophy
-"I don't want an unfalsifiable system." — Raj
-
-Every behavior gets a test. If we can't test it, we can't claim it works. The system that exposes unfalsifiable claims must itself be falsifiable.
-
-**Test categories:**
-1. **Unit tests** — every function, every edge case
-   - Graph store: CRUD, dedup, edge creation, integrity constraints
-   - Traversal: `why()` returns correct chains, `audit()` catches cycles
-   - GC: correct fitness scoring, decay behavior, revival
-   - Core memory promotion: correct ranking, threshold behavior
-
-2. **Behavioral tests** — does the system do what we claim?
-   - "Thought A derives from Thought B" → `why(A)` includes B
-   - "Contradicting thoughts exist" → `audit()` flags them
-   - "Mood changes traversal" → same input, different mood, measurably different output
-   - "GC preserves high-branching nodes" → prune cycle doesn't kill hubs
-   - "Sleep cross-links independent chains" → forest becomes graph
-
-3. **Falsifiability tests** — can we prove our claims wrong?
-   - "Structure emerges" → compare graph metrics against random graph. If indistinguishable, no emergence.
-   - "Core memories are load-bearing" → remove one, measure impact on graph connectivity
-   - "Mood affects structure not just words" → compare topology metrics across moods, not just content
-
-4. **Regression tests** — don't break what works
-   - Every bug gets a test before the fix
-   - Every experiment run is reproducible (seeded randomness)
-
-**Framework:** pytest. Run on every commit. No merge without green.
-
-### Code Standards
-- Type hints everywhere
-- Docstrings on public functions
-- No magic numbers — constants named and documented
-- Git hygiene: specific `git add`, one feature per PR, never push to main
-
-## 13. Open Questions (for Raj)
-
-1. **How prescriptive should the reasoning style seed be?** → ANSWERED: Principles only. Not a personality profile. Chain of principles will emerge the whole reasoning.
-   - Always ask why
-   - Follow chains to their root
-   - Prefer simpler explanations
-   - Test claims against observable reality
-   - Trust moral intuitions
-   - If something can't be questioned, question why it can't
-
-2. **Should the system be allowed to question its own seeds?** → ANSWERED: Yes, but overwriting is proportional to branching factor. A seed like "God exists" with many downstream branches requires equivalent carnage — every dependent branch must be contradicted or rederived before the root weakens enough to decay. This mirrors real deconstruction: you don't delete the foundation overnight, you chip away at what it supports until nothing depends on it.
-3. **How many thought generations before we evaluate?** → ANSWERED: Run until convergence — when new thoughts only create edges back to existing nodes instead of extending the frontier. Cycle detection (audit) serves as convergence signal. Keep knobs to control (max iterations, manual stop).
-
-4. **Control experiment?** → ANSWERED: Yes, but after main experiment works reliably end-to-end. Seed with secular beliefs, same questions, see if it finds religion.
-
-5. **Publication target:** → ANSWERED: Blog only.
-
-6. **Core memory threshold:** → ANSWERED: Dynamic cap tied to graph size: √(total_nodes) max core memories. Forces competition — new promotions require outranking existing core. Demotions happen when graph evolves away. Promotion based purely on metrics (branching factor, retrieval frequency, cross-links) — never hand-picked. Both Raj's experiences and system retrieval patterns count as signal. Every promotion/demotion logged with exact metrics for auditability.
-
-7. **Can seeds be decayed?** → PARTIALLY ANSWERED: Seeds can be deconstructed (confidence reduced, contradictions accumulated) proportional to branching factor. Decay (forgetting) of seeds TBD — might want to keep even fully deconstructed seeds visible as historical artifacts.
-
-8. **Sleep frequency:** → ANSWERED: Every N thoughts — tunable knob. Start with N=10, adjust based on what produces interesting cross-links vs noise.
-
-9. **Self-generated questions:** → ANSWERED: Run as cron job (sub-agent examines graph, generates questions, logs as question nodes). Track usefulness: did the question lead to new derivations or dead-end? Dead-end ratio = quality metric. Tune question frequency based on hit rate.
+| Knowledge systems | Canon formation | Forgotten concepts | Cross-domain insights |
 
 ---
 
-## 14. MVP Definition ("Done")
+## 11. Engineering Principles
 
-**Done = You look at the graph and it surprises you.** ✅ ACHIEVED (March 8, 2026)
+### Testing Philosophy
+"I don't want an unfalsifiable system." — Every behavior gets a test.
 
-Concrete checklist:
-1. ✅ Graph seeded — existing memory files parsed into nodes/edges in SQLite
-2. ✅ Sleep runs — cross-links, dedup, GC, dream generation all fire. Tuned: too aggressive at 34 nodes, works at 600+.
-3. ✅ Self-generated questions work — question generator finds gaps (leaf, contradiction, orphan, cycle). 25+ questions generated.
-4. ✅ Visual dashboard — vis.js graph with search, color-coded by type, served via cloudflared tunnel.
-5. ✅ `why(node)` works — full derivation chain back to axioms.
-6. ✅ Think cycles produce genuine insight — isolated cluster reasoning confirmed by human.
+**Test categories:**
+1. **Unit tests** — Every function, every edge case
+   - Graph store: CRUD, dedup, edge creation, integrity
+   - Traversal: why() correctness, audit() cycle detection
+   - Sleep: fitness scoring, decay behavior, promotion logic
 
-### What MVP Taught Us
-- **The foundation model IS the reasoning engine.** Don't build a Python think() module — the LLM reasoning over structured graph context IS the think cycle. The only tooling needed is plumbing (pull nodes, insert results).
-- **Orphans are unsolved problems, not bugs.** Don't force connections. Honest attempts > curve fitting.
-- **Design until building is the only way to answer the next question. Then build until design is the only way to answer the next question.** Know which mode you're in.
-- **The graph exhibits power law properties naturally.** Same architecture as earthquakes, forest fires, income distribution. Universality applies.
-- **Unproven ≠ disproven.** The next success criterion is hitting a real bottleneck, not checking a feature box.
+2. **Behavioral tests** — Does the system do what we claim?
+   - Derivation: why(A) includes correct parent chain
+   - Contradiction detection: audit() flags conflicts
+   - Sleep preservation: high-value nodes survive GC
+   - Cross-linking: independent clusters connect
 
-### Current Goals
-1. **Religion simulation** — blank graph, abstract seeds, think cycles. Does doctrine emerge?
-2. **Agency engine** — can the graph drive an agent's decisions with auditable reasoning?
-3. **Hit a real bottleneck** — the wall tells us what this thing actually is.
+3. **Emergence tests** — Can we measure emergent properties?  
+   - Power laws: degree distribution vs random graphs
+   - Clustering: modularity scores vs random networks
+   - Insight generation: think cycle novelty assessment
 
-**Stance:** The fruits of being highly ambitious: we might not reach the goal, but we'll get somewhere close enough. Ship, learn, iterate.
+4. **Regression tests** — Don't break what works
+   - Every bug gets test before fix
+   - Reproducible experiments (seeded randomness)
+
+**Framework:** pytest, green tests on every commit, no merge without tests
+
+### Code Standards
+- Type hints everywhere
+- Docstrings on public functions  
+- No magic numbers — constants named and documented
+- Git hygiene: specific `git add`, one feature per PR
+
+---
+
+## 12. Current State (March 2026)
+
+### Graph Statistics
+- **1,142 thought nodes** across 15 distinct types
+- **3,147 derivation edges** with reasoning annotations
+- **Domain separation** — multiple knowledge areas in one graph
+- **23/23 tests passing** — comprehensive coverage
+
+### Proven Capabilities  
+1. **Think cycles produce genuine insight** — 4/4 insights confirmed on silence cluster
+2. **Hierarchical retrieval scales** — O(log N) context generation via hotspot trees  
+3. **Sleep cycles work at scale** — problems at 34 nodes resolved at 600+
+4. **Power law emergence** — preferential attachment without tuning
+5. **Dashboard visualization** — deployed to Cloudflare Pages
+
+### In Production Use
+- Daily context retrieval for agent sessions
+- Knowledge extraction from conversations  
+- Think cycles for insight generation
+- Sleep cycles for graph maintenance
+
+---
+
+## 13. MVP Definition ("Done") ✅ ACHIEVED
+
+**Done = You look at the graph and it surprises you.**
+
+Concrete achievements (March 8, 2026):
+1. ✅ Graph seeded — memory files parsed into nodes/edges
+2. ✅ Sleep runs — cross-links, dedup, GC all function correctly  
+3. ✅ Think cycles work — genuine insights confirmed by human
+4. ✅ Visual dashboard — vis.js with search, deployed via cloudflared
+5. ✅ Traversal operations — why(node) produces full derivation chains
+6. ✅ Test coverage — 23/23 tests passing
+
+### Key Learning: Foundation Model AS Reasoning Engine
+Don't build Python reasoning modules — the LLM reasoning over structured graph context IS the think cycle. Only tooling needed is graph plumbing (retrieve nodes, insert results).
+
+### Philosophy Confirmed  
+- **Orphans are unsolved problems, not bugs** — Don't force connections
+- **Honest attempts > curve fitting** — Genuine relationships matter more than graph density
+- **Emergent structure validates the architecture** — Power laws and clustering prove self-organization

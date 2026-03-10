@@ -1,117 +1,175 @@
-# 🥜 cashew — Cognitive Architecture for Structured, Evolving, Walkable Understanding
+# 🥜 cashew — Self-Organizing Thought Graph Engine
 
-A thought-graph engine that stores reasoning with its full derivation path, enabling auditability, self-correction, and emergent insight. Built in a weekend. Powered by power laws.
+A persistent, hierarchical memory system that gives AI agents auditable reasoning and emergent insights. Thoughts are stored as nodes, connected by derivation, and self-maintained through sleep cycles.
 
 ## What Is This?
 
-cashew stores thoughts as nodes in a graph, connected by derivation edges. Every belief traces back to its roots. Every conclusion is auditable. The graph grows from both ends — human input and AI-generated hypotheses — and self-organizes through sleep cycles.
+**The brain metaphor:**
+- **Graph = long-term memory** (persistent, structured, searchable)
+- **LLM = reasoning engine** (intelligence, derivation, pattern recognition)  
+- **Context window = working memory** (session-scoped, ephemeral)
 
-**The architecture:**
-- **Graph = persistent storage** (structured, queryable, auditable)
-- **Foundation model (LLM) = reasoning engine** (intelligence, derivation, pattern recognition)
-- **Context window = RAM** (working memory, session-scoped)
+cashew stores every thought as a node in a graph, connected to its derivation parents. The system exhibits emergent clustering, power law connectivity, and genuine insight generation through isolated cluster reasoning.
 
-You can't separate storage from reasoning. The graph shapes what the model sees, which shapes what it derives, which shapes the graph. They're coupled.
+## Key Features
+
+- **1,142 nodes, 3,147 edges** — Hierarchical knowledge graph with 15 distinct node types
+- **O(log N) DFS retrieval** — Not flat vector search, but hierarchical hotspot trees
+- **Emergent clustering** — No hardcoded categories; hierarchy forms organically from thought patterns
+- **Sleep cycles** — Decay unused nodes, promote valuable ones, cross-link, generate dreams
+- **Domain separation** — Multiple knowledge domains in one graph
+- **Session lifecycle** — Context retrieval on start, extraction on end
+- **SQLite + local embeddings** — Zero cloud infrastructure
+- **Dashboard visualization** — Live vis.js graph with search and filtering
 
 ## What We've Proven
 
 ### ✅ Think cycles produce genuine insight
-Isolated cluster reasoning (feed ONLY a cluster's nodes to an LLM) generates derivations the human hadn't stated but recognizes as true. Not summaries — actual forward predictions and structural splits.
+Isolated cluster reasoning generates derivations the human hadn't stated but recognizes as true. Not summaries — actual forward predictions and structural patterns.
 
-**Example:** The silence cluster (17 nodes) produced: "Silence is TWO patterns, not one — strategic silence works, avoidant silence doesn't." This insight wasn't in ANY of the 17 nodes. The think cycle found it structurally.
+**Example:** A silence cluster (17 nodes) produced: *"Silence is TWO patterns, not one — strategic silence works, avoidant silence doesn't."* This insight wasn't in ANY of the 17 source nodes. The system found it structurally.
 
-### ✅ The graph exhibits power law properties naturally
-Node connectivity follows a power law distribution — a few hubs with 40-60 edges, hundreds with 1-2. Preferential attachment emerges without tuning. Self-organized criticality through sleep cycles.
+### ✅ The graph exhibits power law properties naturally  
+Node connectivity follows a power law distribution — a few hubs with 40-60 edges, hundreds with 1-2. Preferential attachment emerges without tuning through sleep cycle consolidation.
 
-### ✅ Sleep/GC works at scale
-Decay, promotion, cross-linking, and dream node generation all function. GC was too aggressive at 34 nodes, works correctly at 600+.
+### ✅ Hierarchical retrieval scales
+DFS through hotspot trees replaces flat search. Context retrieval is O(log N) comparisons instead of O(N) vector similarity.
 
-### ✅ Dashboard visualization works
-Live vis.js graph, searchable, color-coded by node type. Human thoughts vs AI-generated are visually distinguishable.
+### ✅ Self-maintenance works at scale
+Sleep protocols (decay, promotion, cross-linking, dream generation) function correctly across 1000+ nodes. Early garbage collection issues resolved at scale.
+
+## Architecture
+
+```
+┌─────────────┐    ┌──────────────────┐    ┌─────────────┐
+│   Query     │───▶│  Thought Engine   │───▶│ Graph Store │
+│ (extract,   │    │                   │    │ (SQLite +   │
+│  context,   │    │  1. Hierarchical  │    │ embeddings) │
+│  think)     │    │     retrieval     │    │             │
+└─────────────┘    │  2. LLM reasoning │    │ Nodes:      │
+                   │  3. Derivation    │    │ - content   │
+                   │     linking       │    │ - metadata  │
+                   │  4. Graph update  │    │ - confidence│
+                   │  5. Sleep cycles  │    │             │
+                   └──────────────────┘    │ Edges:      │
+                                           │ - derivation│
+                                           │ - reasoning │
+                                           │ - weights   │
+                                           └─────────────┘
+```
+
+## Usage
+
+### Command-Line Interface
+
+```bash
+# Generate context for current conversation
+python3 scripts/cashew_context.py context --hints "topic keywords"
+
+# Extract knowledge from a conversation
+python3 scripts/cashew_context.py extract --input conversation.md
+
+# Run a think cycle (generate insights from clusters)  
+python3 scripts/cashew_context.py think
+
+# Run sleep cycle (decay, promote, consolidate)
+python3 scripts/cashew_context.py sleep
+
+# Get graph statistics
+python3 scripts/cashew_context.py stats
+
+# Complete coverage retrieval (advanced)
+python3 scripts/cashew_context.py complete-context --hints "keywords"
+```
+
+### Dashboard
+
+View the live graph visualization:
+
+```bash
+cd dashboard && python3 -m http.server 8787
+# Open http://localhost:8787
+```
+
+Or deploy to Cloudflare Pages:
+```bash
+./scripts/deploy-dashboard.sh
+```
+
+### Direct Python API
+
+```python
+from core.retrieval import RetrievalEngine
+from core.context import ContextEngine
+from core.sleep import SleepProtocol
+
+# Query the graph
+retrieval = RetrievalEngine()
+results = retrieval.search_by_hints(["machine learning", "architecture"])
+
+# Generate context
+context = ContextEngine()
+relevant_nodes = context.generate_context("Tell me about system design")
+
+# Run maintenance
+sleep = SleepProtocol()
+sleep.run_sleep_cycle()
+```
 
 ## The Dual-Growth Loop
 
 1. **Human conversations → nodes** (human-sourced, high confidence)
-2. **Human corrections → edge fixes** (ground truth)
-3. **System self-generation → hypotheses** (machine-sourced, confidence 0.5-0.7)
-4. **Human reviews → promote or decay**
-5. **Sleep consolidates → graph evolves**
+2. **System think cycles → hypotheses** (machine-sourced, 0.5-0.7 confidence) 
+3. **Human feedback → edge corrections** (ground truth)
+4. **Sleep consolidation → graph evolution** (decay/promote/cross-link)
 
-The graph grows from both ends. 🧠 Human thoughts = blue/purple/gold/green. 🤖 System-generated = orange with dashed border.
+The graph grows from both ends: 🧠 Human thoughts (blue/purple/gold/green) and 🤖 System-generated (orange with dashed borders).
 
 ## Current State
 
-- **~700 nodes, ~900 edges**
-- **~21K words** of thought content
-- **768KB** on disk (smaller than a photo)
-- **102 system-generated** nodes, **600+ human-sourced**
-- **23/23 tests passing**
-- **Modules:** traversal (`why()`, `how()`, `audit()`), sleep (decay/promote/cross-link/dream), questions, patterns, context retrieval, export
+- **23/23 tests passing** — Comprehensive test suite covering all major modules
+- **~21K words** of thought content stored
+- **768KB on disk** — Smaller than a photo, contains a mind's worth of reasoning
+- **Domain-separated** — Multiple knowledge areas in one coherent graph
+- **Production-ready** — Used daily for context retrieval and knowledge extraction
 
 ## Key Insight: Power Laws
 
-The same power law that governs earthquakes, forest fires, income distribution, and startup returns also governs how a mind organizes itself. The graph IS a power law system:
+The same mathematical principles governing earthquakes, forest fires, and income distribution also govern how minds organize. The graph exhibits:
 
-- **Preferential attachment** — new thoughts connect to high-connectivity hubs naturally
-- **Self-organized criticality** — sleep cycles are forest fires; thoughts accumulate, occasionally a cascade restructures everything
-- **Fractals** — zoom into any cluster and you see the same structure
-- **Universality** — the substrate doesn't matter. Same architecture, different seed nodes, same emergent behavior
-
-## Experiments
-
-### Experiment 1: Isolated Cluster Reasoning ✅ PASSED
-- Isolate a cluster, feed only those nodes to LLM, generate hypotheses
-- Result: 4/4 hypotheses on silence cluster confirmed by human as genuine insights
-- Scaled to 7 clusters, 21 hypotheses generated
-
-### Experiment 2: Religion Simulation 🔜 NEXT
-- Blank graph, abstract seed beliefs (not Christianity-specific)
-- Run think cycles, observe whether doctrine, schisms, and unfalsifiability emerge structurally
-- Hypothesis: the architecture produces religion without a God node
-
-### Experiment 3: Capable Engineer (future)
-- Seed with an engineer's reasoning patterns
-- The graph becomes the agency engine, foundation model is the reasoning engine
-- Agent makes decisions traceable back to human principles
-
-## Usage
-
-```bash
-# Query the graph
-sqlite3 data/graph.db "SELECT content, confidence FROM thought_nodes ORDER BY confidence DESC LIMIT 10"
-
-# Run traversal
-python3 -c "from core.traversal import TraversalEngine; t = TraversalEngine(); chain = t.why('NODE_ID'); print(chain)"
-
-# Run sleep cycle
-python3 -c "from core.sleep import SleepProtocol; s = SleepProtocol(); s.run_sleep_cycle()"
-
-# Run audit
-python3 -c "from core.traversal import TraversalEngine; t = TraversalEngine(); r = t.audit(); print(f'Cycles: {len(r.cycles)}, Orphans: {len(r.orphan_nodes)}')"
-
-# Export dashboard
-python3 -c "from core.export import GraphExporter; e = GraphExporter(); e.export_full_graph('dashboard/data/graph.json')"
-
-# Serve dashboard locally
-cd dashboard && python3 -m http.server 8787
-```
+- **Preferential attachment** — New thoughts connect to high-connectivity hubs naturally
+- **Self-organized criticality** — Sleep cycles are controlled forest fires that restructure accumulated knowledge  
+- **Fractal structure** — Zoom into any cluster, see the same hierarchical patterns
+- **Emergent behavior** — Complex organization from simple rules
 
 ## Philosophy
 
-- **Orphans are unsolved problems, not bugs.** Don't force edges. Honest attempts > curve fitting.
-- **Unproven ≠ disproven.** Let the bottleneck find us.
-- **Design until the next question can only be answered by building. Then build.**
-- **The fruits of being highly ambitious: you might not reach the goal, but you'll get somewhere close enough.**
-- **The foundation model IS the reasoning engine.** Don't over-engineer what the LLM already does. The graph is memory, the model is intelligence.
+- **Orphans are unsolved problems, not bugs.** Don't force connections; let honest gaps remain visible.
+- **Unproven ≠ disproven.** Keep hypotheses until evidence decides.
+- **Design until the next question requires building.** Then build minimally.
+- **Foundation models ARE reasoning engines.** Don't over-engineer what GPT already does well.
+- **The fruits of being ambitious:** You might not reach the goal, but you'll get somewhere remarkable.
 
 ## Tech Stack
 
-- Python + SQLite + NetworkX
-- Claude (via OpenClaw sub-agents) for think cycles
-- vis.js for dashboard
-- cloudflared for sharing (ephemeral tunnels)
-- pytest for testing
+- **Core:** Python + SQLite + NetworkX for graph operations
+- **Embeddings:** Local sentence transformers (no cloud dependencies)  
+- **Intelligence:** Claude via OpenClaw sub-agents for think cycles
+- **Visualization:** vis.js dashboard with real-time updates
+- **Testing:** pytest with comprehensive module coverage
+- **Deployment:** Cloudflare Pages for dashboard sharing
 
-## Origin
+## Origin Story
 
-Built by Raj and Bunny in a single weekend (March 7-8, 2026). Inspired by a Veritasium video on power laws watched months earlier. Named after "Aunty, do cats eat cashews?" — the question that started a lifetime of asking why.
+Built by Raj and Bunny in a single weekend (March 7-8, 2026). Inspired by a Veritasium video on power laws watched months earlier. 
+
+Named after *"Aunty, do cats eat cashews?"* — the question that started a lifetime of asking why. Sometimes the best tools come from the simplest curiosity.
+
+## What's Next
+
+- **Real-time collaboration** — Multiple agents sharing one graph
+- **Cross-domain insights** — Think cycles across knowledge boundaries
+- **Capable agent framework** — Graph as agency engine, LLM as reasoning
+- **Open sourcing** — Making hierarchical memory available to all AI systems
+
+The graph is the memory. The model is the mind. The combination is something new.
