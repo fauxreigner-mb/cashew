@@ -628,14 +628,19 @@ def cmd_migrate_files(args):
         try:
             # Run a sleep cycle to consolidate and connect the extracted knowledge
             result = run_complete_sleep_cycle(args.db)
-            if result.get("success"):
-                print("✅ Consolidation completed")
-                coverage = result.get('coverage_verification', {}).get('coverage_percentage', 'Unknown')
-                print(f"   Final coverage: {coverage}%")
+            if result.get("error"):
+                print(f"⚠️  Consolidation had issues: {result['error']}")
+                print("   Graph is usable but hierarchy may be incomplete.")
+                print("   Run `cashew sleep` later to retry consolidation.")
             else:
-                print(f"❌ Consolidation failed: {result.get('error', 'Unknown')}")
+                coverage = result.get('coverage_verification', {}).get('coverage_percentage', 'Unknown')
+                actions = result.get('total_actions', 0)
+                print(f"✅ Consolidation completed ({actions} actions)")
+                print(f"   Final coverage: {coverage}%")
         except Exception as e:
-            print(f"❌ Consolidation error: {e}")
+            print(f"⚠️  Consolidation skipped: {e}")
+            print("   Graph is usable but hierarchy may be incomplete.")
+            print("   Run `cashew sleep` later to retry consolidation.")
     
     print()
     print("📊 MIGRATION COMPLETE")
@@ -792,6 +797,25 @@ def cmd_hotspot(args):
                 print(f"     - [{node['type']}] {node['content'][:60]}...")
 
 
+def _preprocess_db_flag(argv):
+    """Move --db flag before subcommand so argparse can find it as a top-level arg"""
+    result = list(argv)
+    i = 0
+    while i < len(result):
+        if result[i] == '--db' and i + 1 < len(result):
+            db_flag = result.pop(i)
+            db_val = result.pop(i)
+            result.insert(0, db_val)
+            result.insert(0, db_flag)
+            break
+        elif result[i].startswith('--db='):
+            db_flag = result.pop(i)
+            result.insert(0, db_flag)
+            break
+        i += 1
+    return result
+
+
 def main():
     parser = argparse.ArgumentParser(description="Cashew Context CLI")
     # Import here to avoid circular imports
@@ -901,7 +925,7 @@ def main():
     migrate_files_parser.add_argument("--db", dest="sub_db", default=None, help="Database path (can also be specified before subcommand)")
     migrate_files_parser.set_defaults(func=cmd_migrate_files)
     
-    args = parser.parse_args()
+    args = parser.parse_args(_preprocess_db_flag(sys.argv[1:]))
     
     if not args.command:
         parser.print_help()

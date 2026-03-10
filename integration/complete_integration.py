@@ -261,9 +261,11 @@ def run_complete_sleep_cycle(db_path: str = None,
         return complete_sleep_results
         
     except Exception as e:
-        logger.error(f"Complete sleep cycle failed: {e}")
+        import traceback
+        error_detail = f"{type(e).__name__}: {e}" if str(e) else f"{type(e).__name__} (no message)"
+        logger.error(f"Complete sleep cycle failed: {error_detail}\n{traceback.format_exc()}")
         return {
-            "error": str(e),
+            "error": error_detail,
             "clustering_phase": {},
             "evolution_phase": {},
             "coverage_verification": {},
