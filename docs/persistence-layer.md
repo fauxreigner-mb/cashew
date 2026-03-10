@@ -1,7 +1,7 @@
 # Cashew Persistence Layer — Architecture
 
 ## Problem
-Bunny (OpenClaw agent) has session amnesia. Current memory system:
+Personal assistants have session amnesia. Current memory system:
 - `MEMORY.md` — flat prose, manually curated
 - `memory/YYYY-MM-DD.md` — daily logs, append-only
 - `memory_search` — keyword/embedding search over flat files
@@ -43,11 +43,11 @@ CREATE TABLE edges (
 ```
 
 ### Node Types
-- **observation** — something that happened ("Raj's manager gave strike 1 feedback")
-- **belief** — an interpreted pattern ("Raj goes silent when struggling")
+- **observation** — something that happened ("The user's manager gave performance feedback")
+- **belief** — an interpreted pattern ("User goes silent when struggling")
 - **decision** — a commitment made ("Will send manager update by Friday")
 - **insight** — a derived connection ("Silent periods correlate with avoidance of hard conversations")
-- **fact** — objective information ("Raj works at Meta as E4")
+- **fact** — objective information ("User works in tech")
 
 ### Integration Points
 
@@ -137,5 +137,5 @@ query = "How's the promotion tracking?"
 - [ ] Context retrieved from graph is more relevant than memory_search results
 - [ ] Cross-domain connections surface naturally (work pattern → personal pattern)
 - [ ] Beliefs update when new info arrives (not just append)
-- [ ] Think cycles produce insights Raj confirms as genuine
+- [ ] Think cycles produce insights user confirms as genuine
 - [ ] No regression in response quality during transition

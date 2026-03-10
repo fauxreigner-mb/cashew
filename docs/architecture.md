@@ -217,7 +217,7 @@ The test suite (`tests/`) covers:
 ### Integration Testing
 ```bash
 # Run complete system test
-cd /Users/bunny/.openclaw/workspace/cashew
+cd cashew
 KMP_DUPLICATE_LIB_OK=TRUE python3 -m pytest tests/ -v
 
 # Test retrieval quality
