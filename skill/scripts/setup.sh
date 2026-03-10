@@ -1,6 +1,6 @@
 #!/bin/bash
-# Cashew quick setup for OpenClaw agents
-# Usage: bash scripts/setup.sh [--dir /path/to/notes]
+# Cashew full setup for OpenClaw agents
+# Usage: bash scripts/setup.sh [--dir /path/to/notes] [--install-crons]
 set -euo pipefail
 
 echo "🥜 Setting up cashew..."
@@ -20,9 +20,11 @@ fi
 
 # Import notes if --dir provided
 DIR=""
+INSTALL_CRONS=false
 while [[ $# -gt 0 ]]; do
     case $1 in
         --dir) DIR="$2"; shift 2 ;;
+        --install-crons) INSTALL_CRONS=true; shift ;;
         *) shift ;;
     esac
 done
@@ -35,5 +37,11 @@ fi
 echo ""
 cashew stats
 echo ""
-echo "✅ Cashew ready. Add to your AGENTS.md:"
-echo '   "Before answering substantive questions, run: cashew context --hints <keywords>"'
+echo "✅ Cashew engine ready."
+
+if [ "$INSTALL_CRONS" = true ]; then
+    echo ""
+    echo "📋 Cron jobs need to be installed via OpenClaw."
+    echo "   Ask your agent: 'Install cashew cron jobs'"
+    echo "   Or run: cashew install-crons (coming soon)"
+fi

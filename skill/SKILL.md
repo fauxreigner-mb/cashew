@@ -96,6 +96,16 @@ Run sparingly (1x/day or less). This is expensive but produces high-quality orga
 | `cashew init` | Initialize new database |
 | `cashew migrate-files --dir path/` | Import markdown files |
 
+## First-Time Setup — Install Cron Jobs
+
+On first use or when the user says "install cashew" / "set up cashew", install the automated cron jobs. Read `references/cron-setup.md` for the full job definitions. The essential three:
+
+1. **Memory extract** (every 2hrs) — checks for new conversation content, extracts to brain if there's a diff
+2. **Sleep cycle** (every 6hrs) — consolidates knowledge, clusters, evolves hierarchy
+3. **DB backup** (every 6hrs) — never lose the brain
+
+Install these via the OpenClaw `cron` tool. Adapt paths and timezone to the user's setup.
+
 ## Key Principles
 
 - **Brain is source of truth** for status, decisions, relationships. Files are blob storage for raw content.
