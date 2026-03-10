@@ -127,9 +127,9 @@ The graph grows from both ends: 🧠 Human thoughts (blue/purple/gold/green) and
 
 ## Current State
 
-- **23/23 tests passing** — Comprehensive test suite covering all major modules
-- **~21K words** of thought content stored
-- **768KB on disk** — Smaller than a photo, contains a mind's worth of reasoning
+- **117 tests passing** — Comprehensive test suite covering all major modules
+- **1,142 nodes, 3,147 edges** — Hierarchical knowledge graph with 15 node types
+- **O(log N) retrieval** — DFS through hotspot tree, not brute-force vector search
 - **Domain-separated** — Multiple knowledge areas in one coherent graph
 - **Production-ready** — Used daily for context retrieval and knowledge extraction
 
@@ -161,7 +161,7 @@ The same mathematical principles governing earthquakes, forest fires, and income
 
 ## Origin Story
 
-Built by Raj and Bunny in a single weekend (March 7-8, 2026). Inspired by a Veritasium video on power laws watched months earlier. 
+A personal knowledge graph system for thought management and retrieval. Inspired by cognitive science research on memory and reasoning. 
 
 Named after *"Aunty, do cats eat cashews?"* — the question that started a lifetime of asking why. Sometimes the best tools come from the simplest curiosity.
 
