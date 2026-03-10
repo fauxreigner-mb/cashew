@@ -124,6 +124,10 @@ def extract_from_conversation_complete(db_path: str = None,
         db_path = get_db_path()
         
     try:
+        # Ensure schema is up to date before any writes
+        from core.embeddings import ensure_schema
+        ensure_schema(db_path)
+        
         model_fn = _create_anthropic_model_fn()
         
         result = extract_with_placement(
@@ -218,6 +222,10 @@ def run_complete_sleep_cycle(db_path: str = None,
         db_path = get_db_path()
         
     try:
+        # Ensure schema is up to date before any writes
+        from core.embeddings import ensure_schema
+        ensure_schema(db_path)
+        
         model_fn = _create_anthropic_model_fn()
         
         logger.info("Starting complete sleep cycle with 100% coverage")

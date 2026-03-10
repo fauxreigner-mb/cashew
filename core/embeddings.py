@@ -45,6 +45,11 @@ def embed_text(text: str) -> List[float]:
     embedding = model.encode(text, convert_to_numpy=True)
     return embedding.tolist()
 
+def ensure_schema(db_path: str):
+    """Ensure all tables have the correct schema (call before any DB writes)"""
+    _ensure_embeddings_table(db_path)
+
+
 def _ensure_embeddings_table(db_path: str):
     """Ensure the embeddings table exists with the correct schema"""
     conn = sqlite3.connect(db_path)
