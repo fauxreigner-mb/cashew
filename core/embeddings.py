@@ -78,6 +78,8 @@ def _ensure_embeddings_table(db_path: str):
         cursor.execute("ALTER TABLE thought_nodes ADD COLUMN metadata TEXT")
     if 'last_updated' not in tn_columns:
         cursor.execute("ALTER TABLE thought_nodes ADD COLUMN last_updated TEXT")
+    if 'mood_state' not in tn_columns:
+        cursor.execute("ALTER TABLE thought_nodes ADD COLUMN mood_state TEXT")
     
     # Ensure derivation_edges has relation + weight + reasoning columns
     cursor.execute("PRAGMA table_info(derivation_edges)")

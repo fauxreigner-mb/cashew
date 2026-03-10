@@ -459,7 +459,8 @@ def cmd_init(args):
                 source_file TEXT,
                 decayed INTEGER DEFAULT 0,
                 metadata TEXT,
-                last_updated TEXT
+                last_updated TEXT,
+                mood_state TEXT
             )
         ''')
         
