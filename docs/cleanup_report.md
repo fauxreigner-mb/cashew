@@ -50,7 +50,7 @@ Successfully cleaned up the cashew thought-graph database, achieving a 73% reduc
 
 ## Examples of Preserved High-Quality Content
 - Deep personal memories (mom's illness, faith journey)
-- Key relationship insights (Partner's feedback, manager interactions)
+- Key relationship insights (partner feedback, manager interactions)
 - Technical background (IIT/GT systems thinking)
 - Personal patterns and growth areas
 

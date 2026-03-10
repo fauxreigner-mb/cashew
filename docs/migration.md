@@ -89,7 +89,7 @@ echo "Had a great 1:1 with my manager today. She mentioned I should take ownersh
 KMP_DUPLICATE_LIB_OK=TRUE python3 scripts/cashew_context.py extract --input /tmp/work-update.md
 
 # Run think cycles to generate insights
-KMP_DUPLICATE_LIB_OK=TRUE python3 scripts/cashew_context.py think --domain bunny
+KMP_DUPLICATE_LIB_OK=TRUE python3 scripts/cashew_context.py think --domain system
 ```
 
 #### Step 3: Periodic Maintenance
@@ -221,11 +221,11 @@ Good migration results should show:
 # Create anchor hotspots for your main domains
 KMP_DUPLICATE_LIB_OK=TRUE python3 scripts/cashew_context.py hotspot create \
     --content "Work and career development activities" \
-    --status "active" --domain bunny --tags "career,work"
+    --status "active" --domain system --tags "career,work"
 
 KMP_DUPLICATE_LIB_OK=TRUE python3 scripts/cashew_context.py hotspot create \
     --content "Personal projects and creative pursuits" \
-    --status "active" --domain bunny --tags "personal,projects"
+    --status "active" --domain system --tags "personal,projects"
 ```
 
 ### Issue: Clusters Too Large or Small

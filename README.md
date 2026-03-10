@@ -96,24 +96,17 @@ Or deploy to Cloudflare Pages:
 ./scripts/deploy-dashboard.sh
 ```
 
-### Direct Python API
+### As a Python package
 
-```python
-from core.retrieval import RetrievalEngine
-from core.context import ContextEngine
-from core.sleep import SleepProtocol
+```bash
+pip install git+https://github.com/jugaad-lab/cashew.git
 
-# Query the graph
-retrieval = RetrievalEngine()
-results = retrieval.search_by_hints(["machine learning", "architecture"])
-
-# Generate context
-context = ContextEngine()
-relevant_nodes = context.generate_context("Tell me about system design")
-
-# Run maintenance
-sleep = SleepProtocol()
-sleep.run_sleep_cycle()
+cashew init                                    # Bootstrap empty graph
+cashew migrate-files --dir ./my-notes/         # Import existing knowledge
+cashew context --hints "what am I working on"  # Query the brain
+cashew think                                   # Generate new insights
+cashew sleep                                   # Consolidate and maintain
+cashew stats                                   # Graph overview
 ```
 
 ## The Dual-Growth Loop
@@ -127,11 +120,10 @@ The graph grows from both ends: 🧠 Human thoughts (blue/purple/gold/green) and
 
 ## Current State
 
-- **117 tests passing** — Comprehensive test suite covering all major modules
-- **1,142 nodes, 3,147 edges** — Hierarchical knowledge graph with 15 node types
-- **O(log N) retrieval** — DFS through hotspot tree, not brute-force vector search
-- **Domain-separated** — Multiple knowledge areas in one coherent graph
-- **Production-ready** — Used daily for context retrieval and knowledge extraction
+- **Production-ready** — Used daily as the primary memory system for an AI agent
+- **117 tests passing** — Comprehensive test suite, zero failures
+- **768KB on disk** — Smaller than a photo, contains a mind's worth of reasoning
+- **Zero cloud dependencies** — Runs entirely local on SQLite + sentence transformers
 
 ## Key Insight: Power Laws
 
@@ -161,15 +153,17 @@ The same mathematical principles governing earthquakes, forest fires, and income
 
 ## Origin Story
 
-A personal knowledge graph system for thought management and retrieval. Inspired by cognitive science research on memory and reasoning. 
+Built in a weekend (March 2026). Inspired by a Veritasium video on power laws watched months earlier — the realization that the same mathematics governing earthquakes and forest fires could govern how a mind organizes itself.
 
-Named after *"Aunty, do cats eat cashews?"* — the question that started a lifetime of asking why. Sometimes the best tools come from the simplest curiosity.
+Named after *"Aunty, do cats eat cashews?"* — the question that started a lifetime of asking why. The best tools come from the simplest curiosity.
 
 ## What's Next
 
-- **Real-time collaboration** — Multiple agents sharing one graph
-- **Cross-domain insights** — Think cycles across knowledge boundaries
-- **Capable agent framework** — Graph as agency engine, LLM as reasoning
-- **Open sourcing** — Making hierarchical memory available to all AI systems
+- **Open source launch** — MIT licensed, pip installable, ready for the community
+- **MCP server** — Plug into Claude Desktop, Cursor, or any MCP-compatible agent
+- **Multi-agent cognition** — Multiple agents sharing one graph with provenance tracking
+- **Benchmarks** — Formal evaluation against mem0, Zep, MemGPT on retrieval quality and scalability
+
+**The competitive landscape:** mem0 remembers what you told it. Zep summarizes your conversations. cashew learns how you think — and can show you why.
 
 The graph is the memory. The model is the mind. The combination is something new.

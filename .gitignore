@@ -9,3 +9,7 @@ dashboard/data/*.json
 dist/
 build/
 *.egg-info/
+
+# DB backups and exports
+data/*.db.*
+data/graph_export.json

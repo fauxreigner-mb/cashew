@@ -45,7 +45,7 @@ python3 -m pytest tests/test_embeddings.py
 - Assert: k parameter works (returns exactly k results)
 - Assert: performance < 100ms for 1000 nodes
 
-**Open question for Raj:**
+**Open question for user:**
 - sentence-transformers `all-MiniLM-L6-v2` (384-dim, fast, good enough)?
 - Or `all-mpnet-base-v2` (768-dim, better quality, 2x slower)?
 - Or API embeddings (best quality, costs money per call)?
@@ -80,7 +80,7 @@ python3 -m pytest tests/test_retrieval.py
 ```python
 def test_retrieval_vs_memory_search():
     """Compare cashew.retrieve vs current memory_search on same queries"""
-    queries = ["promotion tracking", "Raj's communication patterns", "fitness routine"]
+    queries = ["promotion tracking", "user communication patterns", "fitness routine"]
     for q in queries:
         cashew_results = cashew.retrieve(q, k=5)
         # Score: are cashew results more relevant? (human eval needed)
@@ -101,7 +101,7 @@ def test_retrieval_vs_memory_search():
   4. Nodes land ISOLATED — no edges created yet
   5. Flag contradictions for sleep cycle
 - Returns list of new node IDs
-- **Edge creation happens during sleep, not here** (Raj's design: daytime = fragments, sleep = consolidation)
+- **Edge creation happens during sleep, not here** (original design: daytime = fragments, sleep = consolidation)
 
 **Test:**
 ```bash
@@ -114,7 +114,7 @@ python3 -m pytest tests/test_extraction.py
 - Assert: duplicate content doesn't create duplicate nodes (idempotency via content hash)
 - Assert: empty/trivial conversations produce 0 nodes
 
-**Decision (from Raj):**
+**Decision (from original design):**
 - Extract every N minutes if there's stuff to extract. Lightweight scan. Don't wait for compaction.
 - Edge creation happens during SLEEP, not extraction. New nodes land isolated during the day. Sleep rewires — finds nearest neighbors, creates edges, runs think cycles on new clusters, GCs noise. Biologically honest: daytime = fragments, sleep = consolidation.
 
@@ -156,7 +156,7 @@ python3 -m pytest tests/test_think_cycle.py
 - On heartbeat: optionally run think cycle
 - Expose `cashew.retrieve()` as a tool the agent can call explicitly
 
-**Open questions for Raj (need engineering input):**
+**Open questions for user (need engineering input):**
 1. How does OpenClaw inject system context? Can I add to it programmatically?
 2. Is there a session lifecycle hook (on_start, on_end) I can tap into?
 3. Or is this a SKILL that I invoke explicitly? (simpler, more testable)
@@ -167,7 +167,7 @@ python3 -m pytest tests/test_think_cycle.py
 - **A: Skill-based** — I explicitly call `cashew retrieve "query"` when I need context. Simple, testable, no OpenClaw core changes needed. I control when it's used.
 - **B: Hook-based** — Automatically runs on every session start/end. More powerful, but requires OpenClaw integration. Harder to test. Risk of breaking things.
 
-**Decision (from Raj):** Option A. Skill-based. Period. Don't get "comfortable" with A and then creep to B. A is the design. I call cashew explicitly when I need context.
+**Decision (from original design):** Option A. Skill-based. Period. Don't get "comfortable" with A and then creep to B. A is the design. I call cashew explicitly when I need context.
 
 **Files:** `SKILL.md` (for skill-based), or hook scripts
 
@@ -188,8 +188,8 @@ python3 -m pytest tests/test_think_cycle.py
 - Graph growth over N conversations (does it stay healthy or explode?)
 
 ### Validation Tests (human eval, periodic)
-- "Does the retrieved context feel more relevant?" — Raj scores 1-5
-- "Did the think cycle produce genuine insights?" — Raj confirms/denies
+- "Does the retrieved context feel more relevant?" — User scores 1-5
+- "Did the think cycle produce genuine insights?" — User confirms/denies
 - "Am I responding better with cashew context?" — qualitative over 2 weeks
 
 ### Regression Tests

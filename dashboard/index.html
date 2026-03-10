@@ -52,6 +52,8 @@
         .link.derived_from { stroke: #4488cc; }
         .link.questions { stroke: #22d3ee; stroke-dasharray: 2,3; }
         .link.influences { stroke: #da77f2; }
+        .link.summarizes { stroke: #ff2d55; stroke-opacity: 0.5; stroke-dasharray: 6,3; }
+        .hotspot-label { font-size: 11px; fill: #ff2d55; font-weight: 600; pointer-events: none; text-anchor: middle; }
 
         #topbar {
             position: fixed; top: 0; left: 0; right: 0; height: 44px;
@@ -143,7 +145,7 @@
 <!-- PASSWORD GATE -->
 <div id="gate">
     <div class="emoji">🧠</div>
-    <h1>You have arrived at Raj's brain</h1>
+    <h1>cashew thought graph</h1>
     <div class="subtitle">Enter password to continue</div>
     <input type="password" id="gate-pw" placeholder="password" autocomplete="off" autofocus>
     <div class="error" id="gate-error">Wrong password</div>
@@ -154,7 +156,7 @@
 <div id="app">
     <div id="topbar">
         <span class="logo">🥜</span>
-        <span class="title">cashew · raj's brain</span>
+        <span class="title">cashew · thought graph</span>
         <div class="stats">
             <span><b id="stat-nodes">0</b> nodes</span>
             <span><b id="stat-edges">0</b> edges</span>
@@ -167,6 +169,7 @@
         <button class="filter-btn" data-domain="raj" style="--fc:#74c0fc"><span class="filter-dot" style="background:#74c0fc"></span>🧠 Raj <span class="filter-count" data-domain="raj"></span></button>
         <button class="filter-btn" data-domain="bunny" style="--fc:#ff8c42"><span class="filter-dot" style="background:#ff8c42"></span>🐰 Bunny <span class="filter-count" data-domain="bunny"></span></button>
         <span style="width:1px;background:#222;margin:0 4px;align-self:stretch;"></span>
+        <button class="filter-btn" data-type="hotspot" style="--fc:#ff2d55"><span class="filter-dot" style="background:#ff2d55"></span>🔥 Hotspot <span class="filter-count" data-type="hotspot"></span></button>
         <button class="filter-btn" data-type="belief" style="--fc:#f5c542"><span class="filter-dot" style="background:#f5c542"></span>Belief <span class="filter-count" data-type="belief"></span></button>
         <button class="filter-btn" data-type="insight" style="--fc:#74c0fc"><span class="filter-dot" style="background:#74c0fc"></span>Insight <span class="filter-count" data-type="insight"></span></button>
         <button class="filter-btn" data-type="observation" style="--fc:#da77f2"><span class="filter-dot" style="background:#da77f2"></span>Observation <span class="filter-count" data-type="observation"></span></button>
@@ -204,15 +207,16 @@
     <div id="graph"></div>
 
     <div id="legend">
-        <div style="font-size:9px;color:#555;margin-bottom:3px;text-transform:uppercase;letter-spacing:0.5px;">🧠 Raj</div>
+        <div style="font-size:9px;color:#555;margin-bottom:3px;text-transform:uppercase;letter-spacing:0.5px;">Node Types</div>
+        <div class="legend-row"><div class="legend-dot" style="background:#ff2d55;width:12px;height:12px"></div> 🔥 Hotspot (cluster hub)</div>
         <div class="legend-row"><div class="legend-dot" style="background:#f5c542"></div> Belief</div>
         <div class="legend-row"><div class="legend-dot" style="background:#74c0fc"></div> Insight</div>
         <div class="legend-row"><div class="legend-dot" style="background:#da77f2"></div> Observation</div>
-        <div style="font-size:9px;color:#555;margin:6px 0 3px;text-transform:uppercase;letter-spacing:0.5px;">🐰 Bunny</div>
-        <div class="legend-row"><div class="legend-dot" style="background:#ff8c42"></div> Observation</div>
         <div class="legend-row"><div class="legend-dot" style="background:#ff6b6b"></div> Decision</div>
         <div class="legend-row"><div class="legend-dot" style="background:#ffd43b"></div> Fact</div>
-        <div class="legend-row"><div class="legend-dot" style="background:#ffa94d"></div> Belief</div>
+        <div style="font-size:9px;color:#555;margin:6px 0 3px;text-transform:uppercase;letter-spacing:0.5px;">Domains</div>
+        <div class="legend-row"><div class="legend-dot" style="background:#74c0fc"></div> 🧠 Raj</div>
+        <div class="legend-row"><div class="legend-dot" style="background:#ff8c42"></div> 🐰 Bunny</div>
     </div>
 
     <div id="panel">
@@ -267,7 +271,7 @@ const COLORS = {
     dream: '#b197fc'
 };
 
-const BUNNY_COLORS = {
+const SYSTEM_COLORS = {
     observation: '#ff8c42',
     decision: '#ff6b6b',
     fact: '#ffd43b',
@@ -275,8 +279,15 @@ const BUNNY_COLORS = {
 };
 
 function getNodeColor(d) {
-    if (d.domain === 'bunny') return BUNNY_COLORS[d.type] || '#ff8c42';
+    if (d.type === 'hotspot') return '#ff2d55'; // bright pink for hotspots
+    if (d.domain === 'bunny') return SYSTEM_COLORS[d.type] || '#ff8c42';
     return COLORS[d.type] || '#888';
+}
+
+function getNodeRadius(d) {
+    if (d.type === 'hotspot') return 12; // hotspots are large
+    const deg = degree[d.id] || 0;
+    return Math.max(4, Math.min(10, 3 + Math.sqrt(deg)));
 }
 
 let graphData, simulation, svg, g, link, node, labels, zoom;
@@ -435,7 +446,7 @@ async function initDashboard() {
         .force('link', d3.forceLink(allEdges).id(d => d.id).distance(60).strength(0.3))
         .force('charge', d3.forceManyBody().strength(-120))
         .force('center', d3.forceCenter(W / 2, H / 2))
-        .force('collision', d3.forceCollide().radius(d => getRadius(degree[d.id] || 0) + 4));
+        .force('collision', d3.forceCollide().radius(d => getNodeR(d) + 4));
 
     link = g.append('g').selectAll('line')
         .data(allEdges).enter().append('line')
@@ -449,14 +460,19 @@ async function initDashboard() {
         .call(d3.drag().on('start', dragstart).on('drag', dragging).on('end', dragend));
 
     node.append('circle')
-        .attr('r', d => getRadius(degree[d.id] || 0))
+        .attr('r', d => getNodeR(d))
         .attr('fill', d => getNodeColor(d))
         .attr('stroke', d => d3.color(getNodeColor(d)).darker(0.5))
-        .attr('stroke-dasharray', d => d.source_file === 'system_generated' ? '3,2' : null);
+        .attr('stroke-dasharray', d => d.source_file === 'system_generated' ? '3,2' : null)
+        .attr('stroke-width', d => d.type === 'hotspot' ? 3 : 1.5)
+        .attr('stroke-opacity', d => d.type === 'hotspot' ? 0.8 : 0.6);
 
     labels = node.append('text')
-        .text(d => truncate(d.content, 20))
-        .attr('dy', d => -(getRadius(degree[d.id] || 0) + 4));
+        .text(d => d.type === 'hotspot' ? '🔥 ' + truncate(d.content, 30) : truncate(d.content, 20))
+        .attr('dy', d => -(getNodeR(d) + 4))
+        .attr('class', d => d.type === 'hotspot' ? 'hotspot-label' : '')
+        .style('font-size', d => d.type === 'hotspot' ? '11px' : null)
+        .style('font-weight', d => d.type === 'hotspot' ? '600' : null);
 
     node.on('click', (e, d) => { e.stopPropagation(); selectNode(d); });
     svg.on('click', () => { selectedNode = null; node.classed('selected', false); resetOpacity(); closePanel(); });
@@ -541,22 +557,62 @@ function applyFilter() {
 
 function enterTimeline() {
     const W = window.innerWidth, H = window.innerHeight;
-    const maxDepth = d3.max(allNodes, d => d._depth) || 1;
-    const margin = 100;
-    const byDepth = {};
-    allNodes.forEach(n => { if (!byDepth[n._depth]) byDepth[n._depth] = []; byDepth[n._depth].push(n); });
-    allNodes.forEach(n => {
-        const col = byDepth[n._depth];
-        const idx = col.indexOf(n);
-        const ySpacing = Math.min(50, (H - margin * 2) / col.length);
-        n.fx = margin + (n._depth / maxDepth) * (W - margin * 2);
-        n.fy = H/2 - (col.length - 1) * ySpacing / 2 + idx * ySpacing;
+    const margin = { top: 80, bottom: 80, left: 60, right: 60 };
+
+    // Parse timestamps — sort nodes by time
+    const parseT = d => {
+        if (!d.timestamp) return null;
+        const t = new Date(d.timestamp);
+        return isNaN(t) ? null : t;
+    };
+    const timed = allNodes.filter(d => parseT(d) !== null);
+    const untimed = allNodes.filter(d => parseT(d) === null);
+
+    if (timed.length === 0) return;
+
+    const times = timed.map(d => parseT(d).getTime());
+    const tMin = Math.min(...times), tMax = Math.max(...times);
+    const tRange = tMax - tMin || 1;
+
+    // X = time, Y = domain + jitter by node_type for spread
+    const typeOrder = ['hotspot','core_memory','belief','decision','insight','observation','fact','derived','question','tension','prediction','meta','dream','implication','cross_link'];
+    const typeY = {};
+    typeOrder.forEach((t, i) => typeY[t] = i / (typeOrder.length - 1));
+
+    // Seeded pseudo-random for consistent jitter
+    const jitter = (id) => {
+        let h = 0;
+        for (let i = 0; i < id.length; i++) h = ((h << 5) - h) + id.charCodeAt(i);
+        return (((h & 0xFFFF) / 0xFFFF) - 0.5) * 2; // -1 to 1
+    };
+
+    const plotW = W - margin.left - margin.right;
+    const plotH = H - margin.top - margin.bottom;
+
+    timed.forEach(n => {
+        const t = parseT(n).getTime();
+        const tx = margin.left + ((t - tMin) / tRange) * plotW;
+        const tyBase = (typeY[n.node_type] || 0.5) * plotH * 0.7;
+        const domainOffset = n.domain === 'bunny' ? plotH * 0.15 : -plotH * 0.15;
+        const j = jitter(n.id) * 30;
+        n.fx = tx;
+        n.fy = margin.top + plotH * 0.15 + tyBase + domainOffset + j;
     });
-    simulation.alpha(0.5).restart();
+
+    // Park untimed nodes off to the left
+    untimed.forEach((n, i) => {
+        n.fx = margin.left - 30;
+        n.fy = margin.top + (i / untimed.length) * plotH;
+    });
+
+    // Hide labels in timeline mode (too dense)
+    if (labels) labels.style('display', 'none');
+
+    simulation.alpha(0.3).restart();
     setTimeout(() => {
         const bounds = g.node().getBBox();
         if (bounds.width === 0) return;
-        const pad = 80;
+        const pad = 40;
         const scale = Math.min((W - pad) / bounds.width, (H - pad) / bounds.height) * 0.85;
         const tx = W/2 - (bounds.x + bounds.width/2) * scale;
         const ty = H/2 - (bounds.y + bounds.height/2) * scale;
@@ -564,8 +620,9 @@ function enterTimeline() {
     }, 600);
 }
 
-function exitTimeline() { allNodes.forEach(n => { n.fx = null; n.fy = null; }); simulation.alpha(0.8).restart(); }
+function exitTimeline() { allNodes.forEach(n => { n.fx = null; n.fy = null; }); if (labels) labels.style('display', null); simulation.alpha(0.8).restart(); }
 function getRadius(deg) { return Math.max(4, Math.min(16, 4 + deg * 1.5)); }
+function getNodeR(d) { return d.type === 'hotspot' ? 14 : getRadius(degree[d.id] || 0); }
 function truncate(s, n) { return !s ? '' : s.length > n ? s.slice(0, n) + '…' : s; }
 
 function selectNode(d) {

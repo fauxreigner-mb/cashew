@@ -9,7 +9,13 @@ import re
 from typing import List, Dict, Set
 import hashlib
 
-DB_PATH = "/Users/bunny/.openclaw/workspace/cashew/data/graph.db"
+# Database path is now configurable via environment variable or CLI
+import sys
+import os
+sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
+from core.config import get_db_path
+
+DB_PATH = get_db_path()
 
 class QuickDensifier:
     def __init__(self, db_path: str = DB_PATH):

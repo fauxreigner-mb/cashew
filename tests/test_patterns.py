@@ -6,6 +6,10 @@ Tests for pattern extraction module
 import unittest
 import sys
 import os
+import sqlite3
+import tempfile
+import json
+from datetime import datetime, timezone
 
 # Add parent directory to path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
@@ -16,7 +20,83 @@ class TestPatternExtraction(unittest.TestCase):
     
     def setUp(self):
         """Set up test fixtures"""
-        self.extractor = PatternExtractor()
+        # Create a temporary database for testing
+        self.db_fd, self.db_path = tempfile.mkstemp(suffix='.db')
+        os.close(self.db_fd)
+        
+        # Initialize with proper schema and test data
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        
+        # Create the schema
+        cursor.execute('''
+            CREATE TABLE thought_nodes (
+                id TEXT PRIMARY KEY,
+                content TEXT NOT NULL,
+                node_type TEXT NOT NULL,
+                domain TEXT,
+                timestamp TEXT,
+                confidence REAL,
+                source_file TEXT,
+                decayed INTEGER DEFAULT 0,
+                metadata TEXT DEFAULT '{}',
+                mood_state TEXT
+            )
+        ''')
+        
+        cursor.execute('''
+            CREATE TABLE derivation_edges (
+                parent_id TEXT,
+                child_id TEXT,
+                relation TEXT,
+                weight REAL,
+                reasoning TEXT,
+                confidence REAL,
+                timestamp TEXT,
+                PRIMARY KEY (parent_id, child_id, relation)
+            )
+        ''')
+        
+        # Add test data for pattern analysis
+        now = datetime.now(timezone.utc).isoformat()
+        test_nodes = [
+            ("belief1", "Exercise improves mental health", "belief", "health", 0.8),
+            ("observation1", "I felt better after running", "observation", "health", 0.7),
+            ("question1", "What is the best workout routine?", "question", "health", 0.5),
+            ("insight1", "Mind and body are interconnected systems", "insight", "meta", 0.9),
+            ("contradiction1", "Sometimes rest is better than exercise", "belief", "health", 0.6)
+        ]
+        
+        for node_id, content, node_type, domain, confidence in test_nodes:
+            cursor.execute("""
+                INSERT INTO thought_nodes 
+                (id, content, node_type, domain, timestamp, confidence, source_file, metadata)
+                VALUES (?, ?, ?, ?, ?, ?, 'test', '{}')
+            """, (node_id, content, node_type, domain, now, confidence))
+        
+        # Add test edges with different relation types
+        test_edges = [
+            ("belief1", "observation1", "supports", 0.8),
+            ("observation1", "insight1", "derived_from", 0.7),
+            ("belief1", "contradiction1", "contradicts", 0.6),
+            ("question1", "insight1", "questions", 0.5)
+        ]
+        
+        for parent_id, child_id, relation, confidence in test_edges:
+            cursor.execute("""
+                INSERT INTO derivation_edges 
+                (parent_id, child_id, relation, confidence, timestamp)
+                VALUES (?, ?, ?, ?, ?)
+            """, (parent_id, child_id, relation, confidence, now))
+        
+        conn.commit()
+        conn.close()
+        
+        self.extractor = PatternExtractor(self.db_path)
+    
+    def tearDown(self):
+        """Clean up test database"""
+        os.unlink(self.db_path)
     
     def test_edge_type_analysis(self):
         """Test analysis of edge relation types"""

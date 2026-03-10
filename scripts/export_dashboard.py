@@ -20,12 +20,15 @@ def export(db_path: str, output_path: str, title: str = "cashew"):
     
     # Export nodes
     c.execute("""
-        SELECT id, content, node_type, confidence, source_file, timestamp, mood_state
+        SELECT id, content, node_type, confidence, source_file, timestamp, mood_state, domain
         FROM thought_nodes 
         WHERE decayed = 0 OR decayed IS NULL
     """)
     nodes = []
+    # Map DB domains to dashboard domains
+    DOMAIN_MAP = {"raj": "raj", "bunny": "bunny", "default": "raj"}
     for row in c.fetchall():
+        db_domain = row[7] or "default"
         nodes.append({
             "id": row[0],
             "content": row[1],
@@ -33,7 +36,8 @@ def export(db_path: str, output_path: str, title: str = "cashew"):
             "confidence": row[3],
             "source_file": row[4] or "",
             "timestamp": row[5] or "",
-            "mood_state": row[6] or ""
+            "mood_state": row[6] or "",
+            "domain": DOMAIN_MAP.get(db_domain, "user")
         })
     
     # Export edges — use source/target format for dashboard compatibility
