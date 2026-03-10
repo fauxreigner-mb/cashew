@@ -19,7 +19,8 @@ from core.complete_clustering import infer_emergent_domains
 
 logger = logging.getLogger("cashew.placement_aware_extraction")
 
-DB_PATH = "/Users/bunny/.openclaw/workspace/cashew/data/graph.db"
+# Database path is now configurable via environment variable or CLI
+from .config import get_db_path
 
 # Placement parameters
 HOTSPOT_MATCH_THRESHOLD = 0.3  # Min similarity to assign to existing hotspot

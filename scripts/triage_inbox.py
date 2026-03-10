@@ -282,7 +282,13 @@ def main():
     import argparse
     
     parser = argparse.ArgumentParser(description="Triage inbox nodes to appropriate clusters")
-    parser.add_argument("--db", default="/Users/bunny/.openclaw/workspace/cashew/data/graph.db",
+    # Database path is now configurable
+    import sys
+    import os
+    sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
+    from core.config import get_db_path
+    
+    parser.add_argument("--db", default=get_db_path(),
                        help="Database path")
     parser.add_argument("--threshold", type=float, default=0.35,
                        help="Similarity threshold for moving nodes (default: 0.35)")

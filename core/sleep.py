@@ -19,8 +19,9 @@ import logging
 
 logger = logging.getLogger("cashew.sleep")
 
-DB_PATH = "/Users/bunny/.openclaw/workspace/cashew/data/graph.db"
-SLEEP_LOG_PATH = "/Users/bunny/.openclaw/workspace/cashew/data/sleep_log.json"
+# Database path is now configurable via environment variable or CLI
+from .config import get_db_path
+DEFAULT_SLEEP_LOG_PATH = "./data/sleep_log.json"
 
 @dataclass
 class SleepEvent:
@@ -47,7 +48,11 @@ class NodeMetrics:
 class SleepProtocol:
     """Handles memory consolidation during sleep cycles"""
     
-    def __init__(self, db_path: str = DB_PATH, sleep_log_path: str = SLEEP_LOG_PATH):
+    def __init__(self, db_path: str = None, sleep_log_path: str = None):
+        if db_path is None:
+            db_path = get_db_path()
+        if sleep_log_path is None:
+            sleep_log_path = DEFAULT_SLEEP_LOG_PATH
         self.db_path = db_path
         self.sleep_log_path = sleep_log_path
         self.sleep_frequency = 10  # Sleep every N thoughts (tunable)

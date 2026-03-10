@@ -26,7 +26,8 @@ from .hotspots import (
 
 logger = logging.getLogger("cashew.clustering")
 
-DB_PATH = "/Users/bunny/.openclaw/workspace/cashew/data/graph.db"
+# Database path is now configurable via environment variable or CLI
+from .config import get_db_path
 
 # Clustering parameters
 DBSCAN_EPS = 0.35           # Max distance between samples (1 - cosine_sim). Lower = tighter clusters.

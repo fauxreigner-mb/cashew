@@ -2,7 +2,7 @@
 """
 Cashew Context Retrieval Module
 Given a topic/query string, return the most relevant thought nodes and their derivation chains.
-This is used to inject Raj's existing reasoning into LLM prompts before responding.
+This is used to inject the user's existing reasoning into LLM prompts before responding.
 """
 
 import sqlite3
@@ -14,7 +14,8 @@ import argparse
 import sys
 from dataclasses import dataclass
 
-DB_PATH = "/Users/bunny/.openclaw/workspace/cashew/data/graph.db"
+# Database path is now configurable via environment variable or CLI
+from .config import get_db_path
 
 @dataclass 
 class RelevantNode:
@@ -28,7 +29,9 @@ class RelevantNode:
 class ContextRetriever:
     """Retrieve relevant thought nodes for context injection"""
     
-    def __init__(self, db_path: str = DB_PATH):
+    def __init__(self, db_path: str = None):
+        if db_path is None:
+            db_path = get_db_path()
         self.db_path = db_path
         # Common stopwords to exclude from keyword matching
         self.stopwords = {
@@ -219,7 +222,7 @@ class ContextRetriever:
         if not nodes:
             return ""
         
-        context_lines = ["Raj's existing reasoning on this topic:"]
+        context_lines = ["Existing reasoning on this topic:"]
         context_lines.append("")
         
         for i, node in enumerate(nodes, 1):

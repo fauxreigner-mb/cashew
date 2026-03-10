@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Cashew Pattern Extraction
-Extract Raj's reasoning PATTERNS from the graph — not what he thinks, but HOW he thinks.
+Extract reasoning PATTERNS from the graph — not what the user thinks, but HOW they think.
 Analyzes graph structure for recurring patterns in reasoning style.
 """
 
@@ -15,7 +15,8 @@ import sys
 from datetime import datetime
 from dataclasses import dataclass
 
-DB_PATH = "/Users/bunny/.openclaw/workspace/cashew/data/graph.db"
+# Database path is now configurable via environment variable or CLI
+from .config import get_db_path
 
 @dataclass
 class ReasoningPattern:
@@ -28,7 +29,9 @@ class ReasoningPattern:
 class PatternExtractor:
     """Extract reasoning patterns from the thought graph"""
     
-    def __init__(self, db_path: str = DB_PATH):
+    def __init__(self, db_path: str = None):
+        if db_path is None:
+            db_path = get_db_path()
         self.db_path = db_path
     
     def _get_connection(self) -> sqlite3.Connection:
@@ -123,7 +126,7 @@ class PatternExtractor:
         return get_max_depth(chain[0]) if chain else 0
     
     def calculate_branching_factor(self) -> Dict[str, float]:
-        """Calculate how broadly vs deeply Raj explores ideas"""
+        """Calculate how broadly vs deeply the user explores ideas"""
         conn = self._get_connection()
         cursor = conn.cursor()
         
@@ -223,7 +226,7 @@ class PatternExtractor:
         }
     
     def calculate_contradiction_tolerance(self) -> Dict[str, float]:
-        """Measure how comfortable Raj is with contradictory beliefs"""
+        """Measure how comfortable the user is with contradictory beliefs"""
         conn = self._get_connection()
         cursor = conn.cursor()
         
@@ -459,7 +462,7 @@ class PatternExtractor:
         patterns = self.extract_patterns()
         
         description = []
-        description.append("🧠 RAJ'S REASONING PATTERNS")
+        description.append("🧠 REASONING PATTERNS")
         description.append("=" * 50)
         
         # Primary findings

@@ -16,7 +16,8 @@ from core.session import start_session, end_session, think_cycle, tension_detect
 def _load_anthropic_api_key() -> Optional[str]:
     """Load Anthropic API key from OpenClaw auth profiles"""
     try:
-        auth_profiles_path = "/Users/bunny/.openclaw/agents/main/agent/auth-profiles.json"
+        # Look for auth profiles in common locations
+        auth_profiles_path = os.path.expanduser("~/.openclaw/agents/main/agent/auth-profiles.json")
         with open(auth_profiles_path, 'r') as f:
             auth_data = json.load(f)
         
@@ -415,7 +416,8 @@ if __name__ == "__main__":
     
     parser = argparse.ArgumentParser(description="Cashew OpenClaw Integration")
     parser.add_argument("operation", choices=["context", "extract", "think"], help="Operation to perform")
-    parser.add_argument("--db", default="/Users/bunny/.openclaw/workspace/cashew/data/graph.db", help="Database path")
+    from core.config import get_db_path
+    parser.add_argument("--db", default=get_db_path(), help="Database path")
     parser.add_argument("--hints", nargs="*", help="Hints for context generation")
     parser.add_argument("--conversation", help="Conversation text for extraction")
     parser.add_argument("--session-id", help="Session ID")

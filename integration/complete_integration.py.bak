@@ -106,7 +106,7 @@ def generate_complete_session_context(db_path: str = None,
         logger.error(f"Failed to generate complete session context: {e}")
         return f"Error generating context: {e}"
 
-def extract_from_conversation_complete(db_path: str = None,
+def extract_from_conversation_complete(db_path: str = DEFAULT_DB_PATH,
                                       conversation_text: str = "",
                                       session_id: str = "complete_session") -> Dict:
     """
@@ -120,9 +120,6 @@ def extract_from_conversation_complete(db_path: str = None,
     Returns:
         Dict with extraction and placement results
     """
-    if db_path is None:
-        db_path = get_db_path()
-        
     try:
         model_fn = _create_anthropic_model_fn()
         
@@ -147,7 +144,7 @@ def extract_from_conversation_complete(db_path: str = None,
             "placements": []
         }
 
-def run_complete_think_cycle(db_path: str = None,
+def run_complete_think_cycle(db_path: str = DEFAULT_DB_PATH,
                             focus_domain: Optional[str] = None) -> Dict:
     """
     Run a think cycle that creates nodes with immediate placement.
@@ -159,9 +156,6 @@ def run_complete_think_cycle(db_path: str = None,
     Returns:
         Dict with think cycle results and placements
     """
-    if db_path is None:
-        db_path = get_db_path()
-        
     try:
         from core.session import think_cycle
         
@@ -202,7 +196,7 @@ def run_complete_think_cycle(db_path: str = None,
             "new_nodes": []
         }
 
-def run_complete_sleep_cycle(db_path: str = None,
+def run_complete_sleep_cycle(db_path: str = DEFAULT_DB_PATH,
                             enable_hierarchy_evolution: bool = True) -> Dict:
     """
     Run a complete sleep cycle with clustering, hierarchy evolution, and 100% coverage.
@@ -214,9 +208,6 @@ def run_complete_sleep_cycle(db_path: str = None,
     Returns:
         Dict with comprehensive sleep cycle results
     """
-    if db_path is None:
-        db_path = get_db_path()
-        
     try:
         model_fn = _create_anthropic_model_fn()
         
@@ -271,7 +262,7 @@ def run_complete_sleep_cycle(db_path: str = None,
             "total_actions": 0
         }
 
-def migrate_to_complete_coverage(db_path: str = None,
+def migrate_to_complete_coverage(db_path: str = DEFAULT_DB_PATH,
                                 dry_run: bool = False) -> Dict:
     """
     Migrate an existing cashew graph to the complete coverage system.
@@ -285,9 +276,6 @@ def migrate_to_complete_coverage(db_path: str = None,
     Returns:
         Dict with migration results
     """
-    if db_path is None:
-        db_path = get_db_path()
-    
     try:
         logger.info(f"Starting migration to complete coverage (dry_run={dry_run})")
         
@@ -338,7 +326,7 @@ def migrate_to_complete_coverage(db_path: str = None,
             "assignment_results": {}
         }
 
-def explain_complete_system(db_path: str = None, query: str = "test query") -> Dict:
+def explain_complete_system(db_path: str = DEFAULT_DB_PATH, query: str = "test query") -> Dict:
     """
     Generate a comprehensive explanation of the complete coverage system.
     
@@ -349,9 +337,6 @@ def explain_complete_system(db_path: str = None, query: str = "test query") -> D
     Returns:
         Dict with system explanation and examples
     """
-    if db_path is None:
-        db_path = get_db_path()
-    
     try:
         # Get coverage stats
         coverage_stats = check_complete_coverage(db_path)
@@ -402,7 +387,7 @@ def explain_complete_system(db_path: str = None, query: str = "test query") -> D
         logger.error(f"System explanation failed: {e}")
         return {"error": str(e)}
 
-def get_complete_system_stats(db_path: str = None) -> Dict:
+def get_complete_system_stats(db_path: str = DEFAULT_DB_PATH) -> Dict:
     """
     Get comprehensive statistics about the complete coverage system.
     
@@ -412,9 +397,6 @@ def get_complete_system_stats(db_path: str = None) -> Dict:
     Returns:
         Dict with system statistics
     """
-    if db_path is None:
-        db_path = get_db_path()
-    
     try:
         coverage_stats = check_complete_coverage(db_path)
         

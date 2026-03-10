@@ -14,7 +14,13 @@ import argparse
 import sys
 from datetime import datetime
 
-DB_PATH = "/Users/bunny/.openclaw/workspace/cashew/data/graph.db"
+# Database path is now configurable via environment variable or CLI
+import sys
+import os
+sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
+from core.config import get_db_path
+
+DB_PATH = get_db_path()
 
 class EdgeDensifier:
     """Densify graph by creating connections between semantically related nodes"""

@@ -419,6 +419,228 @@ def cmd_explain(args):
         return 1
 
 
+def cmd_init(args):
+    """Initialize a new cashew database"""
+    import sqlite3
+    from pathlib import Path
+    
+    db_path = Path(args.db)
+    data_dir = db_path.parent
+    
+    print(f"🗂  Initializing cashew at: {db_path}")
+    
+    # Create data directory if it doesn't exist
+    data_dir.mkdir(parents=True, exist_ok=True)
+    print(f"✅ Created data directory: {data_dir}")
+    
+    if db_path.exists():
+        print(f"⚠️  Database already exists: {db_path}")
+        response = input("Do you want to overwrite it? [y/N]: ")
+        if response.lower() != 'y':
+            print("❌ Cancelled")
+            return 1
+    
+    # Create the database with schema
+    try:
+        conn = sqlite3.connect(str(db_path))
+        cursor = conn.cursor()
+        
+        # Create tables (from core schema)
+        cursor.execute('''
+            CREATE TABLE thought_nodes (
+                id TEXT PRIMARY KEY,
+                content TEXT NOT NULL,
+                node_type TEXT NOT NULL,
+                domain TEXT,
+                timestamp TEXT,
+                access_count INTEGER DEFAULT 0,
+                last_accessed TEXT,
+                confidence REAL,
+                source_file TEXT,
+                decayed INTEGER DEFAULT 0
+            )
+        ''')
+        
+        cursor.execute('''
+            CREATE TABLE derivation_edges (
+                parent_id TEXT,
+                child_id TEXT,
+                edge_type TEXT,
+                confidence REAL,
+                timestamp TEXT,
+                PRIMARY KEY (parent_id, child_id, edge_type),
+                FOREIGN KEY (parent_id) REFERENCES thought_nodes(id),
+                FOREIGN KEY (child_id) REFERENCES thought_nodes(id)
+            )
+        ''')
+        
+        cursor.execute('''
+            CREATE TABLE embeddings (
+                node_id TEXT PRIMARY KEY,
+                embedding BLOB,
+                model TEXT,
+                timestamp TEXT,
+                FOREIGN KEY (node_id) REFERENCES thought_nodes(id)
+            )
+        ''')
+        
+        cursor.execute('''
+            CREATE TABLE hotspots (
+                id TEXT PRIMARY KEY,
+                content TEXT NOT NULL,
+                status TEXT,
+                domain TEXT,
+                file_pointers TEXT,
+                cluster_node_ids TEXT,
+                tags TEXT,
+                created TEXT,
+                last_updated TEXT
+            )
+        ''')
+        
+        # Create indexes
+        cursor.execute('CREATE INDEX idx_nodes_timestamp ON thought_nodes(timestamp)')
+        cursor.execute('CREATE INDEX idx_nodes_domain ON thought_nodes(domain)')
+        cursor.execute('CREATE INDEX idx_nodes_type ON thought_nodes(node_type)')
+        cursor.execute('CREATE INDEX idx_edges_parent ON derivation_edges(parent_id)')
+        cursor.execute('CREATE INDEX idx_edges_child ON derivation_edges(child_id)')
+        
+        conn.commit()
+        conn.close()
+        
+        print("✅ Database initialized successfully")
+        print(f"   Schema: thought_nodes, derivation_edges, embeddings, hotspots")
+        print(f"   Indexes: optimized for retrieval")
+        print()
+        print("🚀 Ready to use! Try:")
+        print(f"   cashew stats --db {db_path}")
+        print(f"   cashew context 'your topic' --db {db_path}")
+        
+    except Exception as e:
+        print(f"❌ Error initializing database: {e}")
+        if args.debug:
+            import traceback
+            traceback.print_exc()
+        return 1
+
+
+def cmd_migrate_files(args):
+    """Migrate markdown files to cashew database"""
+    import os
+    from pathlib import Path
+    import glob
+    
+    if not args.dir:
+        print("❌ Error: --dir required for migrate command")
+        return 1
+    
+    source_dir = Path(args.dir)
+    if not source_dir.exists():
+        print(f"❌ Error: Directory not found: {source_dir}")
+        return 1
+    
+    dry_run = getattr(args, 'dry_run', False)
+    
+    print(f"📂 Migrating files from: {source_dir}")
+    print(f"🗄  Target database: {args.db}")
+    print(f"🔍 Dry run: {dry_run}")
+    print()
+    
+    # Find markdown files
+    md_files = list(source_dir.glob("*.md")) + list(source_dir.glob("**/*.md"))
+    
+    if not md_files:
+        print("❌ No markdown files found")
+        return 1
+    
+    print(f"📋 Found {len(md_files)} markdown files:")
+    for f in md_files[:5]:  # Show first 5
+        print(f"   {f}")
+    if len(md_files) > 5:
+        print(f"   ... and {len(md_files) - 5} more")
+    print()
+    
+    if dry_run:
+        print("🔍 DRY RUN - No changes will be made")
+        total_content = 0
+        for md_file in md_files:
+            try:
+                content = md_file.read_text(encoding='utf-8')
+                total_content += len(content)
+                print(f"   {md_file.name}: {len(content)} chars")
+            except Exception as e:
+                print(f"   {md_file.name}: Error reading - {e}")
+        
+        print()
+        print(f"📊 Total content: {total_content:,} characters")
+        print("   Would extract key statements and build graph")
+        print("   Would run semantic similarity wiring")
+        print("   Would run consolidation sleep cycle")
+        return 0
+    
+    # Check if database exists
+    if not os.path.exists(args.db):
+        print("❌ Error: Database not found. Run `cashew init` first.")
+        return 1
+    
+    # Extract from each file
+    extracted_count = 0
+    errors = 0
+    
+    for md_file in md_files:
+        try:
+            print(f"📖 Processing: {md_file.name}")
+            content = md_file.read_text(encoding='utf-8')
+            
+            if len(content.strip()) < 100:
+                print(f"   ⚠️  Skipping (too short)")
+                continue
+            
+            # Use the complete extraction system
+            result = extract_from_conversation_complete(
+                args.db, 
+                content, 
+                f"migration_{md_file.stem}"
+            )
+            
+            if result.get("success"):
+                new_nodes = len(result.get('new_nodes', []))
+                placements = len(result.get('placements', []))
+                extracted_count += new_nodes
+                print(f"   ✅ Extracted {new_nodes} nodes, {placements} placements")
+            else:
+                errors += 1
+                print(f"   ❌ Extraction failed: {result.get('error', 'Unknown')}")
+                
+        except Exception as e:
+            errors += 1
+            print(f"   ❌ Error: {e}")
+    
+    if extracted_count > 0:
+        print()
+        print(f"🧠 Running consolidation cycle...")
+        
+        try:
+            # Run a sleep cycle to consolidate and connect the extracted knowledge
+            result = run_complete_sleep_cycle(args.db)
+            if result.get("success"):
+                print("✅ Consolidation completed")
+                coverage = result.get('coverage_verification', {}).get('coverage_percentage', 'Unknown')
+                print(f"   Final coverage: {coverage}%")
+            else:
+                print(f"❌ Consolidation failed: {result.get('error', 'Unknown')}")
+        except Exception as e:
+            print(f"❌ Consolidation error: {e}")
+    
+    print()
+    print("📊 MIGRATION COMPLETE")
+    print(f"   Files processed: {len(md_files)}")
+    print(f"   Nodes extracted: {extracted_count}")
+    print(f"   Errors: {errors}")
+    if errors == 0:
+        print("   🎉 All files migrated successfully!")
+
+
 def cmd_system_stats(args):
     """Show complete system statistics"""
     print("📈 Gathering complete system statistics...")
@@ -567,8 +789,14 @@ def cmd_hotspot(args):
 
 def main():
     parser = argparse.ArgumentParser(description="Cashew Context CLI")
-    parser.add_argument("--db", default="/Users/bunny/.openclaw/workspace/cashew/data/graph.db", 
-                       help="Database path")
+    # Import here to avoid circular imports
+    import sys
+    import os
+    sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(__file__))))
+    from core.config import get_db_path
+    
+    parser.add_argument("--db", default=get_db_path(), 
+                       help="Database path (default: ./data/graph.db, or CASHEW_DB env var)")
     parser.add_argument("--verbose", "-v", action="store_true", help="Verbose output")
     parser.add_argument("--debug", action="store_true", help="Debug output (timing, diagnostics to stderr)")
     
@@ -656,6 +884,16 @@ def main():
     system_stats_parser = subparsers.add_parser("system-stats", help="Show complete system statistics")
     system_stats_parser.set_defaults(func=cmd_system_stats)
     
+    # Init command
+    init_parser = subparsers.add_parser("init", help="Initialize a new cashew database")
+    init_parser.set_defaults(func=cmd_init)
+    
+    # Migrate files command
+    migrate_files_parser = subparsers.add_parser("migrate-files", help="Migrate markdown files to cashew database")
+    migrate_files_parser.add_argument("--dir", required=True, help="Directory containing markdown files")
+    migrate_files_parser.add_argument("--dry-run", action="store_true", help="Show what would be migrated without making changes")
+    migrate_files_parser.set_defaults(func=cmd_migrate_files)
+    
     args = parser.parse_args()
     
     if not args.command:
@@ -667,8 +905,12 @@ def main():
     elif args.verbose:
         logging.basicConfig(level=logging.INFO)
     
-    if not os.path.exists(args.db):
+    # Commands that don't require existing database
+    init_commands = ['init']
+    
+    if args.command not in init_commands and not os.path.exists(args.db):
         print(f"❌ Error: Database not found: {args.db}")
+        print(f"💡 Run `cashew init --db {args.db}` to create a new database")
         return 1
     
     if args.debug:

@@ -25,7 +25,8 @@ from core.complete_clustering import load_embeddings_with_metadata, cosine_simil
 
 logger = logging.getLogger("cashew.hierarchy_evolution")
 
-DB_PATH = "/Users/bunny/.openclaw/workspace/cashew/data/graph.db"
+# Database path is now configurable via environment variable or CLI
+from .config import get_db_path
 
 # Evolution parameters
 MERGE_THRESHOLD = 0.6          # Avg pairwise similarity to trigger cluster merge

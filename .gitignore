@@ -2,3 +2,10 @@ __pycache__/
 *.pyc
 .wrangler/
 *.db
+data/*.db
+dashboard/data/*.json
+.env
+.pytest_cache/
+dist/
+build/
+*.egg-info/

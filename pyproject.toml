@@ -1,0 +1,49 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cashew-core"
+version = "0.1.0"
+description = "A thought-graph engine that gives AI agents persistent, hierarchical memory"
+authors = [{name = "jugaad-lab"}]
+license = {text = "MIT"}
+readme = "README.md"
+requires-python = ">=3.10"
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Database :: Database Engines/Servers",
+]
+dependencies = [
+    "anthropic",
+    "numpy",
+    "scikit-learn",
+    "sentence-transformers",  # for embedding model
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "pytest-cov",
+]
+
+[project.urls]
+Homepage = "https://github.com/jugaad-lab/cashew"
+Repository = "https://github.com/jugaad-lab/cashew"
+Issues = "https://github.com/jugaad-lab/cashew/issues"
+
+[project.scripts]
+cashew = "scripts.cashew_context:main"
+
+[tool.setuptools]
+packages = ["core", "integration", "scripts"]
+
+[tool.setuptools.package-data]
+"*" = ["*.md"]

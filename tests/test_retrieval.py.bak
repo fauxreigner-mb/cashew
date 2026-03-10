@@ -11,7 +11,7 @@ import json
 from typing import List, Dict
 
 import sys
-sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
+sys.path.insert(0, '/Users/bunny/.openclaw/workspace/cashew')
 
 from core.retrieval import retrieve, format_context, explain_retrieval, _graph_walk, _load_node_details, RetrievalResult
 from core.embeddings import embed_nodes

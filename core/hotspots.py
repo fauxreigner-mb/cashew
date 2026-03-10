@@ -23,7 +23,8 @@ import logging
 
 from .embeddings import embed_text, embed_nodes
 
-DB_PATH = "/Users/bunny/.openclaw/workspace/cashew/data/graph.db"
+# Database path is now configurable via environment variable or CLI
+from .config import get_db_path
 
 HOTSPOT_TYPE = "hotspot"
 HOTSPOT_BOOST = 3.0  # Multiplier applied to hotspot scores in retrieval
@@ -41,7 +42,9 @@ class Hotspot:
     confidence: float = 0.95  # Hotspots are high-confidence by design
 
 
-def _get_connection(db_path: str = DB_PATH) -> sqlite3.Connection:
+def _get_connection(db_path: str = None) -> sqlite3.Connection:
+    if db_path is None:
+        db_path = get_db_path()
     return sqlite3.connect(db_path)
 
 

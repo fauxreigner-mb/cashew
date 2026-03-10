@@ -6,9 +6,11 @@ Centralized configuration with environment variable overrides
 
 import os
 from typing import Optional
+from pathlib import Path
 
 # Default configuration values
 DEFAULT_TOKEN_BUDGET = 2000
+DEFAULT_DB_PATH = "./data/graph.db"
 DEFAULT_TOP_K = 10
 DEFAULT_WALK_DEPTH = 2
 DEFAULT_EMBEDDING_MODEL = 'all-MiniLM-L6-v2'
@@ -25,6 +27,9 @@ class CashewConfig:
     
     def _load_config(self):
         """Load configuration from environment variables with fallbacks"""
+        # Database configuration
+        self.db_path = os.getenv('CASHEW_DB', DEFAULT_DB_PATH)
+        
         # Session context configuration
         self.token_budget = int(os.getenv('CASHEW_TOKEN_BUDGET', DEFAULT_TOKEN_BUDGET))
         self.top_k = int(os.getenv('CASHEW_TOP_K', DEFAULT_TOP_K))
@@ -79,6 +84,7 @@ class CashewConfig:
     def to_dict(self) -> dict:
         """Export configuration as dictionary"""
         return {
+            'db_path': self.db_path,
             'token_budget': self.token_budget,
             'top_k': self.top_k,
             'walk_depth': self.walk_depth,
@@ -98,6 +104,10 @@ class CashewConfig:
 config = CashewConfig()
 
 # Convenience functions for accessing config values
+def get_db_path() -> str:
+    """Get the database path"""
+    return config.db_path
+
 def get_token_budget() -> int:
     """Get the current token budget for context injection"""
     return config.token_budget

@@ -8,6 +8,10 @@ This is a READ-ONLY test - it does not modify the brain graph.
 
 import sys
 import os
+
+# Add parent directory to path for imports
+sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
+from core.config import get_db_path
 from pathlib import Path
 
 # Add the parent directory to the path
@@ -21,7 +25,7 @@ def test_work_context():
     print("🏢 Testing Work Context Generation")
     print("=" * 50)
     
-    db_path = "/Users/bunny/.openclaw/workspace/cashew/data/graph.db"
+    db_path = get_db_path()
     hints = ["work", "promotion"]
     
     context = generate_session_context(db_path, hints)
@@ -44,7 +48,7 @@ def test_personal_context():
     print("👤 Testing Personal Context Generation") 
     print("=" * 50)
     
-    db_path = "/Users/bunny/.openclaw/workspace/cashew/data/graph.db"
+    db_path = get_db_path()
     hints = ["personal", "fitness", "health"]
     
     context = generate_session_context(db_path, hints)
@@ -67,7 +71,7 @@ def test_general_context():
     print("🌍 Testing General Context Generation")
     print("=" * 50)
     
-    db_path = "/Users/bunny/.openclaw/workspace/cashew/data/graph.db"
+    db_path = get_db_path()
     hints = None  # No specific hints
     
     context = generate_session_context(db_path, hints)
@@ -90,7 +94,7 @@ def test_technical_context():
     print("🔧 Testing Technical Context Generation")
     print("=" * 50)
     
-    db_path = "/Users/bunny/.openclaw/workspace/cashew/data/graph.db"
+    db_path = get_db_path()
     hints = ["engineering", "technical", "software", "architecture"]
     
     context = generate_session_context(db_path, hints)
@@ -115,7 +119,7 @@ def show_database_stats():
     
     try:
         import sqlite3
-        db_path = "/Users/bunny/.openclaw/workspace/cashew/data/graph.db"
+        db_path = get_db_path()
         
         conn = sqlite3.connect(db_path)
         cursor = conn.cursor()
@@ -174,7 +178,7 @@ def main():
     print()
     
     # Check database exists
-    db_path = "/Users/bunny/.openclaw/workspace/cashew/data/graph.db"
+    db_path = get_db_path()
     if not os.path.exists(db_path):
         print(f"❌ Database not found: {db_path}")
         return 1

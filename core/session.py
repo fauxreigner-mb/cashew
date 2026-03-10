@@ -392,7 +392,7 @@ def _extract_with_heuristics(conversation_text: str) -> List[Dict[str, str]]:
 
 def _create_node(db_path: str, content: str, node_type: str, 
                 session_id: str, confidence: float = 0.7,
-                domain: str = 'bunny') -> str:
+                domain: str = 'default') -> str:
     """Create a new thought node and return its ID"""
     # Generate deterministic ID based on content
     node_id = hashlib.sha256(content.encode()).hexdigest()[:12]

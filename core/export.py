@@ -12,8 +12,9 @@ import argparse
 import sys
 from datetime import datetime
 
-DB_PATH = "/Users/bunny/.openclaw/workspace/cashew/data/graph.db"
-EXPORT_PATH = "/Users/bunny/.openclaw/workspace/cashew/data/graph_export.json"
+# Database path is now configurable via environment variable or CLI
+from .config import get_db_path
+DEFAULT_EXPORT_PATH = "./data/graph_export.json"
 
 @dataclass
 class ExportedNode:
@@ -38,7 +39,9 @@ class ExportedEdge:
 class GraphExporter:
     """Export graph data for visualization"""
     
-    def __init__(self, db_path: str = DB_PATH):
+    def __init__(self, db_path: str = None):
+        if db_path is None:
+            db_path = get_db_path()
         self.db_path = db_path
     
     def _get_connection(self) -> sqlite3.Connection:
