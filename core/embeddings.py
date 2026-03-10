@@ -46,19 +46,48 @@ def embed_text(text: str) -> List[float]:
     return embedding.tolist()
 
 def _ensure_embeddings_table(db_path: str):
-    """Ensure the embeddings table exists in the database"""
+    """Ensure the embeddings table exists with the correct schema"""
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
     
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS embeddings (
-            node_id TEXT PRIMARY KEY,
-            vector BLOB NOT NULL,
-            model TEXT NOT NULL,
-            updated_at TEXT NOT NULL,
-            FOREIGN KEY (node_id) REFERENCES thought_nodes(id)
-        )
-    """)
+    # Check if table exists
+    cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='embeddings'")
+    if cursor.fetchone() is None:
+        cursor.execute("""
+            CREATE TABLE embeddings (
+                node_id TEXT PRIMARY KEY,
+                vector BLOB NOT NULL,
+                model TEXT NOT NULL,
+                updated_at TEXT NOT NULL,
+                FOREIGN KEY (node_id) REFERENCES thought_nodes(id)
+            )
+        """)
+    else:
+        # Migrate: ensure 'vector' column exists (old init created 'embedding' instead)
+        cursor.execute("PRAGMA table_info(embeddings)")
+        columns = {row[1] for row in cursor.fetchall()}
+        if 'vector' not in columns:
+            cursor.execute("ALTER TABLE embeddings ADD COLUMN vector BLOB")
+        if 'updated_at' not in columns:
+            cursor.execute("ALTER TABLE embeddings ADD COLUMN updated_at TEXT")
+    
+    # Also ensure thought_nodes has metadata + last_updated columns
+    cursor.execute("PRAGMA table_info(thought_nodes)")
+    tn_columns = {row[1] for row in cursor.fetchall()}
+    if 'metadata' not in tn_columns:
+        cursor.execute("ALTER TABLE thought_nodes ADD COLUMN metadata TEXT")
+    if 'last_updated' not in tn_columns:
+        cursor.execute("ALTER TABLE thought_nodes ADD COLUMN last_updated TEXT")
+    
+    # Ensure derivation_edges has relation + weight + reasoning columns
+    cursor.execute("PRAGMA table_info(derivation_edges)")
+    de_columns = {row[1] for row in cursor.fetchall()}
+    if 'relation' not in de_columns:
+        cursor.execute("ALTER TABLE derivation_edges ADD COLUMN relation TEXT")
+    if 'weight' not in de_columns:
+        cursor.execute("ALTER TABLE derivation_edges ADD COLUMN weight REAL")
+    if 'reasoning' not in de_columns:
+        cursor.execute("ALTER TABLE derivation_edges ADD COLUMN reasoning TEXT")
     
     conn.commit()
     conn.close()

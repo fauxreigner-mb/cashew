@@ -157,23 +157,36 @@ def _get_tree_overview(db_path: str) -> str:
         logging.error(f"Error getting tree overview: {e}")
         return f"Graph overview unavailable: {e}"
 
-def _get_recent_activity(db_path: str) -> str:
+def _get_recent_activity(db_path: str, domain: str = None) -> str:
     """Get Layer 2 - Recent Activity: recently updated nodes/summaries"""
     try:
         conn = _get_connection(db_path)
         cursor = conn.cursor()
         
         # Get 3 most recently updated non-hotspot nodes
-        cursor.execute("""
-            SELECT substr(content, 1, 80), node_type, 
-                   COALESCE(last_updated, timestamp) as update_time
-            FROM thought_nodes 
-            WHERE (decayed IS NULL OR decayed = 0) 
-            AND node_type != 'hotspot'
-            AND COALESCE(last_updated, timestamp) IS NOT NULL
-            ORDER BY update_time DESC
-            LIMIT 3
-        """)
+        if domain:
+            cursor.execute("""
+                SELECT substr(content, 1, 80), node_type, 
+                       COALESCE(last_updated, timestamp) as update_time
+                FROM thought_nodes 
+                WHERE (decayed IS NULL OR decayed = 0) 
+                AND node_type != 'hotspot'
+                AND COALESCE(last_updated, timestamp) IS NOT NULL
+                AND domain = ?
+                ORDER BY update_time DESC
+                LIMIT 3
+            """, (domain,))
+        else:
+            cursor.execute("""
+                SELECT substr(content, 1, 80), node_type, 
+                       COALESCE(last_updated, timestamp) as update_time
+                FROM thought_nodes 
+                WHERE (decayed IS NULL OR decayed = 0) 
+                AND node_type != 'hotspot'
+                AND COALESCE(last_updated, timestamp) IS NOT NULL
+                ORDER BY update_time DESC
+                LIMIT 3
+            """)
         
         recent_items = []
         for row in cursor.fetchall():
@@ -258,7 +271,7 @@ def start_session(db_path: str, session_id: str, hints: Optional[List[str]] = No
     tree_overview = _get_tree_overview(db_path)
     
     # Layer 2: Recent Activity (always shown)
-    recent_activity = _get_recent_activity(db_path)
+    recent_activity = _get_recent_activity(db_path, domain=domain)
     
     # Layer 3: Hint-driven depth (only if hints provided)
     hint_context = ""

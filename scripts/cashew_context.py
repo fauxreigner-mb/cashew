@@ -457,7 +457,9 @@ def cmd_init(args):
                 last_accessed TEXT,
                 confidence REAL,
                 source_file TEXT,
-                decayed INTEGER DEFAULT 0
+                decayed INTEGER DEFAULT 0,
+                metadata TEXT,
+                last_updated TEXT
             )
         ''')
         
@@ -466,6 +468,9 @@ def cmd_init(args):
                 parent_id TEXT,
                 child_id TEXT,
                 edge_type TEXT,
+                relation TEXT,
+                weight REAL,
+                reasoning TEXT,
                 confidence REAL,
                 timestamp TEXT,
                 PRIMARY KEY (parent_id, child_id, edge_type),
@@ -477,9 +482,9 @@ def cmd_init(args):
         cursor.execute('''
             CREATE TABLE embeddings (
                 node_id TEXT PRIMARY KEY,
-                embedding BLOB,
-                model TEXT,
-                timestamp TEXT,
+                vector BLOB NOT NULL,
+                model TEXT NOT NULL,
+                updated_at TEXT NOT NULL,
                 FOREIGN KEY (node_id) REFERENCES thought_nodes(id)
             )
         ''')
@@ -546,8 +551,8 @@ def cmd_migrate_files(args):
     print(f"🔍 Dry run: {dry_run}")
     print()
     
-    # Find markdown files
-    md_files = list(source_dir.glob("*.md")) + list(source_dir.glob("**/*.md"))
+    # Find markdown files (use set to avoid duplicates from overlapping globs)
+    md_files = sorted(set(source_dir.glob("**/*.md")))
     
     if not md_files:
         print("❌ No markdown files found")
@@ -886,12 +891,14 @@ def main():
     
     # Init command
     init_parser = subparsers.add_parser("init", help="Initialize a new cashew database")
+    init_parser.add_argument("--db", dest="sub_db", default=None, help="Database path (can also be specified before subcommand)")
     init_parser.set_defaults(func=cmd_init)
     
     # Migrate files command
     migrate_files_parser = subparsers.add_parser("migrate-files", help="Migrate markdown files to cashew database")
     migrate_files_parser.add_argument("--dir", required=True, help="Directory containing markdown files")
     migrate_files_parser.add_argument("--dry-run", action="store_true", help="Show what would be migrated without making changes")
+    migrate_files_parser.add_argument("--db", dest="sub_db", default=None, help="Database path (can also be specified before subcommand)")
     migrate_files_parser.set_defaults(func=cmd_migrate_files)
     
     args = parser.parse_args()
@@ -899,6 +906,10 @@ def main():
     if not args.command:
         parser.print_help()
         return 1
+    
+    # Allow --db after subcommand (sub_db overrides if set)
+    if hasattr(args, 'sub_db') and args.sub_db is not None:
+        args.db = args.sub_db
     
     if args.debug:
         logging.basicConfig(level=logging.DEBUG, format="%(name)s %(levelname)s: %(message)s")
