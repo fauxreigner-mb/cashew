@@ -208,18 +208,31 @@ def cmd_sleep(args):
     
     try:
         sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(__file__))))
+        
+        # Phase 1: Core sleep protocol (dedup, cross-links, gc, promotions)
         from core.sleep import SleepProtocol
-        
         protocol = SleepProtocol(args.db)
-        result = protocol.run_sleep_cycle()
-        elapsed = _time.time() - start
+        core_result = protocol.run_sleep_cycle()
         
-        print(f"\n✅ Sleep protocol completed in {elapsed:.1f}s")
-        if isinstance(result, dict):
-            for k, v in result.items():
+        print(f"\n📊 Core sleep results:")
+        if isinstance(core_result, dict):
+            for k, v in core_result.items():
                 print(f"  {k}: {v}")
+        
+        # Phase 2: Complete clustering + hierarchy evolution
+        print(f"\n🔗 Running clustering + hierarchy evolution...")
+        from integration.complete_integration import run_complete_sleep_cycle
+        cluster_result = run_complete_sleep_cycle(args.db)
+        
+        elapsed = _time.time() - start
+        print(f"\n✅ Full sleep protocol completed in {elapsed:.1f}s")
+        
+        if cluster_result.get("error"):
+            print(f"  ⚠️ Clustering issue: {cluster_result['error']}")
         else:
-            print(f"  Result: {result}")
+            coverage = cluster_result.get('coverage_verification', {})
+            print(f"  Coverage: {coverage.get('coverage_percentage', 'N/A')}%")
+            print(f"  Actions: {cluster_result.get('total_actions', 0)}")
         
     except Exception as e:
         print(f"❌ Sleep protocol error: {e}")
