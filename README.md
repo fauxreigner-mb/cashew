@@ -32,6 +32,9 @@ Isolated cluster reasoning generates derivations the human hadn't stated but rec
 ### ✅ The graph exhibits power law properties naturally  
 Node connectivity follows a power law distribution — a few hubs with 40-60 edges, hundreds with 1-2. Preferential attachment emerges without tuning through sleep cycle consolidation.
 
+### ✅ Why-chains emerge from conversation, not engineering
+Ask "why do I overcommit?" → get an answer grounded in the graph → ask "but why do I people-please?" → deeper → "why does disappointing people feel like failure?" → the graph already has the full causal chain, built across different sessions over weeks, cross-linked by sleep cycles. No special algorithm. No depth-building feature. Just honest conversation + extraction + sleep = emergent causal depth. This is what separates cashew from flat journaling — structure creates understanding over time.
+
 ### ✅ Hierarchical retrieval scales
 DFS through hotspot trees replaces flat search. Context retrieval is O(log N) comparisons instead of O(N) vector similarity.
 
