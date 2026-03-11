@@ -32,8 +32,12 @@ Isolated cluster reasoning generates derivations the human hadn't stated but rec
 ### ✅ The graph exhibits power law properties naturally  
 Node connectivity follows a power law distribution — a few hubs with 40-60 edges, hundreds with 1-2. Preferential attachment emerges without tuning through sleep cycle consolidation.
 
-### ✅ Why-chains emerge from conversation, not engineering
-Ask "why do I overcommit?" → get an answer grounded in the graph → ask "but why do I people-please?" → deeper → "why does disappointing people feel like failure?" → the graph already has the full causal chain, built across different sessions over weeks, cross-linked by sleep cycles. No special algorithm. No depth-building feature. Just honest conversation + extraction + sleep = emergent causal depth. This is what separates cashew from flat journaling — structure creates understanding over time.
+### ✅ Retroactive self-understanding — the system infers what you never said
+You talk about work stress on Tuesday, your relationship on Thursday, leaving religion on Saturday. You never say "these are connected." But sleep cycles find the structural similarity and cross-link them. Weeks later, the query "why do I overcommit?" returns a causal chain spanning all three conversations — people-pleasing → family system that punished authentic expression → approval-seeking as survival strategy. **You never stated the why. The system inferred it retroactively.**
+
+This isn't memory. It's understanding. The graph proposes an interpretation, the human validates or rejects it — either way, they come out with clearer self-knowledge. Validation reinforces the node. Rejection forces you to articulate what *is* true, and that correction gets extracted. Both paths produce insight.
+
+No causal reasoning engine. No why-chain algorithm. Just cosine similarity + derivation edges + sleep cycle cross-linking + an LLM that threads the narrative at query time. The infrastructure is simple. The emergent behavior is not.
 
 ### ✅ Hierarchical retrieval scales
 DFS through hotspot trees replaces flat search. Context retrieval is O(log N) comparisons instead of O(N) vector similarity.
