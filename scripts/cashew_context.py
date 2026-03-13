@@ -195,33 +195,54 @@ def cmd_stats(args):
 
 
 def cmd_prune(args):
-    """Prune old unused low-confidence nodes"""
+    """Prune old unused low-confidence nodes with cascading tree decay"""
     dry_run = getattr(args, 'dry_run', False)
     min_age_days = getattr(args, 'min_age_days', 14)
     max_confidence = getattr(args, 'max_confidence', 0.85)
+    disable_cascading = getattr(args, 'disable_cascading', False)
+    decay_factor = getattr(args, 'decay_factor', 0.7)
     
     print(f"🧹 Pruning nodes older than {min_age_days} days with confidence < {max_confidence}")
+    if not disable_cascading:
+        print(f"🌊 Cascading decay enabled (factor: {decay_factor})")
     print(f"🔍 Dry run: {dry_run}")
     print()
     
     if dry_run:
-        # Show candidates without actually pruning
-        candidates = get_decay_candidates(args.db, min_age_days, max_confidence)
+        # Show candidates without actually pruning, including cascade preview
+        candidates = get_decay_candidates(args.db, min_age_days, max_confidence, 
+                                        show_cascade_preview=not disable_cascading, 
+                                        decay_factor=decay_factor)
         print(f"📊 Decay candidates:")
-        print(f"  Count: {candidates['candidates']}")
+        print(f"  Direct candidates: {candidates['candidates']}")
+        print(f"  Hotspots affected: {candidates['hotspot_candidates']}")
         print(f"  Avg confidence: {candidates['avg_confidence']}")
         print(f"  Min confidence: {candidates['min_confidence']}")
         print(f"  Max confidence: {candidates['max_confidence']}")
-        if candidates['candidates'] > 0:
+        
+        if not disable_cascading and 'cascade_preview' in candidates:
+            print(f"  Would cascade: {candidates['cascade_preview']}")
+            print(f"  Total affected: {candidates['total_preview']}")
+            print(f"✨ Run without --dry-run to prune {candidates['total_preview']} nodes (direct + cascaded)")
+        elif candidates['candidates'] > 0:
             print(f"✨ Run without --dry-run to prune {candidates['candidates']} nodes")
         else:
             print(f"✅ No nodes eligible for pruning")
     else:
-        # Actually prune
-        result = auto_decay(args.db, min_age_days, max_confidence)
-        pruned = result['pruned']
-        if pruned > 0:
-            print(f"✅ Pruned {pruned} nodes")
+        # Actually prune with cascading
+        result = auto_decay(args.db, min_age_days, max_confidence, 
+                           enable_cascading=not disable_cascading, 
+                           decay_factor=decay_factor)
+        
+        direct_pruned = result['pruned']
+        cascaded = result.get('cascaded', 0)
+        total = result.get('total', direct_pruned)
+        
+        if total > 0:
+            if cascaded > 0:
+                print(f"✅ Pruned {total} nodes ({direct_pruned} direct + {cascaded} cascaded)")
+            else:
+                print(f"✅ Pruned {direct_pruned} nodes")
         else:
             print(f"✅ No nodes pruned (none eligible)")
     
@@ -1138,10 +1159,12 @@ def main():
     stats_parser.set_defaults(func=cmd_stats)
     
     # Prune command
-    prune_parser = subparsers.add_parser("prune", help="Prune old unused low-confidence nodes")
+    prune_parser = subparsers.add_parser("prune", help="Prune old unused low-confidence nodes with cascading decay")
     prune_parser.add_argument("--dry-run", action="store_true", help="Show what would be pruned without making changes")
     prune_parser.add_argument("--min-age-days", type=int, default=14, help="Minimum age in days for pruning (default: 14)")
     prune_parser.add_argument("--max-confidence", type=float, default=0.85, help="Maximum confidence for pruning (default: 0.85)")
+    prune_parser.add_argument("--disable-cascading", action="store_true", help="Disable cascading tree decay")
+    prune_parser.add_argument("--decay-factor", type=float, default=0.7, help="Decay factor for cascading (default: 0.7)")
     prune_parser.set_defaults(func=cmd_prune)
     
     # Compact command
