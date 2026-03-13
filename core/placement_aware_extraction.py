@@ -28,9 +28,39 @@ NOVELTY_THRESHOLD = 0.82  # reject if nearest neighbor similarity > this
 BORDERLINE_THRESHOLD = 0.72  # confidence tiebreaker zone: 0.72-0.82
 
 
-def check_novelty(db_path: str, content: str, threshold: float = NOVELTY_THRESHOLD) -> Tuple[bool, float, Optional[str]]:
+def load_all_embeddings(db_path: str) -> Dict[str, np.ndarray]:
+    """Load all non-decayed node embeddings from DB. Call once, pass to check_novelty."""
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT e.node_id, e.vector 
+        FROM embeddings e
+        JOIN thought_nodes tn ON e.node_id = tn.id
+        WHERE tn.decayed IS NULL OR tn.decayed = 0
+    """)
+    
+    embeddings = {}
+    for node_id, vector_bytes in cursor.fetchall():
+        try:
+            stored = np.frombuffer(vector_bytes, dtype=np.float32)
+            embeddings[node_id] = stored
+        except Exception:
+            continue
+    
+    conn.close()
+    return embeddings
+
+
+def check_novelty(db_path: str, content: str, threshold: float = NOVELTY_THRESHOLD, 
+                   preloaded_embeddings: Optional[Dict[str, np.ndarray]] = None) -> Tuple[bool, float, Optional[str]]:
     """
     Check if a candidate node is sufficiently novel compared to existing graph.
+    
+    Args:
+        db_path: Path to database
+        content: Content to check for novelty
+        threshold: Similarity threshold for novelty
+        preloaded_embeddings: Optional preloaded embeddings dict to avoid DB scans
     
     Returns:
         (is_novel, max_similarity, nearest_node_id)
@@ -42,21 +72,33 @@ def check_novelty(db_path: str, content: str, threshold: float = NOVELTY_THRESHO
         logger.warning(f"Failed to embed candidate for novelty check: {e}")
         return True, 0.0, None  # fail open — allow the node
     
-    conn = sqlite3.connect(db_path)
-    cursor = conn.cursor()
-    cursor.execute("""
-        SELECT e.node_id, e.vector 
-        FROM embeddings e
-        JOIN thought_nodes tn ON e.node_id = tn.id
-        WHERE tn.decayed IS NULL OR tn.decayed = 0
-    """)
+    # Use preloaded embeddings if provided, otherwise load from DB
+    if preloaded_embeddings is not None:
+        embeddings_dict = preloaded_embeddings
+    else:
+        conn = sqlite3.connect(db_path)
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT e.node_id, e.vector 
+            FROM embeddings e
+            JOIN thought_nodes tn ON e.node_id = tn.id
+            WHERE tn.decayed IS NULL OR tn.decayed = 0
+        """)
+        
+        embeddings_dict = {}
+        for node_id, vector_bytes in cursor.fetchall():
+            try:
+                stored = np.frombuffer(vector_bytes, dtype=np.float32)
+                embeddings_dict[node_id] = stored
+            except Exception:
+                continue
+        conn.close()
     
     max_sim = 0.0
     nearest_id = None
     
-    for node_id, vector_bytes in cursor.fetchall():
+    for node_id, stored in embeddings_dict.items():
         try:
-            stored = np.frombuffer(vector_bytes, dtype=np.float32)
             dot = np.dot(candidate_embedding, stored)
             cn = np.linalg.norm(candidate_embedding)
             sn = np.linalg.norm(stored)
@@ -67,8 +109,6 @@ def check_novelty(db_path: str, content: str, threshold: float = NOVELTY_THRESHO
                     nearest_id = node_id
         except Exception:
             continue
-    
-    conn.close()
     
     is_novel = max_sim < threshold
     return is_novel, max_sim, nearest_id
@@ -634,6 +674,13 @@ Conversation to extract from:
     new_nodes = []
     placements = []
     
+    # Load embeddings once before the loop for performance
+    try:
+        preloaded_embeddings = load_all_embeddings(db_path)
+    except Exception as e:
+        logger.warning(f"Failed to preload embeddings, falling back to per-call loading: {e}")
+        preloaded_embeddings = None
+    
     for extraction in extractions:
         if not extraction.get("content"):
             continue
@@ -643,7 +690,10 @@ Conversation to extract from:
         confidence = extraction.get("confidence", 0.5)
         
         # Primary gate: semantic novelty check
-        is_novel, max_sim, nearest_id = check_novelty(db_path, content)
+        if preloaded_embeddings is not None:
+            is_novel, max_sim, nearest_id = check_novelty(db_path, content, preloaded_embeddings=preloaded_embeddings)
+        else:
+            is_novel, max_sim, nearest_id = check_novelty(db_path, content)
         if not is_novel:
             logger.info(f"Rejecting duplicate (sim={max_sim:.3f} to {nearest_id}): {content[:60]}")
             continue

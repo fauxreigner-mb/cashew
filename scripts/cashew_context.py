@@ -727,6 +727,14 @@ Document ({filename}):
     cursor = conn.cursor()
     new_nodes = []
     
+    # Load embeddings once before the loop for performance
+    try:
+        from core.placement_aware_extraction import check_novelty, load_all_embeddings
+        preloaded_embeddings = load_all_embeddings(db_path)
+    except Exception as e:
+        print(f"   ⚠️  Failed to preload embeddings, falling back to per-call loading: {e}")
+        preloaded_embeddings = None
+    
     for item in extractions:
         node_content = item.get("content", "").strip()
         if not node_content or len(node_content) < 20:
@@ -736,8 +744,10 @@ Document ({filename}):
         
         # Primary gate: semantic novelty check
         try:
-            from core.placement_aware_extraction import check_novelty
-            is_novel, max_sim, nearest_id = check_novelty(db_path, node_content)
+            if preloaded_embeddings is not None:
+                is_novel, max_sim, nearest_id = check_novelty(db_path, node_content, preloaded_embeddings=preloaded_embeddings)
+            else:
+                is_novel, max_sim, nearest_id = check_novelty(db_path, node_content)
             if not is_novel:
                 print(f"   ⊘ Rejecting duplicate (sim={max_sim:.3f}): {node_content[:60]}")
                 continue

@@ -304,11 +304,22 @@ class ThinkCycle:
         saved_count = 0
         timestamp = self._get_current_timestamp()
         
+        # Load embeddings once before the loop for performance
+        try:
+            from core.placement_aware_extraction import check_novelty, load_all_embeddings
+            preloaded_embeddings = load_all_embeddings(self.db_path)
+        except Exception as e:
+            print(f"  ⚠️ Failed to preload embeddings, falling back to per-call loading: {e}")
+            preloaded_embeddings = None
+        
         for insight in insights:
             # Primary gate: semantic novelty check
             try:
-                from core.placement_aware_extraction import check_novelty
-                is_novel, max_sim, nearest_id = check_novelty(self.db_path, insight.content)
+                if preloaded_embeddings is not None:
+                    is_novel, max_sim, nearest_id = check_novelty(self.db_path, insight.content, 
+                                                                preloaded_embeddings=preloaded_embeddings)
+                else:
+                    is_novel, max_sim, nearest_id = check_novelty(self.db_path, insight.content)
                 if not is_novel:
                     print(f"  ⊘ Rejecting duplicate think insight (sim={max_sim:.3f}): {insight.content[:60]}")
                     continue

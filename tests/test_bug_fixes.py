@@ -140,6 +140,43 @@ class TestNoveltyGate(unittest.TestCase):
         self.assertGreater(max_sim, 0.72, "Should be in borderline range")
         self.assertLess(max_sim, 0.82, "Should be in borderline range") 
         self.assertTrue(is_novel, "Should be novel since similarity < 0.82")
+    
+    @patch('core.placement_aware_extraction.embed_text')
+    def test_preloaded_embeddings_performance_mode(self, mock_embed):
+        """Test that preloaded embeddings mode works correctly and avoids DB scans"""
+        # Mock the embedding to return same as existing
+        mock_embed.return_value = self.existing_embedding
+        
+        # Load embeddings once
+        from core.placement_aware_extraction import load_all_embeddings
+        preloaded_embeddings = load_all_embeddings(self.db_path)
+        
+        # Verify we loaded the embeddings
+        self.assertEqual(len(preloaded_embeddings), 1)
+        self.assertIn("existing_node", preloaded_embeddings)
+        
+        # Test novelty check using preloaded embeddings
+        is_novel, max_sim, nearest_id = check_novelty(
+            self.db_path, "Machine learning improves with more data",
+            preloaded_embeddings=preloaded_embeddings
+        )
+        
+        # Should give same result as non-preloaded mode
+        self.assertFalse(is_novel, "Identical content should be rejected with preloaded embeddings")
+        self.assertGreater(max_sim, 0.82, "Similarity should be > 0.82")
+        self.assertEqual(nearest_id, "existing_node")
+        
+        # Test with novel content
+        different_embedding = np.random.rand(384).astype(np.float32)
+        mock_embed.return_value = different_embedding
+        
+        is_novel2, max_sim2, nearest_id2 = check_novelty(
+            self.db_path, "Cats like to play with string",
+            preloaded_embeddings=preloaded_embeddings
+        )
+        
+        self.assertTrue(is_novel2, "Novel content should be accepted with preloaded embeddings")
+        self.assertLess(max_sim2, 0.82, "Similarity should be < 0.82")
 
 
 class TestHotspotProliferationFix(unittest.TestCase):
