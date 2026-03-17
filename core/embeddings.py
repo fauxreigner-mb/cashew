@@ -242,21 +242,13 @@ def get_embedding_stats(db_path: str) -> dict:
         Dictionary with embedding statistics
     """
     _ensure_embeddings_table(db_path)
-    
-    conn = sqlite3.connect(db_path)
+
+    from .stats import get_embedding_coverage, get_connection
+    conn = get_connection(db_path)
     cursor = conn.cursor()
-    
-    # Count total nodes
-    cursor.execute("SELECT COUNT(*) FROM thought_nodes WHERE decayed IS NULL OR decayed = 0")
-    total_nodes = cursor.fetchone()[0]
-    
-    # Count embedded nodes
-    cursor.execute("""
-        SELECT COUNT(*) FROM embeddings e
-        JOIN thought_nodes tn ON e.node_id = tn.id
-        WHERE tn.decayed IS NULL OR tn.decayed = 0
-    """)
-    embedded_nodes = cursor.fetchone()[0]
+
+    # Count embedded and total nodes
+    embedded_nodes, total_nodes = get_embedding_coverage(cursor)
     
     # Count by model
     cursor.execute("""
@@ -290,7 +282,7 @@ def main():
     """CLI interface for embeddings module"""
     parser = argparse.ArgumentParser(description="Cashew Embeddings Module")
     parser.add_argument("command", choices=["embed", "search", "stats"], help="Command to run")
-    parser.add_argument("--db", default="/Users/bunny/.openclaw/workspace/cashew/data/graph.db", help="Database path")
+    parser.add_argument("--db", default="./data/graph.db", help="Database path")
     parser.add_argument("--query", help="Search query (for search command)")
     parser.add_argument("--top-k", type=int, default=10, help="Number of search results")
     parser.add_argument("--batch-size", type=int, default=100, help="Batch size for embedding")

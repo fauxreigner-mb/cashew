@@ -13,6 +13,7 @@ Every node belongs to exactly one cluster. Zero orphans.
 import os
 import sqlite3
 import json
+from .config import get_user_domain, get_ai_domain
 import hashlib
 import logging
 import numpy as np
@@ -155,16 +156,18 @@ def load_embeddings_with_metadata(db_path: str) -> Tuple[List[str], np.ndarray, 
 def infer_emergent_domains(node_meta: Dict[str, Dict]) -> Dict[str, str]:
     """
     Infer domains from node content and metadata.
-    Maps to actual graph domains: 'raj' (human user's knowledge) or 'bunny' (AI analysis/operations).
+    Maps to actual graph domains: user domain (human user's knowledge) or AI domain (AI analysis/operations).
     
     Returns:
-        Dict mapping node_id -> 'raj' or 'bunny'
+        Dict mapping node_id -> user_domain or ai_domain
     """
     domain_mapping = {}
+    ai_domain = get_ai_domain()
+    user_domain = get_user_domain()
     
-    # Keywords that indicate bunny (AI) domain — operational, meta-analytical, system-level
-    bunny_signals = [
-        'bunny', 'operating principle', 'engineering philosophy', 'boot sequence',
+    # Keywords that indicate AI domain — operational, meta-analytical, system-level
+    ai_signals = [
+        ai_domain.lower(), 'operating principle', 'engineering philosophy', 'boot sequence',
         'heartbeat', 'cron job', 'brain query', 'self-context', 'my personality',
         'my beliefs', 'think cycle', 'sleep cycle', 'extraction pipeline',
         'cross-domain insight', 'graph structure', 'hub nodes', 'node_type',
@@ -178,20 +181,20 @@ def infer_emergent_domains(node_meta: Dict[str, Dict]) -> Dict[str, str]:
         source_file = meta.get("source_file", "")
         node_type = meta.get("node_type", "unknown")
         
-        # System-generated content is always bunny domain
+        # System-generated content is always AI domain
         if "system_generated" in source_file:
-            domain_mapping[node_id] = "bunny"
+            domain_mapping[node_id] = ai_domain
             continue
         
-        # Check for bunny signals
-        bunny_score = sum(1 for s in bunny_signals if s in content_lower)
+        # Check for AI signals
+        ai_score = sum(1 for s in ai_signals if s in content_lower)
         
-        if bunny_score >= 2:
-            domain_mapping[node_id] = "bunny"
+        if ai_score >= 2:
+            domain_mapping[node_id] = ai_domain
         elif node_type == "hotspot":
-            domain_mapping[node_id] = "bunny"  # structural nodes are AI's work
+            domain_mapping[node_id] = ai_domain  # structural nodes are AI's work
         else:
-            domain_mapping[node_id] = "raj"  # default: human's knowledge
+            domain_mapping[node_id] = user_domain  # default: human's knowledge
     
     return domain_mapping
 

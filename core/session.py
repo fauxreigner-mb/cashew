@@ -18,6 +18,7 @@ import argparse
 from .config import config, get_token_budget, get_top_k, get_walk_depth
 from .retrieval import retrieve, retrieve_dfs, RetrievalResult
 from .embeddings import embed_text, embed_nodes
+from .stats import get_active_node_count, get_hotspot_count
 
 @dataclass
 class SessionContext:
@@ -94,15 +95,10 @@ def _get_tree_overview(db_path: str) -> str:
         cursor = conn.cursor()
         
         # Total nodes (excluding decayed)
-        cursor.execute("SELECT COUNT(*) FROM thought_nodes WHERE decayed IS NULL OR decayed = 0")
-        total_nodes = cursor.fetchone()[0]
-        
+        total_nodes = get_active_node_count(cursor)
+
         # Total hotspots/clusters
-        cursor.execute("""
-            SELECT COUNT(*) FROM thought_nodes 
-            WHERE node_type = 'hotspot' AND (decayed IS NULL OR decayed = 0)
-        """)
-        total_hotspots = cursor.fetchone()[0]
+        total_hotspots = get_hotspot_count(cursor)
         
         # Recently updated hotspots (today)
         from datetime import datetime, timezone
@@ -1081,7 +1077,7 @@ def main():
     """CLI interface for session management"""
     parser = argparse.ArgumentParser(description="Cashew Session Integration")
     parser.add_argument("command", choices=["start", "end", "think"], help="Command to run")
-    parser.add_argument("--db", default="/Users/bunny/.openclaw/workspace/cashew/data/test_session.db", 
+    parser.add_argument("--db", default="./data/test_session.db", 
                        help="Database path")
     parser.add_argument("--session-id", default="test_session", help="Session ID")
     parser.add_argument("--hints", nargs="*", help="Session hints (for start command)")

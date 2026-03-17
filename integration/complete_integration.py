@@ -24,7 +24,7 @@ from core.complete_retrieval import (
 from core.embeddings import embed_nodes
 
 # Database path is now configurable via environment variable or CLI  
-from core.config import get_db_path
+from core.config import get_db_path, get_user_domain, get_ai_domain
 
 def _create_anthropic_model_fn() -> Optional[Callable[[str], str]]:
     """Create model function for Anthropic API"""
@@ -394,7 +394,7 @@ def explain_complete_system(db_path: str = None, query: str = "test query") -> D
                     "extraction": "Nodes created without cluster assignment",
                     "retrieval": "Requires fallback pools for orphaned nodes",
                     "hierarchy": "Static - minimal evolution",
-                    "domains": "Hardcoded (raj, bunny)"
+                    "domains": "Hardcoded (user, ai)"
                 },
                 "new_system": {
                     "dbscan_noise": "0% nodes orphaned - complete coverage",
@@ -463,7 +463,7 @@ def get_complete_system_stats(db_path: str = None) -> Dict:
             },
             "system_health": {
                 "has_complete_coverage": coverage_stats.get("coverage_percentage", 0) >= 99.9,
-                "emergent_domains": len([d for d in domains.keys() if d not in ["raj", "bunny", "unknown"]]),
+                "emergent_domains": len([d for d in domains.keys() if d not in [get_user_domain(), get_ai_domain(), "unknown"]]),
                 "hierarchical_structure": len(parent_map) > 0
             }
         }

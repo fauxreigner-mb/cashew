@@ -24,6 +24,7 @@ from integration.complete_integration import (
 )
 from core.hotspots import create_hotspot, update_hotspot, list_hotspots, get_hotspot
 from core.decay import auto_decay, get_decay_candidates
+from core.stats import get_active_node_count, get_edge_count, get_embedding_coverage
 
 
 def cmd_context(args):
@@ -152,20 +153,13 @@ def cmd_stats(args):
         node_types = cursor.fetchall()
         
         # Count total nodes
-        cursor.execute("SELECT COUNT(*) FROM thought_nodes WHERE decayed IS NULL OR decayed = 0")
-        total_nodes = cursor.fetchone()[0]
-        
+        total_nodes = get_active_node_count(cursor)
+
         # Count edges
-        cursor.execute("SELECT COUNT(*) FROM derivation_edges")
-        total_edges = cursor.fetchone()[0]
-        
+        total_edges = get_edge_count(cursor)
+
         # Count embeddings
-        cursor.execute("""
-            SELECT COUNT(*) FROM embeddings e
-            JOIN thought_nodes tn ON e.node_id = tn.id
-            WHERE tn.decayed IS NULL OR tn.decayed = 0
-        """)
-        embedded_nodes = cursor.fetchone()[0]
+        embedded_nodes = get_embedding_coverage(cursor)[0]
         
         # Recent activity
         cursor.execute("""
@@ -762,11 +756,13 @@ Document ({filename}):
         
         # Infer domain from content
         content_lower = node_content.lower()
-        bunny_signals = ['bunny', 'operating principle', 'engineering philosophy', 
-                         'belief (bunny', 'decision (bunny', 'insight (bunny',
-                         'boot sequence', 'heartbeat', 'cron job', 'brain query',
-                         'self-context', 'my personality', 'my beliefs']
-        domain = 'bunny' if any(s in content_lower for s in bunny_signals) else 'raj'
+        ai_domain = get_ai_domain()
+        user_domain = get_user_domain()
+        ai_signals = [ai_domain.lower(), 'operating principle', 'engineering philosophy', 
+                      f'belief ({ai_domain.lower()}', f'decision ({ai_domain.lower()}', f'insight ({ai_domain.lower()}',
+                      'boot sequence', 'heartbeat', 'cron job', 'brain query',
+                      'self-context', 'my personality', 'my beliefs']
+        domain = ai_domain if any(s in content_lower for s in ai_signals) else user_domain
         
         try:
             cursor.execute("""
@@ -819,15 +815,17 @@ def _migrate_extract_heuristic(db_path: str, content: str, filename: str, sessio
         clean = ' '.join(para.split())[:500]
         node_id = hashlib.sha256(f"{clean}:{now}".encode()).hexdigest()[:12]
         
-        # Infer domain from content — only raj or bunny, never default
+        # Infer domain from content — only user or ai domains, never default
         clean_lower = clean.lower()
-        bunny_signals = ['bunny', 'operating principle', 'engineering philosophy',
-                         'belief (bunny', 'decision (bunny', 'insight (bunny',
-                         'boot sequence', 'heartbeat', 'cron job', 'brain query',
-                         'self-context', 'my personality', 'my beliefs',
-                         'think cycle', 'cross-domain insight', 'meta-analysis',
-                         'graph structure', 'openclaw', 'system_generated']
-        domain = 'bunny' if any(s in clean_lower for s in bunny_signals) else 'raj'
+        ai_domain = get_ai_domain()
+        user_domain = get_user_domain()
+        ai_signals = [ai_domain.lower(), 'operating principle', 'engineering philosophy',
+                      f'belief ({ai_domain.lower()}', f'decision ({ai_domain.lower()}', f'insight ({ai_domain.lower()}',
+                      'boot sequence', 'heartbeat', 'cron job', 'brain query',
+                      'self-context', 'my personality', 'my beliefs',
+                      'think cycle', 'cross-domain insight', 'meta-analysis',
+                      'graph structure', 'openclaw', 'system_generated']
+        domain = ai_domain if any(s in clean_lower for s in ai_signals) else user_domain
         
         try:
             cursor.execute("""
@@ -1040,7 +1038,7 @@ def cmd_hotspot(args):
             status=args.status or "active",
             file_pointers=file_pointers,
             cluster_node_ids=cluster_ids,
-            domain=args.domain or "bunny",
+            domain=args.domain or get_ai_domain(),
             tags=tags
         )
         print(f"✅ Created hotspot: {hotspot_id}")
@@ -1148,7 +1146,7 @@ def main():
     import sys
     import os
     sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(__file__))))
-    from core.config import get_db_path
+    from core.config import get_db_path, get_user_domain, get_ai_domain
     
     parser.add_argument("--db", default=get_db_path(), 
                        help="Database path (default: ./data/graph.db, or CASHEW_DB env var)")
@@ -1210,7 +1208,7 @@ def main():
     hotspot_parser.add_argument("--files", help="File pointers as 'label:path,label:path'")
     hotspot_parser.add_argument("--cluster", help="Comma-separated cluster node IDs")
     hotspot_parser.add_argument("--tags", help="Comma-separated search tags")
-    hotspot_parser.add_argument("--domain", help="Domain (raj/bunny)")
+    hotspot_parser.add_argument("--domain", help="Domain (user/ai)")
     hotspot_parser.add_argument("--id", help="Hotspot ID (for update/show)")
     hotspot_parser.set_defaults(func=cmd_hotspot)
     

@@ -11,6 +11,11 @@ import json
 import sys
 import os
 from datetime import datetime
+from pathlib import Path
+
+# Add parent directory to path for imports
+sys.path.insert(0, str(Path(__file__).parent.parent))
+from core.config import get_user_domain, get_ai_domain
 
 DASHBOARD_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "dashboard")
 
@@ -26,7 +31,15 @@ def export(db_path: str, output_path: str, title: str = "cashew"):
     """)
     nodes = []
     # Map DB domains to dashboard domains
-    DOMAIN_MAP = {"raj": "raj", "bunny": "bunny", "default": "raj"}
+    user_domain = get_user_domain()
+    ai_domain = get_ai_domain()
+    DOMAIN_MAP = {
+        "raj": user_domain,  # backward compatibility
+        "bunny": ai_domain,   # backward compatibility
+        user_domain: user_domain,
+        ai_domain: ai_domain,
+        "default": user_domain
+    }
     for row in c.fetchall():
         db_domain = row[7] or "default"
         nodes.append({

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Tag existing nodes with domain information
-All existing nodes are tagged as 'raj' domain
+All existing nodes are tagged with user domain by default
 """
 
 import sqlite3
@@ -9,6 +9,11 @@ import json
 import argparse
 import sys
 from datetime import datetime, timezone
+from pathlib import Path
+
+# Add parent directory to path for imports
+sys.path.insert(0, str(Path(__file__).parent.parent))
+from core.config import get_user_domain, get_ai_domain
 
 def get_connection(db_path: str) -> sqlite3.Connection:
     """Get database connection"""
@@ -33,13 +38,16 @@ def ensure_domain_column(db_path: str):
     
     conn.close()
 
-def tag_existing_nodes(db_path: str, domain: str = 'raj') -> dict:
+def tag_existing_nodes(db_path: str, domain: str = None) -> dict:
     """
     Tag all existing nodes that don't have a domain as the specified domain
     
     Returns:
         Dictionary with statistics about the tagging process
     """
+    if domain is None:
+        domain = get_user_domain()
+    
     conn = get_connection(db_path)
     cursor = conn.cursor()
     
@@ -99,32 +107,27 @@ def tag_existing_nodes(db_path: str, domain: str = 'raj') -> dict:
 
 def get_domain_stats(db_path: str) -> dict:
     """Get statistics about domains in the database"""
+    from core.stats import get_domain_counts, get_active_node_count
+
     conn = get_connection(db_path)
     cursor = conn.cursor()
-    
-    # Count nodes by domain
+
+    # Count nodes by domain (preserve ordering by using direct query for display)
     cursor.execute("""
-        SELECT 
+        SELECT
             COALESCE(domain, 'unknown') as domain_name,
             COUNT(*) as count
-        FROM thought_nodes 
+        FROM thought_nodes
         WHERE (decayed IS NULL OR decayed = 0)
         GROUP BY domain_name
         ORDER BY count DESC
     """)
-    
     domain_counts = dict(cursor.fetchall())
-    
-    # Total nodes
-    cursor.execute("""
-        SELECT COUNT(*) 
-        FROM thought_nodes 
-        WHERE (decayed IS NULL OR decayed = 0)
-    """)
-    total_nodes = cursor.fetchone()[0]
-    
+
+    total_nodes = get_active_node_count(cursor)
+
     conn.close()
-    
+
     return {
         "domain_counts": domain_counts,
         "total_nodes": total_nodes
@@ -134,7 +137,7 @@ def main():
     """CLI interface for domain tagging"""
     parser = argparse.ArgumentParser(description="Tag existing nodes with domain information")
     parser.add_argument("--db", required=True, help="Path to SQLite database")
-    parser.add_argument("--domain", default="raj", help="Domain to tag existing nodes with")
+    parser.add_argument("--domain", default=None, help="Domain to tag existing nodes with (defaults to user domain)")
     parser.add_argument("--dry-run", action="store_true", help="Show what would be done without making changes")
     parser.add_argument("--stats", action="store_true", help="Show current domain statistics")
     
