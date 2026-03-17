@@ -192,7 +192,7 @@ def retrieve(db_path: str, query: str, top_k: int = 5, walk_depth: int = 2, doma
         query: Search query
         top_k: Number of top results to return
         walk_depth: Graph walk depth from embedding entry points
-        domain: Optional domain filter ('raj', 'bunny', etc.). If None, returns all domains.
+        domain: Optional domain filter (user, ai, etc.). If None, returns all domains.
         
     Returns:
         List of RetrievalResult objects ranked by hybrid score
@@ -736,11 +736,11 @@ def main():
     """CLI interface for retrieval module"""
     parser = argparse.ArgumentParser(description="Cashew Hybrid Retrieval")
     parser.add_argument("command", choices=["retrieve", "explain"], help="Command to run")
-    parser.add_argument("--db", default="/Users/bunny/.openclaw/workspace/cashew/data/graph.db", help="Database path")
+    parser.add_argument("--db", default="./data/graph.db", help="Database path")
     parser.add_argument("--query", required=True, help="Search query")
     parser.add_argument("--top-k", type=int, default=5, help="Number of results")
     parser.add_argument("--walk-depth", type=int, default=2, help="Graph walk depth")
-    parser.add_argument("--domain", help="Filter results to specific domain (raj, bunny, etc.)")
+    parser.add_argument("--domain", help="Filter results to specific domain (user, ai, etc.)")
     parser.add_argument("--include-paths", action="store_true", help="Include paths in output")
     
     args = parser.parse_args()

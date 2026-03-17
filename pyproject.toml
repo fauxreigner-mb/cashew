@@ -3,13 +3,14 @@ requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "cashew-core"
-version = "0.1.0"
-description = "A thought-graph engine that gives AI agents persistent, hierarchical memory"
+name = "cashew"
+version = "1.0.0"
+description = "Persistent thought-graph memory for AI agents. Provides context generation, knowledge extraction, and autonomous think cycles."
 authors = [{name = "jugaad-lab"}]
 license = {text = "MIT"}
 readme = "README.md"
 requires-python = ">=3.10"
+keywords = ["ai", "memory", "graph", "agents", "openclaw", "llm"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
@@ -20,12 +21,14 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
     "Topic :: Database :: Database Engines/Servers",
+    "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 dependencies = [
     "anthropic",
     "numpy",
     "scikit-learn",
     "sentence-transformers",  # for embedding model
+    "PyYAML",  # for config file support
 ]
 
 [project.optional-dependencies]
@@ -40,7 +43,7 @@ Repository = "https://github.com/jugaad-lab/cashew"
 Issues = "https://github.com/jugaad-lab/cashew/issues"
 
 [project.scripts]
-cashew = "scripts.cashew_context:main"
+cashew = "cashew_cli:main"
 
 [tool.setuptools]
 packages = ["core", "integration", "scripts"]

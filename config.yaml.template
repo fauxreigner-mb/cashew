@@ -1,0 +1,107 @@
+# Cashew Configuration Template
+# Copy this to config.yaml and customize as needed
+
+# Database configuration
+database:
+  path: "${CASHEW_DB_PATH:-./data/graph.db}"
+  backup_dir: "${CASHEW_BACKUP_DIR:-./data/backups}"
+  auto_backup: true
+
+# Model configuration
+models:
+  embedding:
+    name: "all-MiniLM-L6-v2"
+    provider: "sentence-transformers"
+    # Model cache directory
+    cache_dir: "${CASHEW_MODEL_CACHE:-./models}"
+  
+  llm:
+    provider: "anthropic"  # or "openai"
+    model: "${CASHEW_LLM_MODEL:-claude-sonnet-4-20250514}"
+    api_key_env: "ANTHROPIC_API_KEY"  # Environment variable name for API key
+
+# Domain configuration - replace hardcoded 'raj'/'bunny' references
+domains:
+  default: "general"
+  # User domain (replaces 'raj') - things the human user said/decided/believes
+  user: "${CASHEW_USER_DOMAIN:-user}"
+  # AI domain (replaces 'bunny') - AI analysis/suggestions/hypotheses
+  ai: "${CASHEW_AI_DOMAIN:-ai}"
+  # Additional domain classifications
+  classifications:
+    - personal
+    - work
+    - projects
+    - learning
+    - system
+  auto_classify: true
+
+# Performance and behavior tuning
+performance:
+  # Context generation
+  token_budget: 2000
+  top_k_results: 10
+  walk_depth: 2
+  
+  # Similarity and scoring
+  similarity_threshold: 0.3
+  novelty_threshold: 0.82
+  confidence_threshold: 0.7
+  
+  # Scoring weights (must sum to ~1.0)
+  access_weight: 0.2
+  temporal_weight: 0.1
+  # embedding_weight calculated as remainder
+  
+  # Clustering
+  clustering_eps: 0.35
+  
+  # Think cycles
+  think_cycle_nodes: 5
+  max_think_iterations: 3
+
+# Integration settings
+integration:
+  openclaw:
+    # OpenClaw auth profile path
+    auth_profile_path: "${HOME}/.openclaw/agents/${OPENCLAW_AGENT:-main}/agent/auth-profiles.json"
+    # OpenClaw workspace path
+    workspace_path: "${HOME}/.openclaw/workspace"
+    # Session directory for extraction
+    session_dir: "${HOME}/.openclaw/sessions"
+  
+  # Cron job schedules
+  cron:
+    # Brain extraction from session history
+    extract_schedule: "0 */2 * * *"  # Every 2 hours
+    extract_model: "anthropic/claude-haiku-4-5"
+    
+    # Think cycle for consolidation
+    think_schedule: "0 6,18 * * *"  # 6am and 6pm daily
+    think_model: "anthropic/claude-sonnet-4-20250514"
+    
+    # Sleep cycle for deep reorganization
+    sleep_schedule: "0 3 * * *"     # 3am daily
+    sleep_model: "anthropic/claude-sonnet-4-20250514"
+    
+    # Database backup
+    backup_schedule: "0 4 * * *"    # 4am daily
+    
+    # Health check
+    health_schedule: "*/30 * * * *" # Every 30 minutes
+
+# Logging configuration
+logging:
+  level: "INFO"  # DEBUG, INFO, WARNING, ERROR
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  file: "${CASHEW_LOG_FILE:-./logs/cashew.log}"
+  
+# Feature flags
+features:
+  # Enable/disable various features
+  auto_extraction: true
+  think_cycles: true
+  sleep_cycles: true
+  decay_pruning: true
+  hotspot_generation: true
+  pattern_detection: true

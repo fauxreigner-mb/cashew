@@ -12,7 +12,7 @@ from datetime import datetime, timezone
 
 from core.retrieval import retrieve, format_context
 from core.session import start_session
-from integration.openclaw import get_bunny_context, get_raj_context
+from integration.openclaw import get_ai_context, get_user_context
 
 
 def embed_test_nodes(db_path: str):
@@ -156,17 +156,17 @@ def test_domain_specific_context_generation(temp_db):
     create_test_node(temp_db, "raj1", "Raj goes silent when struggling", "observation", "raj")
     create_test_node(temp_db, "bunny1", "Check in after 1 day of silence", "decision", "bunny")
     
-    # Test bunny context
-    bunny_context = get_bunny_context(temp_db, ["silence", "communication"])
-    assert "Bunny's Operational Knowledge" in bunny_context
-    assert "Check in after 1 day of silence" in bunny_context
-    assert "bunny domain nodes" in bunny_context
+    # Test ai context
+    ai_context = get_ai_context(temp_db, ["silence", "communication"])
+    assert "AI Operational Knowledge" in ai_context
+    assert "Check in after 1 day of silence" in ai_context
+    assert "domain nodes" in ai_context
     
-    # Test raj context
-    raj_context = get_raj_context(temp_db, ["silence", "struggling"])
-    assert "Raj's Thoughts and Insights" in raj_context
-    assert "Raj goes silent when struggling" in raj_context
-    assert "raj domain nodes" in raj_context
+    # Test user context
+    user_context = get_user_context(temp_db, ["silence", "struggling"])
+    assert "User Thoughts and Insights" in user_context
+    assert "Raj goes silent when struggling" in user_context
+    assert "domain nodes" in user_context
 
 
 def test_format_context_includes_domain_labels(temp_db):
@@ -230,11 +230,11 @@ def test_empty_database_handling(temp_db):
     assert len(results) == 0
     
     # Test context generation on empty database
-    bunny_context = get_bunny_context(temp_db)
-    assert bunny_context == ""
+    ai_context = get_ai_context(temp_db)
+    assert ai_context == ""
     
-    raj_context = get_raj_context(temp_db)
-    assert raj_context == ""
+    user_context = get_user_context(temp_db)
+    assert user_context == ""
 
 
 if __name__ == "__main__":

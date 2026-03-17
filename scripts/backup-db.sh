@@ -2,7 +2,7 @@
 # Backup cashew graph.db every 6 hours, keep last 4 (24hr window)
 set -euo pipefail
 
-DB="${CASHEW_DB:-/Users/bunny/.openclaw/workspace/cashew/data/graph.db}"
+DB="${CASHEW_DB:-./data/graph.db}"
 BACKUP_DIR="$(dirname "$DB")/backups"
 TIMESTAMP=$(date +%Y%m%d-%H%M%S)
 

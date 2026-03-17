@@ -1,176 +1,365 @@
-# 🥜 cashew — Self-Organizing Thought Graph Engine
+# Cashew 🥜
 
-A persistent, hierarchical memory system that gives AI agents auditable reasoning and emergent insights. Thoughts are stored as nodes, connected by derivation, and self-maintained through sleep cycles.
+**Persistent thought-graph memory for AI agents.** Cashew provides context generation, knowledge extraction, and autonomous think cycles to maintain coherent memory across sessions and compactions.
 
-## What Is This?
+Never lose context again. Cashew builds a hierarchical graph of interconnected knowledge nodes that grows smarter over time through autonomous reasoning cycles.
 
-**The brain metaphor:**
-- **Graph = long-term memory** (persistent, structured, searchable)
-- **LLM = reasoning engine** (intelligence, derivation, pattern recognition)  
-- **Context window = working memory** (session-scoped, ephemeral)
-
-cashew stores every thought as a node in a graph, connected to its derivation parents. The system exhibits emergent clustering, power law connectivity, and genuine insight generation through isolated cluster reasoning.
-
-## Key Features
-
-- **1,142 nodes, 3,147 edges** — Hierarchical knowledge graph with 15 distinct node types
-- **O(log N) DFS retrieval** — Not flat vector search, but hierarchical hotspot trees
-- **Emergent clustering** — No hardcoded categories; hierarchy forms organically from thought patterns
-- **Sleep cycles** — Decay unused nodes, promote valuable ones, cross-link, generate dreams
-- **Domain separation** — Multiple knowledge domains in one graph
-- **Session lifecycle** — Context retrieval on start, extraction on end
-- **SQLite + local embeddings** — Zero cloud infrastructure
-- **Dashboard visualization** — Live vis.js graph with search and filtering
-
-## What We've Proven
-
-### ✅ Think cycles produce genuine insight
-Isolated cluster reasoning generates derivations the human hadn't stated but recognizes as true. Not summaries — actual forward predictions and structural patterns.
-
-**Example:** A silence cluster (17 nodes) produced: *"Silence is TWO patterns, not one — strategic silence works, avoidant silence doesn't."* This insight wasn't in ANY of the 17 source nodes. The system found it structurally.
-
-### ✅ The graph exhibits power law properties naturally  
-Node connectivity follows a power law distribution — a few hubs with 40-60 edges, hundreds with 1-2. Preferential attachment emerges without tuning through sleep cycle consolidation.
-
-### ✅ Retroactive self-understanding — the system infers what you never said
-You talk about work stress on Tuesday, your relationship on Thursday, leaving religion on Saturday. You never say "these are connected." But sleep cycles find the structural similarity and cross-link them. Weeks later, the query "why do I overcommit?" returns a causal chain spanning all three conversations — people-pleasing → family system that punished authentic expression → approval-seeking as survival strategy. **You never stated the why. The system inferred it retroactively.**
-
-This isn't memory. It's understanding. The graph proposes an interpretation, the human validates or rejects it — either way, they come out with clearer self-knowledge. Validation reinforces the node. Rejection forces you to articulate what *is* true, and that correction gets extracted. Both paths produce insight.
-
-No causal reasoning engine. No why-chain algorithm. Just cosine similarity + derivation edges + sleep cycle cross-linking + an LLM that threads the narrative at query time. The infrastructure is simple. The emergent behavior is not.
-
-### ✅ Hierarchical retrieval scales
-DFS through hotspot trees replaces flat search. Context retrieval is O(log N) comparisons instead of O(N) vector similarity.
-
-### ✅ Self-maintenance works at scale
-Sleep protocols (decay, promotion, cross-linking, dream generation) function correctly across 1000+ nodes. Early garbage collection issues resolved at scale.
-
-## Architecture
-
-```
-┌─────────────┐    ┌──────────────────┐    ┌─────────────┐
-│   Query     │───▶│  Thought Engine   │───▶│ Graph Store │
-│ (extract,   │    │                   │    │ (SQLite +   │
-│  context,   │    │  1. Hierarchical  │    │ embeddings) │
-│  think)     │    │     retrieval     │    │             │
-└─────────────┘    │  2. LLM reasoning │    │ Nodes:      │
-                   │  3. Derivation    │    │ - content   │
-                   │     linking       │    │ - metadata  │
-                   │  4. Graph update  │    │ - confidence│
-                   │  5. Sleep cycles  │    │             │
-                   └──────────────────┘    │ Edges:      │
-                                           │ - derivation│
-                                           │ - reasoning │
-                                           │ - weights   │
-                                           └─────────────┘
-```
-
-## Usage
-
-### Command-Line Interface
+## Quick Start
 
 ```bash
-# Generate context for current conversation
-python3 scripts/cashew_context.py context --hints "topic keywords"
+# Clone and install
+git clone <your-repo>
+cd cashew
+pip install -e .
 
-# Extract knowledge from a conversation
-python3 scripts/cashew_context.py extract --input conversation.md
+# Initialize your brain
+cashew init
 
-# Run a think cycle (generate insights from clusters)  
-python3 scripts/cashew_context.py think
+# Verify setup
+cashew context --hints "test"
 
-# Run sleep cycle (decay, promote, consolidate)
-python3 scripts/cashew_context.py sleep
-
-# Get graph statistics
-python3 scripts/cashew_context.py stats
-
-# Complete coverage retrieval (advanced)
-python3 scripts/cashew_context.py complete-context --hints "keywords"
+# Start using in conversations
+echo "I prefer TypeScript over JavaScript for complex projects" | cashew extract --input -
 ```
 
-### Dashboard
+## What is Cashew?
 
-View the live graph visualization:
+Cashew is a **pure infrastructure** thought-graph memory engine that gives AI agents persistent, hierarchical memory across sessions. This is engine-only: graph database, retrieval, extraction, think cycles, and sleep cycles. No opinionated identity layer or philosophical content.
+
+Unlike simple RAG systems, Cashew:
+
+- **Builds knowledge graphs**: Facts, insights, and decisions become interconnected nodes
+- **Learns autonomously**: Think cycles consolidate and extend knowledge without human input  
+- **Provides smart context**: Retrieves relevant information using semantic similarity and graph traversal
+- **Handles scale**: Efficient clustering and indexing keeps performance high as knowledge grows
+- **Integrates seamlessly**: Drop-in enhancement for OpenClaw agents and other AI systems
+
+## Installation
+
+### Requirements
+- Python 3.10+
+- 2GB RAM (for embedding model)
+- 100MB disk space (grows with your knowledge graph)
+
+### Install
 
 ```bash
-cd dashboard && python3 -m http.server 8787
-# Open http://localhost:8787
+pip install cashew
 ```
 
-Or deploy to Cloudflare Pages:
+Or for development:
 ```bash
-./scripts/deploy-dashboard.sh
+git clone <repo>
+cd cashew
+pip install -e .
 ```
 
-### As a Python package
+## Setup
+
+### 1. Initialize
+```bash
+cashew init
+```
+
+This creates:
+- `config.yaml` - Configuration (edit this!)
+- `data/graph.db` - Your knowledge graph database
+- `logs/` - Application logs
+- `models/` - Downloaded embedding models
+
+### 2. Configure
+
+Edit `config.yaml` to customize:
+
+```yaml
+# Database and storage
+database:
+  path: "./data/graph.db"
+  backup_dir: "./data/backups"
+
+# Domain names (replaces hardcoded 'raj'/'bunny')
+domains:
+  user: "user"    # Things the human said/decided
+  ai: "ai"        # AI analysis and suggestions
+
+# Performance tuning
+performance:
+  token_budget: 2000      # Context size limit
+  top_k_results: 10       # Max results to retrieve
+  similarity_threshold: 0.3  # Minimum relevance
+  
+# Model configuration  
+models:
+  embedding:
+    name: "all-MiniLM-L6-v2"
+  llm:
+    provider: "anthropic"
+    model: "claude-sonnet-4-20250514"
+    api_key_env: "ANTHROPIC_API_KEY"
+```
+
+### 3. Set Environment Variables
 
 ```bash
-pip install git+https://github.com/jugaad-lab/cashew.git
-
-cashew init                                    # Bootstrap empty graph
-cashew migrate-files --dir ./my-notes/         # Import existing knowledge
-cashew context --hints "what am I working on"  # Query the brain
-cashew think                                   # Generate new insights
-cashew sleep                                   # Consolidate and maintain
-cashew stats                                   # Graph overview
+export ANTHROPIC_API_KEY="your-key-here"
+# or use .env file
 ```
 
-## The Dual-Growth Loop
+### 4. Verify
 
-1. **Human conversations → nodes** (human-sourced, high confidence)
-2. **System think cycles → hypotheses** (machine-sourced, 0.5-0.7 confidence) 
-3. **Human feedback → edge corrections** (ground truth)
-4. **Sleep consolidation → graph evolution** (decay/promote/cross-link)
+```bash
+cashew context --hints "test"
+# Should show: "No relevant context found" (expected for empty brain)
+```
 
-The graph grows from both ends: 🧠 Human thoughts (blue/purple/gold/green) and 🤖 System-generated (orange with dashed borders).
+## Core Usage
 
-## Current State
+### Query for Context
+Before answering questions, query your brain:
+```bash
+cashew context --hints "project status work priorities"
+```
 
-- **Production-ready** — Used daily as the primary memory system for an AI agent
-- **117 tests passing** — Comprehensive test suite, zero failures
-- **768KB on disk** — Smaller than a photo, contains a mind's worth of reasoning
-- **Zero cloud dependencies** — Runs entirely local on SQLite + sentence transformers
+This returns relevant knowledge to inform your response.
 
-## Key Insight: Power Laws
+### Extract Knowledge
+After important conversations, extract insights:
+```bash
+# From file
+cashew extract --input conversation.txt
 
-The same mathematical principles governing earthquakes, forest fires, and income distribution also govern how minds organize. The graph exhibits:
+# From stdin  
+echo "User prefers TypeScript for type safety" | cashew extract --input -
+```
 
-- **Preferential attachment** — New thoughts connect to high-connectivity hubs naturally
-- **Self-organized criticality** — Sleep cycles are controlled forest fires that restructure accumulated knowledge  
-- **Fractal structure** — Zoom into any cluster, see the same hierarchical patterns
-- **Emergent behavior** — Complex organization from simple rules
+### Think Cycles
+Run autonomous reasoning to consolidate knowledge:
+```bash
+cashew think
+```
 
-## Philosophy
+### Sleep Cycles  
+Deep reorganization and clustering (run daily):
+```bash
+cashew sleep
+```
 
-- **Orphans are unsolved problems, not bugs.** Don't force connections; let honest gaps remain visible.
-- **Unproven ≠ disproven.** Keep hypotheses until evidence decides.
-- **Design until the next question requires building.** Then build minimally.
-- **Foundation models ARE reasoning engines.** Don't over-engineer what GPT already does well.
-- **The fruits of being ambitious:** You might not reach the goal, but you'll get somewhere remarkable.
+### Statistics
+Check your brain's health:
+```bash
+cashew stats
+```
 
-## Tech Stack
+## Cron Automation
 
-- **Core:** Python + SQLite + NetworkX for graph operations
-- **Embeddings:** Local sentence transformers (no cloud dependencies)  
-- **Intelligence:** Claude via OpenClaw sub-agents for think cycles
-- **Visualization:** vis.js dashboard with real-time updates
-- **Testing:** pytest with comprehensive module coverage
-- **Deployment:** Cloudflare Pages for dashboard sharing
+Install automated maintenance:
 
-## Origin Story
+```bash
+cashew install-crons
+```
 
-Built in a weekend (March 2026). Inspired by a Veritasium video on power laws watched months earlier — the realization that the same mathematics governing earthquakes and forest fires could govern how a mind organizes itself.
+This generates `cashew-crons.yaml` with OpenClaw cron job configurations:
 
-Named after *"Aunty, do cats eat cashews?"* — the question that started a lifetime of asking why. The best tools come from the simplest curiosity.
+- **Brain extraction** (every 2hrs) - Reads session history, extracts to brain
+- **Think cycle** (2x daily) - Consolidation and insight generation  
+- **Sleep cycle** (daily) - Deep reorganization and clustering
+- **Backup** (daily) - Database backup and health checks
 
-## What's Next
+Copy the generated jobs to your OpenClaw config file (`~/.openclaw/config/config.yaml`).
 
-- **Open source launch** — MIT licensed, pip installable, ready for the community
-- **MCP server** — Plug into Claude Desktop, Cursor, or any MCP-compatible agent
-- **Multi-agent cognition** — Multiple agents sharing one graph with provenance tracking
-- **Benchmarks** — Formal evaluation against mem0, Zep, MemGPT on retrieval quality and scalability
+## Configuration Reference
 
-**The competitive landscape:** mem0 remembers what you told it. Zep summarizes your conversations. cashew learns how you think — and can show you why.
+### Database Configuration
+```yaml
+database:
+  path: "./data/graph.db"           # Main database location
+  backup_dir: "./data/backups"      # Backup storage
+  auto_backup: true                 # Auto-backup before major operations
+```
 
-The graph is the memory. The model is the mind. The combination is something new.
+### Domain Configuration
+```yaml
+domains:
+  default: "general"                # Fallback domain
+  user: "user"                      # Human user's knowledge
+  ai: "ai"                         # AI-generated insights
+  classifications:                  # Additional categories
+    - personal
+    - work  
+    - projects
+    - learning
+```
+
+### Performance Tuning
+```yaml
+performance:
+  token_budget: 2000               # Max tokens for context generation
+  top_k_results: 10                # Max results per query
+  walk_depth: 2                    # Graph traversal depth
+  similarity_threshold: 0.3         # Minimum relevance score
+  novelty_threshold: 0.82          # Prevent near-duplicates
+  clustering_eps: 0.35             # DBSCAN clustering sensitivity
+  think_cycle_nodes: 5             # Max nodes per think cycle
+```
+
+### Model Configuration
+```yaml
+models:
+  embedding:
+    name: "all-MiniLM-L6-v2"       # Sentence transformer model
+    provider: "sentence-transformers"
+    cache_dir: "./models"           # Local model cache
+    
+  llm:
+    provider: "anthropic"           # or "openai"
+    model: "claude-sonnet-4-20250514"
+    api_key_env: "ANTHROPIC_API_KEY"  # Environment variable name
+```
+
+### Integration Settings
+```yaml
+integration:
+  openclaw:
+    # Path to OpenClaw auth profiles
+    auth_profile_path: "${HOME}/.openclaw/agents/${OPENCLAW_AGENT:-main}/agent/auth-profiles.json"
+    # OpenClaw workspace
+    workspace_path: "${HOME}/.openclaw/workspace"
+```
+
+## API Integration
+
+### Python API
+
+```python
+from cashew.core.context import ContextRetriever
+from cashew.integration.openclaw import extract_from_conversation
+
+# Query context
+retriever = ContextRetriever("./data/graph.db")
+context = retriever.generate_context_from_hints(["work", "projects"])
+
+# Extract knowledge
+result = extract_from_conversation(
+    db_path="./data/graph.db",
+    conversation="User decided to use React for the frontend",
+    session_id="session_123"
+)
+```
+
+### CLI Integration
+
+Perfect for shell scripts and automation:
+```bash
+# Context for current task
+CONTEXT=$(cashew context --hints "$(echo $USER_INPUT | head -c 100)")
+
+# Extract after completion  
+echo "$CONVERSATION_LOG" | cashew extract --input -
+```
+
+## Advanced Usage
+
+### Custom Domains
+
+Add your own domain classifications in `config.yaml`:
+
+```yaml
+domains:
+  classifications:
+    - work
+    - personal  
+    - learning
+    - projects
+    - research
+```
+
+### Performance Optimization
+
+For large graphs (10k+ nodes):
+
+```yaml
+performance:
+  clustering_eps: 0.3        # Tighter clustering
+  similarity_threshold: 0.4  # Higher relevance bar
+  token_budget: 1500         # Smaller context window
+```
+
+For real-time applications:
+```yaml
+performance:
+  top_k_results: 5          # Fewer results
+  walk_depth: 1             # Shallow traversal
+  novelty_threshold: 0.9    # Aggressive deduplication
+```
+
+### Database Migration
+
+Moving to a new system:
+```bash
+# Backup current database
+cashew backup
+
+# Copy to new system
+cp data/graph.db /new/location/
+
+# Update config
+vim config.yaml  # Update database.path
+
+# Verify
+cashew stats
+```
+
+## Troubleshooting
+
+### Empty Context Results
+- Check database exists: `ls -la data/graph.db`
+- Verify embeddings: `cashew stats`
+- Try broader hints: `cashew context --hints "general"`
+
+### Extraction Failing
+- Check API key: `echo $ANTHROPIC_API_KEY`
+- Test model access: Try simple extraction
+- Review logs: `tail -f logs/cashew.log`
+
+### Performance Issues
+- Reduce token budget in config.yaml
+- Lower top_k_results
+- Run `cashew sleep` to reorganize clusters
+
+### Database Corruption
+- Restore from backup: `cp data/backups/latest.db data/graph.db`
+- Reinitialize: `rm data/graph.db && cashew init`
+
+## Development
+
+### Running Tests
+```bash
+pip install -e .[dev]
+pytest
+```
+
+### Adding Features
+1. Core logic goes in `core/`
+2. Integration code in `integration/`
+3. CLI commands in `cashew_cli.py`
+4. Update tests in `tests/`
+
+### Contributing
+1. Fork the repository
+2. Create a feature branch
+3. Add tests for new functionality
+4. Submit a pull request
+
+## License
+
+MIT License - see [LICENSE](LICENSE) for details.
+
+## Support
+
+- **Issues**: [GitHub Issues](https://github.com/jugaad-lab/cashew/issues)
+- **Documentation**: See `docs/` directory
+- **Examples**: See `examples/` directory
+
+---
+
+**Built for the OpenClaw ecosystem** - Cashew integrates seamlessly with OpenClaw agents to provide persistent memory across sessions, compactions, and system restarts.

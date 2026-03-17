@@ -11,13 +11,14 @@ from typing import List, Dict, Optional, Any
 from pathlib import Path
 
 from core.session import start_session, end_session, think_cycle, tension_detection, SessionContext, ExtractionResult, ThinkResult
+from core.config import config, get_user_domain, get_ai_domain
 
 
 def _load_anthropic_api_key() -> Optional[str]:
     """Load Anthropic API key from OpenClaw auth profiles"""
     try:
-        # Look for auth profiles in common locations
-        auth_profiles_path = os.path.expanduser("~/.openclaw/agents/main/agent/auth-profiles.json")
+        # Look for auth profiles using configured path
+        auth_profiles_path = os.path.expanduser(config.auth_profile_path)
         with open(auth_profiles_path, 'r') as f:
             auth_data = json.load(f)
         
@@ -256,16 +257,16 @@ def get_technical_context(db_path: str) -> str:
     return generate_session_context(db_path, ["engineering", "technical", "programming", "software", "architecture"])
 
 
-def get_bunny_context(db_path: str, hints: Optional[List[str]] = None) -> str:
+def get_ai_context(db_path: str, hints: Optional[List[str]] = None) -> str:
     """
-    Get context from Bunny's operational knowledge domain only
+    Get context from AI's operational knowledge domain only
     
     Args:
         db_path: Path to the SQLite database
         hints: Optional list of topic hints for context retrieval
         
     Returns:
-        Formatted context string from bunny domain only
+        Formatted context string from AI domain only
     """
     try:
         # Check if database exists
@@ -278,8 +279,9 @@ def get_bunny_context(db_path: str, hints: Optional[List[str]] = None) -> str:
         # Build query from hints or use default
         query = " ".join(hints) if hints else "operational knowledge patterns decisions"
         
-        # Retrieve only bunny domain nodes using DFS
-        results = retrieve_dfs(db_path, query, top_k=10, domain="bunny")
+        # Retrieve only AI domain nodes using DFS
+        ai_domain = get_ai_domain()
+        results = retrieve_dfs(db_path, query, top_k=10, domain=ai_domain)
         
         if not results:
             return ""
@@ -288,29 +290,29 @@ def get_bunny_context(db_path: str, hints: Optional[List[str]] = None) -> str:
         from core.retrieval import format_context
         context_str = format_context(results, include_paths=False)
         
-        formatted_context = f"""## Bunny's Operational Knowledge
+        formatted_context = f"""## AI Operational Knowledge
 
 {context_str}
 
-*Retrieved {len(results)} bunny domain nodes*"""
+*Retrieved {len(results)} {ai_domain} domain nodes*"""
         
         return formatted_context
         
     except Exception as e:
-        logging.error(f"Error generating bunny context: {e}")
+        logging.error(f"Error generating AI context: {e}")
         return ""
 
 
-def get_raj_context(db_path: str, hints: Optional[List[str]] = None) -> str:
+def get_user_context(db_path: str, hints: Optional[List[str]] = None) -> str:
     """
-    Get context from Raj's thought domain only
+    Get context from user's thought domain only
     
     Args:
         db_path: Path to the SQLite database
         hints: Optional list of topic hints for context retrieval
         
     Returns:
-        Formatted context string from raj domain only
+        Formatted context string from user domain only
     """
     try:
         # Check if database exists
@@ -323,8 +325,9 @@ def get_raj_context(db_path: str, hints: Optional[List[str]] = None) -> str:
         # Build query from hints or use default
         query = " ".join(hints) if hints else "thoughts insights patterns decisions"
         
-        # Retrieve only raj domain nodes using DFS
-        results = retrieve_dfs(db_path, query, top_k=10, domain="raj")
+        # Retrieve only user domain nodes using DFS
+        user_domain = get_user_domain()
+        results = retrieve_dfs(db_path, query, top_k=10, domain=user_domain)
         
         if not results:
             return ""
@@ -333,16 +336,16 @@ def get_raj_context(db_path: str, hints: Optional[List[str]] = None) -> str:
         from core.retrieval import format_context
         context_str = format_context(results, include_paths=False)
         
-        formatted_context = f"""## Raj's Thoughts and Insights
+        formatted_context = f"""## User Thoughts and Insights
 
 {context_str}
 
-*Retrieved {len(results)} raj domain nodes*"""
+*Retrieved {len(results)} {user_domain} domain nodes*"""
         
         return formatted_context
         
     except Exception as e:
-        logging.error(f"Error generating raj context: {e}")
+        logging.error(f"Error generating user context: {e}")
         return ""
 
 
