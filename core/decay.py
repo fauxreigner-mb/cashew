@@ -60,9 +60,9 @@ def cascade_decay(db_path: str, decayed_node_id: str, decay_factor: float = 0.7,
             if live_parent_count > 0:
                 continue
             
-            # Get current child node info
+            # Get current child node info (including permanence status)
             cursor.execute("""
-                SELECT confidence, decayed FROM thought_nodes 
+                SELECT confidence, decayed, permanent FROM thought_nodes 
                 WHERE id = ?
             """, (child_id,))
             
@@ -70,10 +70,10 @@ def cascade_decay(db_path: str, decayed_node_id: str, decay_factor: float = 0.7,
             if not result:
                 continue
                 
-            current_confidence, is_decayed = result
+            current_confidence, is_decayed, is_permanent = result
             
-            # Skip if already decayed
-            if is_decayed:
+            # Skip if already decayed or permanent
+            if is_decayed or is_permanent:
                 continue
             
             # Calculate new confidence with decay factor applied by depth
@@ -123,9 +123,11 @@ def auto_decay(db_path: str, min_age_days: int = 14, max_confidence_for_decay: f
     cutoff = (datetime.now(timezone.utc) - timedelta(days=min_age_days)).isoformat()
     
     # First, find nodes that will be decayed (including hotspots now)
+    # Skip permanent nodes entirely
     cursor.execute("""
         SELECT id FROM thought_nodes
         WHERE (decayed IS NULL OR decayed = 0)
+        AND (permanent IS NULL OR permanent = 0)
         AND access_count = 0
         AND confidence < ?
         AND timestamp < ?
@@ -133,10 +135,11 @@ def auto_decay(db_path: str, min_age_days: int = 14, max_confidence_for_decay: f
     
     nodes_to_decay = [row[0] for row in cursor.fetchall()]
     
-    # Mark them as decayed
+    # Mark them as decayed (skip permanent nodes)
     cursor.execute("""
         UPDATE thought_nodes SET decayed = 1, last_updated = ?
         WHERE (decayed IS NULL OR decayed = 0)
+        AND (permanent IS NULL OR permanent = 0)
         AND access_count = 0
         AND confidence < ?
         AND timestamp < ?
@@ -179,11 +182,12 @@ def get_decay_candidates(db_path: str, min_age_days: int = 14, max_confidence_fo
     
     cutoff = (datetime.now(timezone.utc) - timedelta(days=min_age_days)).isoformat()
     
-    # Get direct candidates (including hotspots now)
+    # Get direct candidates (including hotspots now, but excluding permanent nodes)
     cursor.execute("""
         SELECT COUNT(*), AVG(confidence), MIN(confidence), MAX(confidence)
         FROM thought_nodes 
         WHERE (decayed IS NULL OR decayed = 0)
+        AND (permanent IS NULL OR permanent = 0)
         AND access_count = 0
         AND confidence < ?
         AND timestamp < ?
@@ -192,11 +196,12 @@ def get_decay_candidates(db_path: str, min_age_days: int = 14, max_confidence_fo
     result = cursor.fetchone()
     count, avg_conf, min_conf, max_conf = result
     
-    # Count hotspots specifically
+    # Count hotspots specifically (excluding permanent ones)
     cursor.execute("""
         SELECT COUNT(*)
         FROM thought_nodes 
         WHERE (decayed IS NULL OR decayed = 0)
+        AND (permanent IS NULL OR permanent = 0)
         AND access_count = 0
         AND confidence < ?
         AND timestamp < ?
@@ -215,10 +220,11 @@ def get_decay_candidates(db_path: str, min_age_days: int = 14, max_confidence_fo
     
     # Simulate cascade effects if requested
     if show_cascade_preview and count and count > 0:
-        # Get the actual candidate node IDs
+        # Get the actual candidate node IDs (excluding permanent nodes)
         cursor.execute("""
             SELECT id FROM thought_nodes 
             WHERE (decayed IS NULL OR decayed = 0)
+            AND (permanent IS NULL OR permanent = 0)
             AND access_count = 0
             AND confidence < ?
             AND timestamp < ?
@@ -291,9 +297,9 @@ def simulate_cascade_decay(db_path: str, decayed_node_id: str, decay_factor: flo
             if live_parent_count > 0:
                 continue
             
-            # Get current child node info
+            # Get current child node info (including permanence status)
             cursor.execute("""
-                SELECT confidence, decayed FROM thought_nodes 
+                SELECT confidence, decayed, permanent FROM thought_nodes 
                 WHERE id = ?
             """, (child_id,))
             
@@ -301,10 +307,10 @@ def simulate_cascade_decay(db_path: str, decayed_node_id: str, decay_factor: flo
             if not result:
                 continue
                 
-            current_confidence, is_decayed = result
+            current_confidence, is_decayed, is_permanent = result
             
-            # Skip if already decayed
-            if is_decayed:
+            # Skip if already decayed or permanent
+            if is_decayed or is_permanent:
                 continue
             
             # Calculate what new confidence would be

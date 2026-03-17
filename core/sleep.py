@@ -604,6 +604,10 @@ class SleepProtocol:
         print("🗑️  Running garbage collection...")
         decayed_nodes = self.garbage_collect(metrics)
         
+        # 4.5. Permanence evaluation (after decay, before core memory operations)
+        print("🔒 Evaluating node permanence...")
+        permanence_stats = self.evaluate_permanence()
+        
         # 5. Core memory promotion/demotion
         print("⭐ Updating core memories...")
         promotions, demotions = self.promote_core_memories(metrics)
@@ -619,6 +623,7 @@ class SleepProtocol:
         summary = {
             "cross_links_created": cross_links_created,
             "deduplications": dedups_performed,
+            "permanence_stats": permanence_stats,
             "dream_nodes_created": 1 if dream_id else 0,
             "nodes_decayed": len(decayed_nodes),
             "core_promotions": len(promotions),
@@ -676,6 +681,42 @@ class SleepProtocol:
         except Exception as e:
             logger.warning(f"Clustering phase failed (non-fatal): {e}")
             return {"clusters_found": 0, "new_hotspots_created": 0, "stale_hotspots_found": 0}
+
+    def evaluate_permanence(self) -> Dict:
+        """
+        Evaluate and update permanence for all nodes in the graph.
+        This runs during sleep cycle after decay to mark valuable nodes permanent.
+        
+        Returns:
+            Dict with permanence evaluation statistics
+        """
+        try:
+            # Import the permanence module
+            from .permanence import evaluate_all_permanence
+            
+            # Run the evaluation
+            stats = evaluate_all_permanence(self.db_path)
+            
+            # Log the permanence evaluation event
+            self._log_event("permanence_evaluation", {
+                "nodes_evaluated": stats.get('nodes_evaluated', 0),
+                "nodes_made_permanent": stats.get('nodes_made_permanent', 0),
+                "nodes_lost_permanence": stats.get('nodes_lost_permanence', 0),
+                "hotspots_made_permanent": stats.get('hotspots_made_permanent', 0),
+                "hotspots_lost_permanence": stats.get('hotspots_lost_permanence', 0)
+            })
+            
+            return stats
+            
+        except Exception as e:
+            logger.warning(f"Permanence evaluation failed (non-fatal): {e}")
+            return {
+                'nodes_evaluated': 0,
+                'nodes_made_permanent': 0,
+                'nodes_lost_permanence': 0,
+                'hotspots_made_permanent': 0,
+                'hotspots_lost_permanence': 0
+            }
 
     def save_sleep_log(self):
         """Save sleep events to log file"""

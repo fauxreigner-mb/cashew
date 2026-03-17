@@ -254,6 +254,84 @@ def cmd_install_crons(args):
     return 0
 
 
+def cmd_pin(args):
+    """Pin a node as permanently important"""
+    from core.permanence import pin_node
+    
+    db_path = args.db if args.db else get_db_path()
+    
+    success = pin_node(db_path, args.node_id)
+    
+    if success:
+        print(f"✅ Node {args.node_id} pinned as permanent")
+        return 0
+    else:
+        print(f"❌ Node {args.node_id} not found")
+        return 1
+
+
+def cmd_unpin(args):
+    """Remove permanent pin from a node"""
+    from core.permanence import unpin_node
+    
+    db_path = args.db if args.db else get_db_path()
+    
+    success = unpin_node(db_path, args.node_id)
+    
+    if success:
+        print(f"✅ Node {args.node_id} unpinned")
+        return 0
+    else:
+        print(f"❌ Node {args.node_id} not found")
+        return 1
+
+
+def cmd_permanent(args):
+    """Show permanence statistics or list permanent nodes"""
+    from core.permanence import get_permanence_stats, get_permanent_nodes
+    
+    db_path = args.db if args.db else get_db_path()
+    
+    if args.stats:
+        # Show statistics
+        stats = get_permanence_stats(db_path)
+        
+        print("🔒 Permanence Statistics:")
+        print(f"  Total active nodes: {stats['total_active_nodes']}")
+        print(f"  Permanent nodes: {stats['total_permanent_nodes']} ({stats['permanent_ratio']:.1%})")
+        print(f"    • Auto-permanent: {stats['auto_permanent']}")
+        print(f"    • Manually pinned: {stats['manually_pinned']}")
+        print(f"  Permanent hotspots: {stats['permanent_hotspots']}/{stats['total_hotspots']} ({stats['hotspot_permanent_ratio']:.1%})")
+        
+        if stats['permanent_by_domain']:
+            print(f"  By domain:")
+            for domain, count in sorted(stats['permanent_by_domain'].items()):
+                print(f"    • {domain}: {count}")
+        
+        return 0
+        
+    else:
+        # List permanent nodes
+        nodes = get_permanent_nodes(db_path, include_manually_pinned=True)
+        
+        if not nodes:
+            print("No permanent nodes found.")
+            return 0
+        
+        print(f"🔒 Permanent Nodes ({len(nodes)}):")
+        for node in nodes[:20]:  # Limit to first 20
+            pin_type = "📌" if node['permanent_type'] == 'manually_pinned' else "🔒"
+            print(f"  {pin_type} {node['id']} ({node['node_type']}/{node['domain']})")
+            print(f"      {node['content']}")
+            print(f"      Access: {node['access_count']}, Confidence: {node['confidence']:.3f}")
+            print()
+        
+        if len(nodes) > 20:
+            print(f"... and {len(nodes) - 20} more. Use --stats for summary.")
+        
+        return 0
+
+
 def main():
     """Main CLI entry point"""
     parser = argparse.ArgumentParser(
@@ -267,6 +345,9 @@ Examples:
   cashew think                          # Run think cycle
   cashew sleep                          # Run sleep cycle
   cashew stats                          # Show graph statistics
+  cashew pin node123                    # Pin node as permanent
+  cashew unpin node123                  # Remove permanent pin
+  cashew permanent --stats              # Show permanence statistics
   cashew install-crons                  # Generate cron job configs
         """)
     
@@ -283,6 +364,21 @@ Examples:
     # install-crons command
     crons_parser = subparsers.add_parser('install-crons', help='Generate OpenClaw cron job configs')
     crons_parser.set_defaults(func=cmd_install_crons)
+    
+    # pin command
+    pin_parser = subparsers.add_parser('pin', help='Pin a node as permanently important')
+    pin_parser.add_argument('node_id', help='Node ID to pin')
+    pin_parser.set_defaults(func=cmd_pin)
+    
+    # unpin command
+    unpin_parser = subparsers.add_parser('unpin', help='Remove permanent pin from a node')
+    unpin_parser.add_argument('node_id', help='Node ID to unpin')
+    unpin_parser.set_defaults(func=cmd_unpin)
+    
+    # permanent command  
+    permanent_parser = subparsers.add_parser('permanent', help='Show permanence statistics and permanent nodes')
+    permanent_parser.add_argument('--stats', action='store_true', help='Show statistics instead of listing nodes')
+    permanent_parser.set_defaults(func=cmd_permanent)
     
     # TODO: Add other commands (context, extract, think, sleep, stats, etc.)
     # For now, we'll just implement the essential ones for packaging
