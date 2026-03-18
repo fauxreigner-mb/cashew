@@ -3,13 +3,15 @@
 Cashew Think Cycle Module
 Analyzes the existing thought graph and generates new derived thoughts through LLM reasoning.
 Creates connections between new insights and existing nodes.
+
+Uses model_fn (pluggable LLM) for all reasoning. If model_fn is None, insight generation is skipped.
 """
 
 import sqlite3
 import json
 import hashlib
 from datetime import datetime, timezone
-from typing import List, Dict, Optional, Tuple
+from typing import List, Dict, Optional, Tuple, Callable
 from dataclasses import dataclass
 import sys
 import random
@@ -55,47 +57,51 @@ class ThinkCycle:
         """Get current ISO timestamp"""
         return datetime.now(timezone.utc).isoformat()
     
-    def analyze_graph_structure(self) -> Dict:
-        """Analyze the current graph to understand its structure and patterns"""
+    def analyze_graph_structure(self, k_hubs: int = 5, k_contradictions: int = 3,
+                                 k_leaves: int = 8, k_questions: int = 5) -> Dict:
+        """Analyze the current graph, randomly sampling from each category.
+        
+        Random sampling ensures each think cycle sees different nodes,
+        preventing rich-get-richer on hub nodes and maintaining ROI per cycle.
+        """
         conn = self._get_connection()
         cursor = conn.cursor()
         
         analysis = {}
         
-        # Get hub nodes (nodes with highest edge count)
+        # Get ALL hub nodes (nodes with edge count > 0), then random sample
         cursor.execute("""
             SELECT tn.id, tn.content, tn.confidence, 
                    (SELECT COUNT(*) FROM derivation_edges de1 WHERE de1.parent_id = tn.id) +
                    (SELECT COUNT(*) FROM derivation_edges de2 WHERE de2.child_id = tn.id) as edge_count
             FROM thought_nodes tn
+            HAVING edge_count > 2
             ORDER BY edge_count DESC
-            LIMIT 10
         """)
-        analysis['hub_nodes'] = cursor.fetchall()
+        all_hubs = cursor.fetchall()
+        analysis['hub_nodes'] = random.sample(all_hubs, min(k_hubs, len(all_hubs))) if all_hubs else []
         
-        # Get contradiction nodes (nodes with edges that might represent contradictions)
-        # NOTE: relation column removed, using reasoning text to identify contradictions
+        # Get ALL contradiction nodes, then random sample
         cursor.execute("""
             SELECT DISTINCT tn.id, tn.content, tn.confidence
             FROM thought_nodes tn
             JOIN derivation_edges de ON tn.id = de.child_id OR tn.id = de.parent_id
             WHERE de.reasoning LIKE '%contradict%' OR de.reasoning LIKE '%conflict%'
-            LIMIT 10
         """)
-        analysis['contradiction_nodes'] = cursor.fetchall()
+        all_contradictions = cursor.fetchall()
+        analysis['contradiction_nodes'] = random.sample(all_contradictions, min(k_contradictions, len(all_contradictions))) if all_contradictions else []
         
-        # Get leaf nodes (nodes with no children)
+        # Get ALL leaf nodes (nodes with no children), then random sample
         cursor.execute("""
             SELECT tn.id, tn.content, tn.confidence
             FROM thought_nodes tn
             LEFT JOIN derivation_edges de ON tn.id = de.parent_id
             WHERE de.parent_id IS NULL
-            ORDER BY tn.confidence DESC
-            LIMIT 20
         """)
-        analysis['leaf_nodes'] = cursor.fetchall()
+        all_leaves = cursor.fetchall()
+        analysis['leaf_nodes'] = random.sample(all_leaves, min(k_leaves, len(all_leaves))) if all_leaves else []
         
-        # Get orphan nodes (nodes with no connections)
+        # Get orphan nodes (nodes with no connections at all)
         cursor.execute("""
             SELECT tn.id, tn.content, tn.confidence
             FROM thought_nodes tn
@@ -106,198 +112,270 @@ class ThinkCycle:
         """)
         analysis['orphan_nodes'] = cursor.fetchall()
         
-        # Get question nodes
+        # Get ALL question nodes, then random sample
         cursor.execute("""
             SELECT id, content, confidence
             FROM thought_nodes
             WHERE node_type = 'question'
-            ORDER BY confidence DESC
-            LIMIT 15
         """)
-        analysis['question_nodes'] = cursor.fetchall()
+        all_questions = cursor.fetchall()
+        analysis['question_nodes'] = random.sample(all_questions, min(k_questions, len(all_questions))) if all_questions else []
         
-        # Get recent high-confidence nodes
+        # Get recent high-confidence nodes (random sample from recent)
         cursor.execute("""
             SELECT id, content, confidence
             FROM thought_nodes
             WHERE confidence > 0.8
             ORDER BY timestamp DESC
-            LIMIT 15
+            LIMIT 50
         """)
-        analysis['high_confidence_nodes'] = cursor.fetchall()
+        all_high_conf = cursor.fetchall()
+        analysis['high_confidence_nodes'] = random.sample(all_high_conf, min(15, len(all_high_conf))) if all_high_conf else []
         
         conn.close()
         return analysis
     
-    def generate_insights_from_analysis(self, analysis: Dict) -> List[NewThought]:
-        """Generate new derived thoughts based on graph analysis"""
+    def generate_insights_from_analysis(self, analysis: Dict, model_fn: Callable = None) -> List[NewThought]:
+        """Generate new derived thoughts based on graph analysis using LLM reasoning.
+        
+        Requires model_fn for all insight generation. If model_fn is None, returns empty list.
+        """
+        if not model_fn:
+            print("  ⚠️ No model_fn provided — skipping LLM-based insight generation")
+            return []
+        
         insights = []
         
         # Analyze hub nodes for meta-patterns
-        hub_contents = [node[1] for node in analysis['hub_nodes'][:5]]
-        hub_insight = self._reason_about_hubs(hub_contents, [node[0] for node in analysis['hub_nodes'][:5]])
-        if hub_insight:
-            insights.append(hub_insight)
+        hub_insights = self._reason_about_hubs(analysis['hub_nodes'], model_fn)
+        insights.extend(hub_insights)
         
         # Analyze contradictions for resolution patterns
-        contradiction_contents = [node[1] for node in analysis['contradiction_nodes'][:3]]
-        if contradiction_contents:
-            contradiction_insight = self._reason_about_contradictions(contradiction_contents, 
-                                                                    [node[0] for node in analysis['contradiction_nodes'][:3]])
-            if contradiction_insight:
-                insights.append(contradiction_insight)
+        contradiction_insights = self._reason_about_contradictions(analysis['contradiction_nodes'], model_fn)
+        insights.extend(contradiction_insights)
         
         # Analyze leaf nodes for extension opportunities
-        leaf_contents = [node[1] for node in analysis['leaf_nodes'][:8]]
-        leaf_insights = self._reason_about_leaves(leaf_contents, [node[0] for node in analysis['leaf_nodes'][:8]])
+        leaf_insights = self._reason_about_leaves(analysis['leaf_nodes'], model_fn)
         insights.extend(leaf_insights)
         
         # Analyze question nodes for potential answers or deeper questions
-        question_contents = [node[1] for node in analysis['question_nodes'][:5]]
-        question_insights = self._reason_about_questions(question_contents, [node[0] for node in analysis['question_nodes'][:5]])
+        question_insights = self._reason_about_questions(analysis['question_nodes'], model_fn)
         insights.extend(question_insights)
         
         # Generate cross-domain connections
-        cross_domain_insights = self._generate_cross_domain_connections(analysis)
+        cross_domain_insights = self._generate_cross_domain_connections(analysis, model_fn)
         insights.extend(cross_domain_insights)
-        
-        # Generate meta-insights about the thinking patterns themselves
-        meta_insights = self._generate_meta_insights(analysis)
-        insights.extend(meta_insights)
         
         return insights[:50]  # Cap at 50 to avoid overwhelming the graph
     
-    def _reason_about_hubs(self, hub_contents: List[str], hub_ids: List[str]) -> Optional[NewThought]:
-        """Analyze hub nodes to identify meta-patterns"""
-        if not hub_contents:
-            return None
+    def _parse_llm_insights(self, response: str, parent_ids: List[str], prefix: str = "[think cycle]") -> List[NewThought]:
+        """Parse LLM response into NewThought objects.
+        
+        Expected format from LLM (one or more insights):
+        INSIGHT: <insight text>
+        CONFIDENCE: <0.0-1.0>
+        REASONING: <why this insight matters>
+        ---
+        """
+        insights = []
+        blocks = response.split('---')
+        
+        for block in blocks:
+            block = block.strip()
+            if not block:
+                continue
             
-        # Look for common themes in hub nodes
-        themes = []
-        for content in hub_contents:
-            if any(word in content.lower() for word in ['system', 'pattern', 'architecture']):
-                themes.append('systems_thinking')
-            if any(word in content.lower() for word in ['family', 'religion', 'christian']):
-                themes.append('religious_transition')
-            if any(word in content.lower() for word in ['career', 'work', 'engineer']):
-                themes.append('professional_identity')
-            if any(word in content.lower() for word in ['silence', 'communication', 'express']):
-                themes.append('communication_patterns')
-        
-        if len(set(themes)) >= 2:
-            insight_content = f"The highest-connectivity nodes in the graph cluster around {', '.join(set(themes))} — suggesting these aren't separate life domains but interconnected architectural patterns. Hub nodes indicate where multiple reasoning chains converge, revealing core structural elements of identity formation."
-            return NewThought(
-                content=insight_content,
-                confidence=0.65,
-                parent_ids=hub_ids[:3],
-                reasoning="Meta-analysis of hub node themes to identify convergent patterns"
-            )
-        return None
-    
-    def _reason_about_contradictions(self, contradiction_contents: List[str], contradiction_ids: List[str]) -> Optional[NewThought]:
-        """Analyze contradictions for resolution patterns"""
-        if not contradiction_contents:
-            return None
+            insight_text = None
+            confidence = 0.6  # default
+            reasoning = "LLM think cycle analysis"
             
-        insight_content = "Contradictions in the graph aren't errors to be resolved—they're architectural features. They mark decision points where competing values (family harmony vs. intellectual integrity, career advancement vs. depth) create productive tension. The goal isn't elimination but conscious navigation."
-        
-        return NewThought(
-            content=insight_content,
-            confidence=0.6,
-            parent_ids=contradiction_ids,
-            reasoning="Analysis of contradiction nodes as productive tension points rather than errors"
-        )
-    
-    def _reason_about_leaves(self, leaf_contents: List[str], leaf_ids: List[str]) -> List[NewThought]:
-        """Analyze leaf nodes for extension opportunities"""
-        insights = []
-        
-        for i, (content, node_id) in enumerate(zip(leaf_contents[:4], leaf_ids[:4])):
-            if 'career' in content.lower() or 'work' in content.lower():
-                extension = f"Extension: {content.split('.')[0] if '.' in content else content} → This suggests the optimal career path isn't climbing traditional ladders but finding or creating environments where technical depth is valued over visibility optimization."
+            for line in block.split('\n'):
+                line = line.strip()
+                if line.upper().startswith('INSIGHT:'):
+                    insight_text = line[len('INSIGHT:'):].strip()
+                elif line.upper().startswith('CONFIDENCE:'):
+                    try:
+                        confidence = float(line[len('CONFIDENCE:'):].strip())
+                        confidence = max(0.1, min(0.95, confidence))  # clamp
+                    except ValueError:
+                        pass
+                elif line.upper().startswith('REASONING:'):
+                    reasoning = line[len('REASONING:'):].strip()
+            
+            if insight_text:
+                if not insight_text.startswith('['):
+                    insight_text = f"{prefix} {insight_text}"
                 insights.append(NewThought(
-                    content=extension,
-                    confidence=0.55,
-                    parent_ids=[node_id],
-                    reasoning="Extension of career-related leaf node to practical implications"
-                ))
-            elif 'family' in content.lower() or 'religion' in content.lower():
-                extension = f"Extension: {content.split('.')[0] if '.' in content else content} → This pattern likely exists in other relationship contexts—anywhere belief systems create inclusion/exclusion boundaries, similar dynamics will emerge."
-                insights.append(NewThought(
-                    content=extension,
-                    confidence=0.6,
-                    parent_ids=[node_id],
-                    reasoning="Extension of family/religious dynamics to broader relationship patterns"
+                    content=insight_text,
+                    confidence=confidence,
+                    parent_ids=parent_ids[:3],  # max 3 parents
+                    reasoning=reasoning
                 ))
         
         return insights
     
-    def _reason_about_questions(self, question_contents: List[str], question_ids: List[str]) -> List[NewThought]:
-        """Analyze questions for potential answers or deeper questions"""
-        insights = []
+    def _reason_about_hubs(self, hub_nodes: List[tuple], model_fn: Callable) -> List[NewThought]:
+        """Analyze hub nodes to identify meta-patterns via LLM."""
+        if not hub_nodes:
+            return []
         
-        for content, node_id in zip(question_contents[:3], question_ids[:3]):
-            if '?' in content:
-                # Generate a hypothesis as an answer
-                hypothesis = f"Hypothesis: {content.replace('?', '')} — The answer likely involves recognizing that the question itself contains a false binary. Most 'either/or' frameworks miss the architectural solution: designing systems that transcend the original constraints."
-                insights.append(NewThought(
-                    content=hypothesis,
-                    confidence=0.55,
-                    parent_ids=[node_id],
-                    reasoning="Generated hypothesis to address open question node"
-                ))
+        node_contents = "\n".join([f"- [{node[0]}] {node[1]}" for node in hub_nodes])
+        node_ids = [node[0] for node in hub_nodes]
         
-        return insights
+        prompt = f"""You are analyzing the highest-connectivity nodes in a personal knowledge graph. These are hub nodes — they have the most connections to other thoughts.
+
+HUB NODES:
+{node_contents}
+
+Task: Identify 1-2 meta-patterns across these hub nodes. What themes converge here? What does the clustering of connections around these topics reveal about the person's thinking architecture?
+
+These are YOUR analytical observations as an AI assistant, not the person's beliefs. Prefix accordingly.
+
+Format each insight as:
+INSIGHT: <your observation>
+CONFIDENCE: <0.5-0.9>
+REASONING: <why this pattern matters>
+---"""
+        
+        try:
+            response = model_fn(prompt)
+            return self._parse_llm_insights(response, node_ids, "[think cycle]")
+        except Exception as e:
+            print(f"  ⚠️ Hub reasoning failed: {e}")
+            return []
     
-    def _generate_cross_domain_connections(self, analysis: Dict) -> List[NewThought]:
-        """Generate insights connecting different domains in the graph.
-        These are Bunny's analytical observations, NOT Raj's beliefs."""
-        insights = []
+    def _reason_about_contradictions(self, contradiction_nodes: List[tuple], model_fn: Callable) -> List[NewThought]:
+        """Analyze contradictions for resolution or productive tension via LLM."""
+        if not contradiction_nodes:
+            return []
         
-        # Connect family dynamics with career patterns
-        insight1 = NewThought(
-            content="[cross-domain insight] The family silence pattern and E5 communication struggles share the same architecture: both contexts punish authentic expression when it threatens system stability. The family needed religious cohesion; the promotion process needs legible signals. Both reward performance over substance.",
-            confidence=0.65,
-            parent_ids=[node[0] for node in analysis['hub_nodes'][:2]],
-            reasoning="Cross-domain pattern recognition between family and career dynamics"
-        )
-        insights.append(insight1)
+        node_contents = "\n".join([f"- [{node[0]}] {node[1]}" for node in contradiction_nodes])
+        node_ids = [node[0] for node in contradiction_nodes]
         
-        # Connect technical depth with relationship patterns  
-        insight2 = NewThought(
-            content="[cross-domain insight] Technical depth and relationship authenticity follow similar principles: both require sustained attention beneath surface-level optimization. Just as premature optimization ruins code architecture, premature harmony-seeking ruins relationship architecture.",
-            confidence=0.6,
-            parent_ids=[node[0] for node in analysis['leaf_nodes'][2:4]],
-            reasoning="Analogical connection between technical and interpersonal depth"
-        )
-        insights.append(insight2)
+        prompt = f"""You are analyzing nodes in a knowledge graph that are connected by contradiction or conflict edges. These represent tensions in the person's thinking.
+
+CONTRADICTION NODES:
+{node_contents}
+
+Task: For each contradiction, determine: is this a genuine inconsistency that should be resolved, or a productive tension that reveals competing values? Generate 1 insight.
+
+These are YOUR analytical observations, not the person's beliefs.
+
+Format:
+INSIGHT: <your observation>
+CONFIDENCE: <0.5-0.9>
+REASONING: <why this matters>
+---"""
         
-        return insights
+        try:
+            response = model_fn(prompt)
+            return self._parse_llm_insights(response, node_ids, "[think cycle]")
+        except Exception as e:
+            print(f"  ⚠️ Contradiction reasoning failed: {e}")
+            return []
     
-    def _generate_meta_insights(self, analysis: Dict) -> List[NewThought]:
-        """Generate insights about the thinking patterns themselves.
-        These are Bunny's meta-observations, NOT Raj's beliefs."""
-        insights = []
+    def _reason_about_leaves(self, leaf_nodes: List[tuple], model_fn: Callable) -> List[NewThought]:
+        """Analyze leaf nodes for extension opportunities via LLM."""
+        if not leaf_nodes:
+            return []
         
-        # Meta-insight about the graph structure
-        insight1 = NewThought(
-            content="[think cycle] The graph's hub structure reveals a key thinking pattern: rather than compartmentalizing life domains, there's a consistent tendency to find architectural parallels across contexts. This isn't analogical thinking—it's pattern recognition at the systems level.",
-            confidence=0.7,
-            parent_ids=[node[0] for node in analysis['hub_nodes'][:3]],
-            reasoning="Meta-analysis of the graph's own structural patterns"
-        )
-        insights.append(insight1)
+        node_contents = "\n".join([f"- [{node[0]}] {node[1]}" for node in leaf_nodes])
+        node_ids = [node[0] for node in leaf_nodes]
         
-        # Meta-insight about contradiction handling
-        insight2 = NewThought(
-            content="[think cycle] The presence of contradiction nodes without resolution attempts suggests a sophisticated relationship with uncertainty: rather than rushing to eliminate dissonance, the thinking process preserves productive tensions as information.",
-            confidence=0.65,
-            parent_ids=[node[0] for node in analysis['contradiction_nodes'][:2]] if analysis['contradiction_nodes'] else [],
-            reasoning="Meta-analysis of how contradictions are preserved rather than resolved"
-        )
-        insights.append(insight2)
+        prompt = f"""You are analyzing leaf nodes in a knowledge graph — these are thoughts with no outgoing connections. They represent endpoints of reasoning chains that haven't been extended.
+
+LEAF NODES:
+{node_contents}
+
+Task: Pick 2-3 of these leaves that could be meaningfully extended. For each, generate an insight that extends the reasoning or connects it to a broader pattern. Don't force connections that don't exist.
+
+These are YOUR analytical observations, not the person's beliefs.
+
+Format each as:
+INSIGHT: <your extension or connection>
+CONFIDENCE: <0.5-0.9>
+REASONING: <what this extends and why>
+---"""
         
-        return insights
+        try:
+            response = model_fn(prompt)
+            return self._parse_llm_insights(response, node_ids, "[think cycle]")
+        except Exception as e:
+            print(f"  ⚠️ Leaf reasoning failed: {e}")
+            return []
+    
+    def _reason_about_questions(self, question_nodes: List[tuple], model_fn: Callable) -> List[NewThought]:
+        """Analyze question nodes for potential answers or deeper questions via LLM."""
+        if not question_nodes:
+            return []
+        
+        node_contents = "\n".join([f"- [{node[0]}] {node[1]}" for node in question_nodes])
+        node_ids = [node[0] for node in question_nodes]
+        
+        prompt = f"""You are analyzing open question nodes in a knowledge graph — these are unresolved questions the person has been thinking about.
+
+QUESTION NODES:
+{node_contents}
+
+Task: For 1-2 of these questions, either:
+(a) Propose a hypothesis based on patterns visible in the question itself
+(b) Reframe the question to reveal a hidden assumption
+(c) Suggest the question contains a false binary
+
+These are YOUR analytical observations, not the person's beliefs.
+
+Format each as:
+INSIGHT: <your hypothesis, reframe, or observation>
+CONFIDENCE: <0.5-0.9>
+REASONING: <what prompted this and why>
+---"""
+        
+        try:
+            response = model_fn(prompt)
+            return self._parse_llm_insights(response, node_ids, "[think cycle]")
+        except Exception as e:
+            print(f"  ⚠️ Question reasoning failed: {e}")
+            return []
+    
+    def _generate_cross_domain_connections(self, analysis: Dict, model_fn: Callable) -> List[NewThought]:
+        """Generate insights connecting different domains in the graph via LLM."""
+        # Combine a sample from different categories for cross-pollination
+        all_nodes = []
+        for key in ['hub_nodes', 'leaf_nodes', 'question_nodes']:
+            for node in analysis.get(key, [])[:3]:
+                all_nodes.append(node)
+        
+        if len(all_nodes) < 3:
+            return []
+        
+        node_contents = "\n".join([f"- [{node[0]}] {node[1]}" for node in all_nodes])
+        node_ids = [node[0] for node in all_nodes]
+        
+        prompt = f"""You are looking at nodes from different parts of a personal knowledge graph — hubs, leaves, and questions mixed together. These come from different domains and reasoning chains.
+
+MIXED NODES:
+{node_contents}
+
+Task: Find 1-2 genuine cross-domain connections. These should be non-obvious patterns where an insight in one domain illuminates something in another. Do NOT force connections — if nothing connects, say so.
+
+These are YOUR analytical observations, not the person's beliefs.
+
+Format each as:
+INSIGHT: <the cross-domain connection>
+CONFIDENCE: <0.5-0.9>
+REASONING: <which domains connect and why>
+---
+
+If no genuine connections exist, respond with just: NO_CONNECTIONS"""
+        
+        try:
+            response = model_fn(prompt)
+            if 'NO_CONNECTIONS' in response:
+                return []
+            return self._parse_llm_insights(response, node_ids, "[cross-domain insight]")
+        except Exception as e:
+            print(f"  ⚠️ Cross-domain reasoning failed: {e}")
+            return []
     
     def save_insights_to_db(self, insights: List[NewThought]) -> int:
         """Save new thoughts and their edges to the database"""
@@ -341,8 +419,7 @@ class ThinkCycle:
             if cursor.fetchone():
                 continue  # Skip exact duplicate content
             
-            # Insert the new thought node — always bunny domain with cross-domain tag
-            # Think cycle insights are AI-generated analysis, never Raj's beliefs
+            # Insert the new thought node — always bunny domain with source_file=system_generated
             insight_content = insight.content
             if not insight_content.startswith("[cross-domain insight]") and not insight_content.startswith("[think cycle]"):
                 insight_content = f"[think cycle] {insight_content}"
@@ -371,8 +448,13 @@ class ThinkCycle:
         conn.close()
         return saved_count
     
-    def run_think_cycle(self) -> Dict:
-        """Run a complete think cycle"""
+    def run_think_cycle(self, model_fn: Callable = None) -> Dict:
+        """Run a complete think cycle.
+        
+        Args:
+            model_fn: Callable (prompt_str) -> response_str for LLM reasoning.
+                      If None, insight generation is skipped.
+        """
         print("🧠 Starting think cycle...")
         
         # Get initial counts
@@ -385,13 +467,18 @@ class ThinkCycle:
         
         print(f"📊 Initial state: {initial_count} total nodes, {initial_system_count} system_generated")
         
-        # Analyze graph structure
-        print("🔍 Analyzing graph structure...")
+        # Analyze graph structure (random sampling)
+        print("🔍 Analyzing graph structure (random sample)...")
         analysis = self.analyze_graph_structure()
         
-        # Generate insights
-        print("💡 Generating new insights...")
-        insights = self.generate_insights_from_analysis(analysis)
+        # Log what was sampled
+        for key in ['hub_nodes', 'contradiction_nodes', 'leaf_nodes', 'question_nodes']:
+            count = len(analysis.get(key, []))
+            print(f"  📋 {key}: {count} sampled")
+        
+        # Generate insights via LLM
+        print("💡 Generating new insights via LLM...")
+        insights = self.generate_insights_from_analysis(analysis, model_fn=model_fn)
         print(f"Generated {len(insights)} potential insights")
         
         # Save to database
@@ -399,7 +486,6 @@ class ThinkCycle:
         saved_count = self.save_insights_to_db(insights)
         
         # Get final counts
-        from .stats import get_total_node_count, get_think_node_count
         conn = self._get_connection()
         cursor = conn.cursor()
         final_count = get_total_node_count(cursor, include_decayed=True)
@@ -420,6 +506,13 @@ class ThinkCycle:
         
         print("✅ Think cycle complete!")
         return result
+
+
+def run_think_cycle(db_path: str = None, model_fn: Callable = None) -> Dict:
+    """Module-level convenience function, matching sleep.py's pattern."""
+    cycle = ThinkCycle(db_path)
+    return cycle.run_think_cycle(model_fn=model_fn)
+
 
 if __name__ == "__main__":
     cycle = ThinkCycle()
