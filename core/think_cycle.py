@@ -69,13 +69,14 @@ class ThinkCycle:
         
         analysis = {}
         
-        # Get ALL hub nodes (nodes with edge count > 0), then random sample
+        # Get ALL hub nodes (nodes with edge count > 2), then random sample
         cursor.execute("""
-            SELECT tn.id, tn.content, tn.confidence, 
-                   (SELECT COUNT(*) FROM derivation_edges de1 WHERE de1.parent_id = tn.id) +
-                   (SELECT COUNT(*) FROM derivation_edges de2 WHERE de2.child_id = tn.id) as edge_count
-            FROM thought_nodes tn
-            HAVING edge_count > 2
+            SELECT * FROM (
+                SELECT tn.id, tn.content, tn.confidence, 
+                       (SELECT COUNT(*) FROM derivation_edges de1 WHERE de1.parent_id = tn.id) +
+                       (SELECT COUNT(*) FROM derivation_edges de2 WHERE de2.child_id = tn.id) as edge_count
+                FROM thought_nodes tn
+            ) WHERE edge_count > 2
             ORDER BY edge_count DESC
         """)
         all_hubs = cursor.fetchall()
