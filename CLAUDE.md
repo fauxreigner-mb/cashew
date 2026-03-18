@@ -49,7 +49,7 @@ integration/               — OpenClaw bridges
 SQLite with 4 tables:
 
 - **`thought_nodes`** — Knowledge nodes (id, content, node_type, domain, confidence, access_count, decayed, permanent)
-- **`derivation_edges`** — Relationships (parent_id, child_id, relation, weight, confidence)
+- **`derivation_edges`** — Relationships (parent_id, child_id, weight, confidence)
 - **`embeddings`** — Vector embeddings per node (node_id, vector as BLOB, model name)
 - **`hotspots`** — Cluster summary nodes (id, content, status, cluster_node_ids as JSON)
 
@@ -76,7 +76,7 @@ Environment variables override config: `${VAR:-default}` syntax supported in YAM
 
 - **Node IDs** — 12-char hex strings generated from content hash (`hashlib.sha256(content)[:12]`)
 - **Timestamps** — ISO 8601 strings
-- **Edge relations** — Free-text but common ones: `summarizes`, `relates_to`, `contradicts`, `derived_from`, `evolved_to`
+- **Edges are untyped** — no `relation` column. Ablation testing proved typed edges don't improve retrieval. Edges are pure connections; semantics come from node content + embeddings.
 - **Hotspot cluster_node_ids** — JSON array of node IDs stored as TEXT
 - **Embeddings** — 384-dimensional numpy arrays stored as BLOBs
 
@@ -93,15 +93,47 @@ Cashew follows a strict separation of concerns:
 - `run_sleep_cycle(model_fn=None)` — Uses fallback hotspot summaries if None
 - `run_clustering_cycle(model_fn=None)` — Creates text summaries only if provided
 
-### CLI vs Orchestrated Usage:
-- **CLI**: No LLM access. Pure heuristic extraction, structural operations only.
-- **OpenClaw crons**: Full LLM access provided via model_fn from the orchestrator.
+### CLI LLM Access:
+The CLI auto-discovers a running OpenClaw gateway from `~/.openclaw/openclaw.json` and routes LLM calls through it via the `/v1/chat/completions` endpoint (OpenAI-compatible). This is **provider-agnostic** — works with whatever LLM the user configured in OpenClaw (Anthropic, OpenAI, local models, etc).
+
+The `_build_model_fn()` function in `scripts/cashew_context.py` handles discovery. No API keys or provider-specific code needed.
 
 ### Never do in cashew:
 - `import anthropic` or any LLM client library
 - Store API keys or auth tokens
 - Make direct API calls to LLM providers
 - Create `Client()` objects
+
+## Prompt Injection Pattern (Canonical)
+
+**This is how brain context must be injected into LLM prompts.** All users should use this pattern — don't roll your own.
+
+The function `generate_session_context(db_path, hints)` in `integration/openclaw.py` returns a **pre-formatted, ready-to-inject string**. The caller drops it into their system prompt as-is.
+
+The output has three layers:
+1. **Graph Overview** — total nodes, clusters, shape of knowledge
+2. **Recent Activity** — last few sessions' worth of new nodes (recency signal)
+3. **Relevant Context** — hint-driven semantic search results with domain labels
+
+```
+=== GRAPH OVERVIEW ===
+Graph: 2124 nodes across 30 clusters.
+
+=== RECENT ACTIVITY ===
+1. [fact] Some recent fact... (03-18)
+
+=== RELEVANT CONTEXT ===
+1. [FACT] Relevant node content (Domain: user)
+2. [DECISION] Another relevant node (Domain: ai)
+
+=== END CONTEXT ===
+```
+
+**Rules:**
+- Always use `cashew context --hints "..."` or `generate_session_context()` — never assemble prompts from raw node lists
+- The output is framed as **background knowledge**, not search results. This changes how the LLM uses it.
+- Hotspot summaries are included automatically when relevant nodes connect to them
+- The caller should inject this into the system prompt, not the user message
 
 ## Important Rules
 
