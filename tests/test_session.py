@@ -453,18 +453,17 @@ class TestCashewConfig:
         assert abs(total - 1.0) < 0.001
     
     def test_scoring_weights_invalid(self):
-        """Test scoring weights validation"""
+        """Test scoring weights validation — weights > 1.0 should raise ValueError"""
         os.environ['CASHEW_ACCESS_WEIGHT'] = '0.8'
         os.environ['CASHEW_TEMPORAL_WEIGHT'] = '0.5'  # Total > 1.0
         
-        config = CashewConfig()
-        
-        with pytest.raises(ValueError):
-            config.get_scoring_weights()
-        
-        # Cleanup
-        del os.environ['CASHEW_ACCESS_WEIGHT']
-        del os.environ['CASHEW_TEMPORAL_WEIGHT']
+        try:
+            with pytest.raises(ValueError):
+                CashewConfig()  # Validation fires in __init__
+        finally:
+            # Cleanup
+            del os.environ['CASHEW_ACCESS_WEIGHT']
+            del os.environ['CASHEW_TEMPORAL_WEIGHT']
 
 class TestSessionDataClasses:
     """Test the dataclass structures"""

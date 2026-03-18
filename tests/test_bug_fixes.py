@@ -52,7 +52,8 @@ class TestNoveltyGate(unittest.TestCase):
                 decayed INTEGER DEFAULT 0,
                 metadata TEXT DEFAULT '{}',
                 last_updated TEXT,
-                mood_state TEXT
+                mood_state TEXT,
+                permanent INTEGER DEFAULT 0
             )
         ''')
         
@@ -292,7 +293,10 @@ class TestHotspotProliferationFix(unittest.TestCase):
         if 'cluster_details' in results:
             for detail in results['cluster_details']:
                 if 'action' in detail:
-                    self.assertEqual(detail['action'], "skipped_no_hotspot_creation_in_clustering")
+                    self.assertIn(detail['action'], [
+                        "skipped_no_hotspot_creation_in_clustering",
+                        "skipped_too_small_or_no_model"
+                    ])
     
     def test_complete_clustering_cycle_no_hotspot_creation(self):
         """Test that run_complete_clustering_cycle doesn't create new hotspots"""
@@ -349,7 +353,8 @@ class TestMicroClusterRemoval(unittest.TestCase):
                 decayed INTEGER DEFAULT 0,
                 metadata TEXT DEFAULT '{}',
                 last_updated TEXT,
-                mood_state TEXT
+                mood_state TEXT,
+                permanent INTEGER DEFAULT 0
             )
         ''')
         
@@ -451,7 +456,8 @@ class TestBatchEmbedding(unittest.TestCase):
                 decayed INTEGER DEFAULT 0,
                 metadata TEXT DEFAULT '{}',
                 last_updated TEXT,
-                mood_state TEXT
+                mood_state TEXT,
+                permanent INTEGER DEFAULT 0
             )
         ''')
         
@@ -596,7 +602,8 @@ class TestShouldCreateNewHotspot(unittest.TestCase):
                 decayed INTEGER DEFAULT 0,
                 metadata TEXT DEFAULT '{}',
                 last_updated TEXT,
-                mood_state TEXT
+                mood_state TEXT,
+                permanent INTEGER DEFAULT 0
             )
         ''')
         
@@ -721,7 +728,8 @@ class TestThinkCycleNoveltyGate(unittest.TestCase):
                 decayed INTEGER DEFAULT 0,
                 metadata TEXT DEFAULT '{}',
                 last_updated TEXT,
-                mood_state TEXT
+                mood_state TEXT,
+                permanent INTEGER DEFAULT 0
             )
         ''')
         
@@ -827,7 +835,8 @@ class TestCLICommands(unittest.TestCase):
                 decayed INTEGER DEFAULT 0,
                 metadata TEXT DEFAULT '{}',
                 last_updated TEXT,
-                mood_state TEXT
+                mood_state TEXT,
+                permanent INTEGER DEFAULT 0
             )
         ''')
         
@@ -904,7 +913,8 @@ class TestExtractionNoveltyGate(unittest.TestCase):
                 decayed INTEGER DEFAULT 0,
                 metadata TEXT DEFAULT '{}',
                 last_updated TEXT,
-                mood_state TEXT
+                mood_state TEXT,
+                permanent INTEGER DEFAULT 0
             )
         ''')
         

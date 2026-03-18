@@ -185,8 +185,8 @@ def infer_emergent_domains(node_meta: Dict[str, Dict]) -> Dict[str, str]:
     
     for node_id, meta in node_meta.items():
         content_lower = meta["content"].lower()
-        source_file = meta.get("source_file", "")
-        node_type = meta.get("node_type", "unknown")
+        source_file = meta.get("source_file", "") or ""
+        node_type = meta.get("node_type", "unknown") or "unknown"
         
         # System-generated content is always AI domain
         if "system_generated" in source_file:

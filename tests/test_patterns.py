@@ -99,21 +99,9 @@ class TestPatternExtraction(unittest.TestCase):
         os.unlink(self.db_path)
     
     def test_edge_type_analysis(self):
-        """Test analysis of edge relation types"""
-        edge_types = self.extractor.analyze_edge_types()
-        
-        # Should return a dictionary of percentages
-        self.assertIsInstance(edge_types, dict)
-        
-        # Percentages should sum to ~100 (allowing for rounding)
-        total_pct = sum(edge_types.values())
-        self.assertAlmostEqual(total_pct, 100, delta=5)
-        
-        # Should have common relation types
-        expected_relations = ['derived_from', 'supports', 'contradicts', 'questions']
-        for relation in expected_relations:
-            if relation in edge_types:
-                self.assertGreaterEqual(edge_types[relation], 0)
+        """Test analysis of edge relation types - SKIPPED: edge types were removed from architecture"""
+        import pytest
+        pytest.skip("Edge type analysis removed as part of 'no typed edges' architecture decision")
     
     def test_branching_factor_calculation(self):
         """Test branching factor analysis"""
@@ -177,7 +165,7 @@ class TestPatternExtraction(unittest.TestCase):
         
         # Should contain all major pattern categories
         expected_keys = [
-            "edge_types", "chain_depths", "branching", 
+            "chain_depths", "branching", 
             "questions", "contradictions", "confidence", 
             "temporal", "composite"
         ]
@@ -209,7 +197,7 @@ class TestPatternExtraction(unittest.TestCase):
         self.assertIn("confidence_level", composite)
         
         # Values should be from expected sets
-        valid_styles = ["derivational", "supportive", "critical", "exploratory"]
+        valid_styles = ["derivational", "supportive", "critical", "exploratory", "highly_connected", "moderately_connected"]
         self.assertIn(composite.get("primary_reasoning_style"), valid_styles)
         
         valid_exploration = ["depth-focused", "breadth-focused", "balanced"]

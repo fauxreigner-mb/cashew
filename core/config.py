@@ -182,21 +182,21 @@ class CashewConfig:
         self.backup_dir = self._raw_config['database']['backup_dir']
         self.auto_backup = self._raw_config['database']['auto_backup']
         
-        # Performance configuration
+        # Performance configuration (env vars override YAML)
         perf = self._raw_config['performance']
-        self.token_budget = int(perf['token_budget'])
-        self.top_k = int(perf['top_k_results'])
-        self.walk_depth = int(perf['walk_depth'])
+        self.token_budget = int(os.environ.get('CASHEW_TOKEN_BUDGET', perf['token_budget']))
+        self.top_k = int(os.environ.get('CASHEW_TOP_K', perf['top_k_results']))
+        self.walk_depth = int(os.environ.get('CASHEW_WALK_DEPTH', perf['walk_depth']))
         self.similarity_threshold = float(perf['similarity_threshold'])
-        self.access_weight = float(perf['access_weight'])
-        self.temporal_weight = float(perf['temporal_weight'])
+        self.access_weight = float(os.environ.get('CASHEW_ACCESS_WEIGHT', perf['access_weight']))
+        self.temporal_weight = float(os.environ.get('CASHEW_TEMPORAL_WEIGHT', perf['temporal_weight']))
         self.think_cycle_nodes = int(perf['think_cycle_nodes'])
         self.clustering_eps = float(perf.get('clustering_eps', 0.35))
         self.novelty_threshold = float(perf.get('novelty_threshold', 0.82))
         self.confidence_threshold = float(perf.get('confidence_threshold', 0.7))
         
-        # Model configuration
-        self.embedding_model = self._raw_config['models']['embedding']['name']
+        # Model configuration (env var override)
+        self.embedding_model = os.environ.get('CASHEW_EMBEDDING_MODEL', self._raw_config['models']['embedding']['name'])
         # LLM properties removed - cashew doesn't call LLMs directly
         
         # Domain configuration

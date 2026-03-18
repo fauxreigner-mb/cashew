@@ -344,8 +344,8 @@ def test_circular_references_handling(decay_test_db):
     conn = sqlite3.connect(decay_test_db)
     cursor = conn.cursor()
     cursor.execute("""
-        INSERT INTO derivation_edges (parent_id, child_id, relation, confidence, timestamp)
-        VALUES ('child1', 'root', 'circular', 0.8, ?)
+        INSERT INTO derivation_edges (parent_id, child_id, weight, reasoning, confidence, timestamp)
+        VALUES ('child1', 'root', 0.8, 'circular reference', 0.8, ?)
     """, (datetime.now(timezone.utc).isoformat(),))
     conn.commit()
     conn.close()

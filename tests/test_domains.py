@@ -152,9 +152,13 @@ def test_unfiltered_retrieval_returns_both_domains(temp_db):
 
 def test_domain_specific_context_generation(temp_db):
     """Test domain-specific context generation functions"""
-    # Create test nodes
-    create_test_node(temp_db, "raj1", "Raj goes silent when struggling", "observation", "raj")
-    create_test_node(temp_db, "bunny1", "Check in after 1 day of silence", "decision", "bunny")
+    # Create test nodes using config domain names
+    from core.config import get_user_domain, get_ai_domain
+    user_dom = get_user_domain()
+    ai_dom = get_ai_domain()
+    
+    create_test_node(temp_db, "raj1", "Raj goes silent when struggling", "observation", user_dom)
+    create_test_node(temp_db, "bunny1", "Check in after 1 day of silence", "decision", ai_dom)
     
     # Test ai context
     ai_context = get_ai_context(temp_db, ["silence", "communication"])
