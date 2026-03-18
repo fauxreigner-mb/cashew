@@ -5,6 +5,7 @@ Immediately assigns new nodes to best-matching hotspots upon creation.
 No node ever exists without cluster membership.
 """
 
+import re
 import sqlite3
 import json
 import hashlib
@@ -289,6 +290,14 @@ def create_node_with_placement(db_path: str, content: str, node_type: str,
     Returns:
         Tuple of (node_id, assigned_hotspot_id)
     """
+    # Quality gate: reject low-substance content before it enters the graph
+    stripped = content.strip()
+    # Remove type prefixes for checking (e.g., "Observation: ", "Decision: ")
+    bare = re.sub(r'^(Observation|Decision|Belief|Fact|Insight|Connection discovered):\s*', '', stripped)
+    if len(bare) < 20 or len(bare.split()) < 4:
+        logger.info(f"Rejected low-substance node: '{stripped[:50]}...' ({len(bare)} chars, {len(bare.split())} words)")
+        return "", "rejected"
+    
     # Generate deterministic ID based on content
     node_id = hashlib.sha256(content.encode()).hexdigest()[:12]
     
@@ -779,13 +788,27 @@ def _extract_with_heuristics(conversation_text: str) -> List[Dict[str, str]]:
                 "confidence": 0.5
             })
     
-    # Fact markers (simple heuristic)
+    # Fact markers (with quality gate)
+    # Reject log-like fragments, status updates, and low-substance lines
+    LOW_SUBSTANCE_PATTERNS = [
+        r'^(committed|pushed|merged|deployed|fixed|updated|added|removed|deleted|created|ran|running|done|completed|finished|started|installed|uploaded|downloaded)',
+        r'^(ok|yes|no|sure|thanks|noted|got it|will do|on it)',
+        r'^\d+\s*(files?|lines?|nodes?|edges?|bytes?|commits?)',
+        r'^(TODO|FIXME|HACK|WIP|TBD|FYI)\b',
+        r'(pull request|PR|commit|branch|merge|git|npm|pip)\s',
+    ]
+    low_substance_re = re.compile('|'.join(LOW_SUBSTANCE_PATTERNS), re.IGNORECASE)
+    
     sentences = conversation_text.split('.')
     for sentence in sentences:
         sentence = sentence.strip()
-        if len(sentence) > 20 and len(sentence) < 100:
-            # Look for factual statements (contains proper nouns, numbers, etc.)
-            if re.search(r'[A-Z][a-z]+|\d+', sentence):
+        # Minimum substance: 40+ chars, contains meaningful content
+        if len(sentence) > 40 and len(sentence) < 200:
+            # Skip log-like and status fragments
+            if low_substance_re.search(sentence):
+                continue
+            # Must have at least some semantic substance (multiple words with capitals or specifics)
+            if re.search(r'[A-Z][a-z]{2,}', sentence) and len(sentence.split()) >= 6:
                 extractions.append({
                     "content": f"Observation: {sentence}",
                     "type": "observation",
