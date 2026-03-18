@@ -4,6 +4,10 @@ data/
 logs/
 models/
 
+# Dashboard data (contains full brain export — PII)
+dashboard/data/graph.json
+dashboard/data/*.json
+
 # Configuration (users should copy from template)
 config.yaml
 
