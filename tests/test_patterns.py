@@ -97,12 +97,6 @@ class TestPatternExtraction(unittest.TestCase):
     def tearDown(self):
         """Clean up test database"""
         os.unlink(self.db_path)
-    
-    def test_edge_type_analysis(self):
-        """Test analysis of edge relation types - SKIPPED: edge types were removed from architecture"""
-        import pytest
-        pytest.skip("Edge type analysis removed as part of 'no typed edges' architecture decision")
-    
     def test_branching_factor_calculation(self):
         """Test branching factor analysis"""
         branching = self.extractor.calculate_branching_factor()
