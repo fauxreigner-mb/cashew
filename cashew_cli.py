@@ -379,8 +379,61 @@ Examples:
     permanent_parser.add_argument('--stats', action='store_true', help='Show statistics instead of listing nodes')
     permanent_parser.set_defaults(func=cmd_permanent)
     
-    # TODO: Add other commands (context, extract, think, sleep, stats, etc.)
-    # For now, we'll just implement the essential ones for packaging
+    # Core workflow commands (delegated to cashew_context.py functions)
+    from scripts.cashew_context import (
+        cmd_context, cmd_extract, cmd_think, cmd_sleep, cmd_stats,
+        cmd_migrate_files, cmd_complete_context, cmd_complete_sleep,
+        cmd_system_stats
+    )
+    
+    # context command
+    context_parser = subparsers.add_parser('context', help='Query brain for relevant context')
+    context_parser.add_argument('--hints', nargs='*', help='Topic hints (e.g., "work promotion")')
+    context_parser.set_defaults(func=cmd_context)
+    
+    # extract command
+    extract_parser = subparsers.add_parser('extract', help='Extract knowledge from text')
+    extract_parser.add_argument('--input', required=True, help='Input text file')
+    extract_parser.add_argument('--session-id', help='Optional session ID')
+    extract_parser.set_defaults(func=cmd_extract)
+    
+    # think command
+    think_parser = subparsers.add_parser('think', help='Run a think cycle')
+    think_parser.add_argument('--domain', help='Focus domain')
+    think_parser.add_argument('--mode', default='general', choices=['general', 'tension'],
+                              help='Think mode')
+    think_parser.set_defaults(func=cmd_think)
+    
+    # sleep command
+    sleep_parser = subparsers.add_parser('sleep', help='Run sleep/consolidation protocol')
+    sleep_parser.add_argument('--eps', type=float, default=None,
+                              help='Clustering threshold (0.0-1.0). Higher = looser clusters')
+    sleep_parser.set_defaults(func=cmd_sleep)
+    
+    # stats command
+    stats_parser = subparsers.add_parser('stats', help='Show graph statistics')
+    stats_parser.set_defaults(func=cmd_stats)
+    
+    # system-stats command
+    sys_stats_parser = subparsers.add_parser('system-stats', help='Show complete system statistics')
+    sys_stats_parser.set_defaults(func=cmd_system_stats)
+    
+    # migrate-files command
+    mf_parser = subparsers.add_parser('migrate-files', help='Migrate markdown files to cashew')
+    mf_parser.add_argument('--dir', required=True, help='Directory containing markdown files')
+    mf_parser.add_argument('--dry-run', action='store_true', help='Preview without changes')
+    mf_parser.set_defaults(func=cmd_migrate_files)
+    
+    # complete-context command
+    cc_parser = subparsers.add_parser('complete-context', help='Context with complete coverage retrieval')
+    cc_parser.add_argument('--hints', nargs='*', help='Topic hints')
+    cc_parser.add_argument('--method', default='dfs', choices=['dfs', 'hierarchical', 'breadth_first'])
+    cc_parser.set_defaults(func=cmd_complete_context)
+    
+    # complete-sleep command
+    cs_parser = subparsers.add_parser('complete-sleep', help='Full sleep with hierarchy evolution')
+    cs_parser.add_argument('--no-evolution', action='store_true', help='Skip hierarchy evolution')
+    cs_parser.set_defaults(func=cmd_complete_sleep)
     
     args = parser.parse_args()
     
@@ -396,9 +449,15 @@ Examples:
     if args.config:
         reload_config(args.config)
     
-    # Override DB path if specified
+    # Ensure args.db is always set (needed by delegated commands from cashew_context.py)
     if args.db:
         config.db_path = args.db
+    else:
+        args.db = get_db_path()
+    
+    # Ensure args.verbose and args.debug exist for delegated commands
+    if not hasattr(args, 'verbose'):
+        args.verbose = False
     
     # Execute command
     try:
