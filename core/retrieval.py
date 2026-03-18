@@ -275,7 +275,7 @@ def retrieve(db_path: str, query: str, top_k: int = 5, walk_depth: int = 2, doma
             cursor2 = conn2.cursor()
             cursor2.execute("""
                 SELECT child_id FROM derivation_edges 
-                WHERE parent_id = ? AND relation = 'summarizes'
+                WHERE parent_id = ? AND reasoning LIKE '%summarizes%'
             """, (result.node_id,))
             for row in cursor2.fetchall():
                 hotspot_cluster_members.add(row[0])
@@ -344,7 +344,7 @@ def retrieve_dfs(db_path: str, query: str, top_k: int = 5,
         JOIN thought_nodes tn_parent ON de.parent_id = tn_parent.id
         JOIN thought_nodes tn_child ON de.child_id = tn_child.id
         WHERE tn_parent.node_type = ? AND tn_child.node_type = ?
-        AND de.relation = 'summarizes'
+        AND de.reasoning LIKE '%summarizes%'
         AND (tn_parent.decayed IS NULL OR tn_parent.decayed = 0)
         AND (tn_child.decayed IS NULL OR tn_child.decayed = 0)
     """, (HOTSPOT_TYPE, HOTSPOT_TYPE))
@@ -433,7 +433,7 @@ def retrieve_dfs(db_path: str, query: str, top_k: int = 5,
     
     cursor.execute("""
         SELECT child_id FROM derivation_edges 
-        WHERE parent_id = ? AND relation = 'summarizes'
+        WHERE parent_id = ? AND reasoning LIKE '%summarizes%'
     """, (best_hotspot_id,))
     
     cluster_members = set(row[0] for row in cursor.fetchall())
@@ -441,7 +441,7 @@ def retrieve_dfs(db_path: str, query: str, top_k: int = 5,
     # Also get unclustered nodes as fallback
     cursor.execute("""
         SELECT DISTINCT child_id FROM derivation_edges 
-        WHERE relation = 'summarizes'
+        WHERE reasoning LIKE '%summarizes%'
     """)
     all_clustered = set(row[0] for row in cursor.fetchall())
     
@@ -576,7 +576,7 @@ def retrieve_hierarchical(db_path: str, query: str, top_k: int = 5,
         # Get cluster members
         cursor.execute("""
             SELECT child_id FROM derivation_edges 
-            WHERE parent_id = ? AND relation = 'summarizes'
+            WHERE parent_id = ? AND reasoning LIKE '%summarizes%'
         """, (hotspot_id,))
         for row in cursor.fetchall():
             search_pool.add(row[0])
@@ -584,7 +584,7 @@ def retrieve_hierarchical(db_path: str, query: str, top_k: int = 5,
     # Also get unclustered nodes (not in ANY hotspot's cluster)
     cursor.execute("""
         SELECT DISTINCT child_id FROM derivation_edges 
-        WHERE relation = 'summarizes'
+        WHERE reasoning LIKE '%summarizes%'
     """)
     all_clustered = set(row[0] for row in cursor.fetchall())
     

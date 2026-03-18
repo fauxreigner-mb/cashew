@@ -73,12 +73,13 @@ class ThinkCycle:
         """)
         analysis['hub_nodes'] = cursor.fetchall()
         
-        # Get contradiction nodes (nodes with contradictory edges)
+        # Get contradiction nodes (nodes with edges that might represent contradictions)
+        # NOTE: relation column removed, using reasoning text to identify contradictions
         cursor.execute("""
             SELECT DISTINCT tn.id, tn.content, tn.confidence
             FROM thought_nodes tn
             JOIN derivation_edges de ON tn.id = de.child_id OR tn.id = de.parent_id
-            WHERE de.relation = 'contradicts'
+            WHERE de.reasoning LIKE '%contradict%' OR de.reasoning LIKE '%conflict%'
             LIMIT 10
         """)
         analysis['contradiction_nodes'] = cursor.fetchall()
@@ -356,9 +357,9 @@ class ThinkCycle:
                 for parent_id in insight.parent_ids:
                     cursor.execute("""
                         INSERT OR IGNORE INTO derivation_edges 
-                        (parent_id, child_id, relation, weight, reasoning)
-                        VALUES (?, ?, ?, ?, ?)
-                    """, (parent_id, node_id, 'derives_from', 0.8, insight.reasoning))
+                        (parent_id, child_id, weight, reasoning)
+                        VALUES (?, ?, ?, ?)
+                    """, (parent_id, node_id, 0.8, insight.reasoning))
                 
                 saved_count += 1
                 
@@ -375,12 +376,11 @@ class ThinkCycle:
         print("🧠 Starting think cycle...")
         
         # Get initial counts
+        from .stats import get_total_node_count, get_think_node_count
         conn = self._get_connection()
         cursor = conn.cursor()
-        cursor.execute("SELECT COUNT(*) FROM thought_nodes")
-        initial_count = cursor.fetchone()[0]
-        cursor.execute("SELECT COUNT(*) FROM thought_nodes WHERE source_file='system_generated'")
-        initial_system_count = cursor.fetchone()[0]
+        initial_count = get_total_node_count(cursor, include_decayed=True)
+        initial_system_count = get_think_node_count(cursor)
         conn.close()
         
         print(f"📊 Initial state: {initial_count} total nodes, {initial_system_count} system_generated")
@@ -399,12 +399,11 @@ class ThinkCycle:
         saved_count = self.save_insights_to_db(insights)
         
         # Get final counts
+        from .stats import get_total_node_count, get_think_node_count
         conn = self._get_connection()
         cursor = conn.cursor()
-        cursor.execute("SELECT COUNT(*) FROM thought_nodes")
-        final_count = cursor.fetchone()[0]
-        cursor.execute("SELECT COUNT(*) FROM thought_nodes WHERE source_file='system_generated'")
-        final_system_count = cursor.fetchone()[0]
+        final_count = get_total_node_count(cursor, include_decayed=True)
+        final_system_count = get_think_node_count(cursor)
         conn.close()
         
         # Sample of best new thoughts

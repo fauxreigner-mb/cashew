@@ -77,7 +77,7 @@ def calculate_hotspot_permanence_ratio(cursor: sqlite3.Cursor, hotspot_id: str) 
     # Get member nodes via summarizes edges
     cursor.execute("""
         SELECT child_id FROM derivation_edges 
-        WHERE parent_id = ? AND relation = 'summarizes'
+        WHERE parent_id = ? AND reasoning LIKE '%summarizes%'
     """, (hotspot_id,))
     
     cluster_node_ids = [row[0] for row in cursor.fetchall()]

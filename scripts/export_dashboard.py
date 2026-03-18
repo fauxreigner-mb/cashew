@@ -54,18 +54,28 @@ def export(db_path: str, output_path: str, title: str = "cashew"):
         })
     
     # Export edges — use source/target format for dashboard compatibility
-    c.execute("SELECT parent_id, child_id, relation, weight, reasoning FROM derivation_edges")
+    c.execute("SELECT parent_id, child_id, weight, reasoning FROM derivation_edges")
     edges = []
     node_ids = {n["id"] for n in nodes}
     for row in c.fetchall():
         # Only include edges where both nodes exist
         if row[0] in node_ids and row[1] in node_ids:
+            # Extract relation type from reasoning for dashboard compatibility
+            reasoning = row[3] or ""
+            relation = "derived_from"  # default
+            if "summarizes" in reasoning.lower():
+                relation = "summarizes"
+            elif "cross_link" in reasoning.lower():
+                relation = "cross_link"
+            elif "contradict" in reasoning.lower():
+                relation = "contradicts"
+            
             edges.append({
                 "source": row[0],
                 "target": row[1],
-                "relation": row[2] or "derived_from",
-                "weight": row[3] or 0.5,
-                "reasoning": row[4] or ""
+                "relation": relation,
+                "weight": row[2] or 0.5,
+                "reasoning": reasoning
             })
     
     dashboard = {

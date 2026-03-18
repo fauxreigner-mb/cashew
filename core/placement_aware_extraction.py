@@ -257,9 +257,9 @@ def _assign_node_to_hotspot(db_path: str, node_id: str, hotspot_id: str,
     try:
         cursor.execute("""
             INSERT OR IGNORE INTO derivation_edges 
-            (parent_id, child_id, relation, weight, reasoning)
-            VALUES (?, ?, 'summarizes', 0.8, ?)
-        """, (hotspot_id, node_id, reasoning))
+            (parent_id, child_id, weight, reasoning)
+            VALUES (?, ?, 0.8, ?)
+        """, (hotspot_id, node_id, f"summarizes - {reasoning}"))
         
         conn.commit()
         logger.info(f"Assigned node {node_id} to hotspot {hotspot_id}")
@@ -368,7 +368,7 @@ def _find_nodes_current_hotspot(db_path: str, node_id: str) -> Optional[str]:
         SELECT de.parent_id
         FROM derivation_edges de
         JOIN thought_nodes tn ON de.parent_id = tn.id
-        WHERE de.child_id = ? AND de.relation = 'summarizes'
+        WHERE de.child_id = ? AND de.reasoning LIKE '%summarizes%'
         AND tn.node_type = ?
     """, (node_id, HOTSPOT_TYPE))
     
@@ -514,7 +514,7 @@ def batch_assign_orphaned_nodes(db_path: str, model_fn: Optional[Callable[[str],
             SELECT DISTINCT de.child_id 
             FROM derivation_edges de
             JOIN thought_nodes hotspot ON de.parent_id = hotspot.id
-            WHERE de.relation = 'summarizes' AND hotspot.node_type = ?
+            WHERE de.reasoning LIKE '%summarizes%' AND hotspot.node_type = ?
         )
     """, (HOTSPOT_TYPE, HOTSPOT_TYPE))
     

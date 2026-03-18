@@ -115,7 +115,7 @@ def choose_node_to_keep(node1, node2):
 def get_node_edges(cursor, node_id):
     """Get all edges where node is parent or child."""
     cursor.execute("""
-        SELECT parent_id, child_id, relation, weight, reasoning
+        SELECT parent_id, child_id, weight, reasoning
         FROM derivation_edges
         WHERE parent_id = ? OR child_id = ?
     """, (node_id, node_id))
@@ -146,7 +146,7 @@ def transfer_edges(cursor, from_node_id, to_node_id):
                 INSERT OR IGNORE INTO derivation_edges 
                 (parent_id, child_id, relation, weight, reasoning)
                 VALUES (?, ?, ?, ?, ?)
-            """, (new_parent_id, new_child_id, relation, weight, 
+            """, (new_parent_id, new_child_id, weight, 
                   f"Transferred from duplicate {from_node_id}: {reasoning}"))
             transferred += 1
             

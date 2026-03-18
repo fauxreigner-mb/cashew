@@ -96,7 +96,7 @@ def _get_all_cluster_stats(db_path: str) -> Dict[str, ClusterStats]:
         cursor.execute("""
             SELECT de.child_id 
             FROM derivation_edges de
-            WHERE de.parent_id = ? AND de.relation = 'summarizes'
+            WHERE de.parent_id = ? AND de.reasoning LIKE '%summarizes%'
         """, (hotspot_id,))
         
         member_ids = [row[0] for row in cursor.fetchall()]
@@ -130,7 +130,7 @@ def _get_all_cluster_stats(db_path: str) -> Dict[str, ClusterStats]:
             SELECT de.child_id
             FROM derivation_edges de
             JOIN thought_nodes tn ON de.child_id = tn.id
-            WHERE de.parent_id = ? AND de.relation = 'summarizes' 
+            WHERE de.parent_id = ? AND de.reasoning LIKE '%summarizes%' 
             AND tn.node_type = ?
         """, (hotspot_id, HOTSPOT_TYPE))
         
@@ -355,13 +355,13 @@ def execute_merge(db_path: str, hotspot1_id: str, hotspot2_id: str,
     # Choose the hotspot with more members to be the primary
     cursor.execute("""
         SELECT COUNT(*) FROM derivation_edges 
-        WHERE parent_id = ? AND relation = 'summarizes'
+        WHERE parent_id = ? AND reasoning LIKE '%summarizes%'
     """, (hotspot1_id,))
     count1 = cursor.fetchone()[0]
     
     cursor.execute("""
         SELECT COUNT(*) FROM derivation_edges 
-        WHERE parent_id = ? AND relation = 'summarizes'
+        WHERE parent_id = ? AND reasoning LIKE '%summarizes%'
     """, (hotspot2_id,))
     count2 = cursor.fetchone()[0]
     
@@ -373,7 +373,7 @@ def execute_merge(db_path: str, hotspot1_id: str, hotspot2_id: str,
     # Get all members from secondary cluster
     cursor.execute("""
         SELECT child_id FROM derivation_edges 
-        WHERE parent_id = ? AND relation = 'summarizes'
+        WHERE parent_id = ? AND reasoning LIKE '%summarizes%'
     """, (secondary_id,))
     
     secondary_members = [row[0] for row in cursor.fetchall()]
@@ -383,7 +383,7 @@ def execute_merge(db_path: str, hotspot1_id: str, hotspot2_id: str,
         cursor.execute("""
             UPDATE derivation_edges 
             SET parent_id = ?, reasoning = ?
-            WHERE parent_id = ? AND child_id = ? AND relation = 'summarizes'
+            WHERE parent_id = ? AND child_id = ? AND reasoning LIKE '%summarizes%'
         """, (primary_id, f"Cluster merge: {secondary_id} -> {primary_id}", secondary_id, member_id))
     
     # Generate merged summary if model is available
@@ -437,7 +437,7 @@ def execute_split(db_path: str, hotspot_id: str, reason: str,
         SELECT de.child_id, tn.content, COALESCE(tn.domain, 'general') as domain
         FROM derivation_edges de
         JOIN thought_nodes tn ON de.child_id = tn.id
-        WHERE de.parent_id = ? AND de.relation = 'summarizes'
+        WHERE de.parent_id = ? AND de.reasoning LIKE '%summarizes%'
         AND (tn.decayed IS NULL OR tn.decayed = 0)
     """, (hotspot_id,))
     
@@ -518,9 +518,9 @@ Sub-cluster summary (1-2 sentences):"""
             for new_hotspot_id in new_hotspot_ids:
                 cursor.execute("""
                     INSERT OR IGNORE INTO derivation_edges 
-                    (parent_id, child_id, relation, weight, reasoning)
-                    VALUES (?, ?, 'summarizes', 0.9, ?)
-                """, (hotspot_id, new_hotspot_id, f"Split operation result"))
+                    (parent_id, child_id, weight, reasoning)
+                    VALUES (?, ?, 0.9, ?)
+                """, (hotspot_id, new_hotspot_id, f"summarizes - Split operation result"))
         
         conn.commit()
         conn.close()
@@ -607,9 +607,9 @@ Parent-level summary (1-2 sentences):"""
     for cluster_id in related_cluster_ids:
         cursor.execute("""
             INSERT OR IGNORE INTO derivation_edges 
-            (parent_id, child_id, relation, weight, reasoning)
-            VALUES (?, ?, 'summarizes', 0.8, ?)
-        """, (promoted_hotspot_id, cluster_id, f"Concept promotion: shared theme"))
+            (parent_id, child_id, weight, reasoning)
+            VALUES (?, ?, 0.8, ?)
+        """, (promoted_hotspot_id, cluster_id, f"summarizes - Concept promotion: shared theme"))
     
     conn.commit()
     conn.close()
@@ -629,15 +629,15 @@ def execute_reclassification(db_path: str, node_id: str, current_cluster: str,
     # Remove from current cluster
     cursor.execute("""
         DELETE FROM derivation_edges 
-        WHERE parent_id = ? AND child_id = ? AND relation = 'summarizes'
+        WHERE parent_id = ? AND child_id = ? AND reasoning LIKE '%summarizes%'
     """, (current_cluster, node_id))
     
     # Add to better cluster
     cursor.execute("""
         INSERT OR IGNORE INTO derivation_edges 
-        (parent_id, child_id, relation, weight, reasoning)
-        VALUES (?, ?, 'summarizes', 0.8, ?)
-    """, (better_cluster, node_id, f"Reclassification: similarity improvement {improvement:.3f}"))
+        (parent_id, child_id, weight, reasoning)
+        VALUES (?, ?, 0.8, ?)
+    """, (better_cluster, node_id, f"summarizes - Reclassification: similarity improvement {improvement:.3f}"))
     
     conn.commit()
     conn.close()

@@ -88,7 +88,7 @@ class QuestionGenerator:
         cursor.execute("""
             SELECT de.parent_id, de.child_id, de.reasoning
             FROM derivation_edges de
-            WHERE de.relation = 'contradicts'
+            WHERE de.reasoning LIKE '%contradict%' OR de.reasoning LIKE '%conflict%'
         """)
         
         contradictions = [(row[0], row[1], row[2]) for row in cursor.fetchall()]
@@ -103,7 +103,7 @@ class QuestionGenerator:
         cursor.execute("""
             SELECT de.parent_id, de.child_id, de.weight, de.reasoning
             FROM derivation_edges de
-            WHERE de.weight < ? AND de.relation != 'cross_link'
+            WHERE de.weight < ? AND de.reasoning NOT LIKE '%cross_link%'
             ORDER BY de.weight ASC
         """, (threshold,))
         
@@ -370,9 +370,9 @@ class QuestionGenerator:
         for source_id in question.source_nodes:
             cursor.execute("""
                 INSERT OR IGNORE INTO derivation_edges
-                (parent_id, child_id, relation, weight, reasoning)
-                VALUES (?, ?, 'questions', 0.8, ?)
-            """, (source_id, question_id, question.reasoning))
+                (parent_id, child_id, weight, reasoning)
+                VALUES (?, ?, 0.8, ?)
+            """, (source_id, question_id, f"questions - {question.reasoning}"))
         
         conn.commit()
         conn.close()

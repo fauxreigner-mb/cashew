@@ -36,7 +36,7 @@ def get_inbox_members(db_path: str, inbox_hotspot_id: str = "07621e89a08e") -> L
         SELECT de.child_id
         FROM derivation_edges de
         JOIN thought_nodes tn ON de.child_id = tn.id
-        WHERE de.parent_id = ? AND de.relation = 'summarizes'
+        WHERE de.parent_id = ? AND de.reasoning LIKE '%summarizes%'
         AND (tn.decayed IS NULL OR tn.decayed = 0)
     """, (inbox_hotspot_id,))
     
@@ -135,14 +135,14 @@ def move_node_to_hotspot(db_path: str, node_id: str, old_hotspot_id: str,
         # Delete old edge
         cursor.execute("""
             DELETE FROM derivation_edges 
-            WHERE parent_id = ? AND child_id = ? AND relation = 'summarizes'
+            WHERE parent_id = ? AND child_id = ? AND reasoning LIKE '%summarizes%'
         """, (old_hotspot_id, node_id))
         
         # Create new edge
         cursor.execute("""
             INSERT OR IGNORE INTO derivation_edges (parent_id, child_id, relation, weight, reasoning)
-            VALUES (?, ?, 'summarizes', ?, ?)
-        """, (new_hotspot_id, node_id, 0.8, f"Sleep cycle reclassification (similarity: {similarity:.3f})"))
+            VALUES (?, ?, ?, ?)
+        """, (new_hotspot_id, node_id, 0.8, f"summarizes - Sleep cycle reclassification (similarity: {similarity:.3f})"))
         
         conn.commit()
         conn.close()

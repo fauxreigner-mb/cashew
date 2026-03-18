@@ -229,14 +229,14 @@ class SleepProtocol:
         
         # Create bidirectional cross-link
         cursor.execute("""
-            INSERT OR IGNORE INTO derivation_edges (parent_id, child_id, relation, weight, reasoning)
-            VALUES (?, ?, 'cross_link', ?, ?)
-        """, (node1_id, node2_id, similarity, reasoning or f"Semantic similarity: {similarity:.2f}"))
+            INSERT OR IGNORE INTO derivation_edges (parent_id, child_id, weight, reasoning)
+            VALUES (?, ?, ?, ?)
+        """, (node1_id, node2_id, similarity, f"cross_link - {reasoning or f'Semantic similarity: {similarity:.2f}'}"))
         
         cursor.execute("""
-            INSERT OR IGNORE INTO derivation_edges (parent_id, child_id, relation, weight, reasoning)
-            VALUES (?, ?, 'cross_link', ?, ?)
-        """, (node2_id, node1_id, similarity, reasoning or f"Semantic similarity: {similarity:.2f}"))
+            INSERT OR IGNORE INTO derivation_edges (parent_id, child_id, weight, reasoning)
+            VALUES (?, ?, ?, ?)
+        """, (node2_id, node1_id, similarity, f"cross_link - {reasoning or f'Semantic similarity: {similarity:.2f}'}"))
         
         conn.commit()
         conn.close()
@@ -364,14 +364,14 @@ class SleepProtocol:
         
         # Connect dream to both nodes
         cursor.execute("""
-            INSERT OR IGNORE INTO derivation_edges (parent_id, child_id, relation, weight, reasoning)
-            VALUES (?, ?, 'derived_from', ?, 'Dream synthesis')
-        """, (best_bridge.node1_id, dream_id, best_bridge.similarity))
+            INSERT OR IGNORE INTO derivation_edges (parent_id, child_id, weight, reasoning)
+            VALUES (?, ?, ?, ?)
+        """, (best_bridge.node1_id, dream_id, best_bridge.similarity, 'derived_from - Dream synthesis'))
         
         cursor.execute("""
-            INSERT OR IGNORE INTO derivation_edges (parent_id, child_id, relation, weight, reasoning)
-            VALUES (?, ?, 'derived_from', ?, 'Dream synthesis')
-        """, (best_bridge.node2_id, dream_id, best_bridge.similarity))
+            INSERT OR IGNORE INTO derivation_edges (parent_id, child_id, weight, reasoning)
+            VALUES (?, ?, ?, ?)
+        """, (best_bridge.node2_id, dream_id, best_bridge.similarity, 'derived_from - Dream synthesis'))
         
         conn.commit()
         conn.close()
@@ -409,7 +409,7 @@ class SleepProtocol:
             # Cross-links (bidirectional cross_link edges)
             cursor.execute("""
                 SELECT COUNT(*) FROM derivation_edges 
-                WHERE (parent_id = ? OR child_id = ?) AND relation = 'cross_link'
+                WHERE (parent_id = ? OR child_id = ?) AND reasoning LIKE '%cross_link%'
             """, (node_id, node_id))
             cross_links = cursor.fetchone()[0]
             

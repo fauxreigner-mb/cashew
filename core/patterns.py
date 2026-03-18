@@ -38,33 +38,30 @@ class PatternExtractor:
         """Get database connection"""
         return sqlite3.connect(self.db_path)
     
-    def analyze_edge_types(self) -> Dict[str, float]:
-        """Analyze distribution of edge relation types"""
+    def analyze_edge_density(self) -> Dict[str, float]:
+        """Analyze edge density and distribution"""
         conn = self._get_connection()
         cursor = conn.cursor()
         
-        cursor.execute("""
-            SELECT relation, COUNT(*) as count
-            FROM derivation_edges
-            GROUP BY relation
-            ORDER BY count DESC
-        """)
+        # Count total edges and nodes
+        cursor.execute("SELECT COUNT(*) FROM derivation_edges")
+        total_edges = cursor.fetchone()[0]
         
-        edge_counts = {}
-        total_edges = 0
+        cursor.execute("SELECT COUNT(*) FROM thought_nodes WHERE (decayed = 0 OR decayed IS NULL)")
+        total_nodes = cursor.fetchone()[0]
         
-        for relation, count in cursor.fetchall():
-            edge_counts[relation] = count
-            total_edges += count
+        # Calculate edge density
+        max_possible_edges = total_nodes * (total_nodes - 1)
+        edge_density = (total_edges / max_possible_edges * 100) if max_possible_edges > 0 else 0
         
         conn.close()
         
-        # Convert to percentages
-        edge_percentages = {}
-        for relation, count in edge_counts.items():
-            edge_percentages[relation] = (count / total_edges * 100) if total_edges > 0 else 0
-        
-        return edge_percentages
+        return {
+            "total_edges": total_edges,
+            "total_nodes": total_nodes,
+            "edge_density_pct": edge_density,
+            "avg_edges_per_node": (total_edges / total_nodes) if total_nodes > 0 else 0
+        }
     
     def calculate_chain_depths(self) -> Dict[str, float]:
         """Calculate average chain depth from seeds to leaves"""
@@ -230,25 +227,24 @@ class PatternExtractor:
         conn = self._get_connection()
         cursor = conn.cursor()
         
-        # Count contradiction edges
+        # Count contradiction edges by reasoning text
         cursor.execute("""
-            SELECT COUNT(*) FROM derivation_edges WHERE relation = 'contradicts'
+            SELECT COUNT(*) FROM derivation_edges 
+            WHERE reasoning LIKE '%contradict%' OR reasoning LIKE '%conflict%' OR reasoning LIKE '%oppose%'
         """)
         contradiction_count = cursor.fetchone()[0]
         
         # Count total edges
-        cursor.execute("""
-            SELECT COUNT(*) FROM derivation_edges
-        """)
-        total_edges = cursor.fetchone()[0]
-        
+        from .stats import get_edge_count
+        total_edges = get_edge_count(cursor)
+
         # Get contradiction examples
         cursor.execute("""
             SELECT de.reasoning, tn1.content, tn2.content
             FROM derivation_edges de
             JOIN thought_nodes tn1 ON de.parent_id = tn1.id
             JOIN thought_nodes tn2 ON de.child_id = tn2.id
-            WHERE de.relation = 'contradicts'
+            WHERE de.reasoning LIKE '%contradict%' OR de.reasoning LIKE '%conflict%' OR de.reasoning LIKE '%oppose%'
             LIMIT 3
         """)
         
@@ -365,8 +361,8 @@ class PatternExtractor:
         
         patterns = {}
         
-        # Edge type patterns
-        patterns["edge_types"] = self.analyze_edge_types()
+        # Edge density patterns
+        patterns["edge_density"] = self.analyze_edge_density()
         
         # Depth patterns
         patterns["chain_depths"] = self.calculate_chain_depths()
@@ -395,18 +391,20 @@ class PatternExtractor:
         """Calculate high-level composite reasoning metrics"""
         composite = {}
         
-        # Primary reasoning style
-        edge_types = patterns.get("edge_types", {})
-        derived_pct = edge_types.get("derived_from", 0)
-        supports_pct = edge_types.get("supports", 0)
-        contradicts_pct = edge_types.get("contradicts", 0)
+        # Primary reasoning style based on edge density and patterns
+        edge_density = patterns.get("edge_density", {})
+        density_pct = edge_density.get("edge_density_pct", 0)
         
-        if derived_pct > 50:
-            primary_style = "derivational"
-        elif supports_pct > 30:
-            primary_style = "supportive"
+        # Use contradiction ratio to determine style
+        contradictions = patterns.get("contradictions", {})
+        contradicts_pct = contradictions.get("contradiction_ratio", 0)
+        
+        if density_pct > 10:
+            primary_style = "highly_connected"
         elif contradicts_pct > 10:
             primary_style = "critical"
+        elif density_pct > 5:
+            primary_style = "moderately_connected"
         else:
             primary_style = "exploratory"
         
@@ -472,12 +470,13 @@ class PatternExtractor:
         description.append(f"❓ Inquiry: {composite.get('inquiry_style', 'unknown').title()}")
         description.append(f"🎯 Confidence: {composite.get('confidence_level', 'unknown').title()}")
         
-        # Edge type distribution
-        edge_types = patterns.get("edge_types", {})
-        if edge_types:
-            description.append(f"\n🔗 Reasoning Relations:")
-            for relation, pct in sorted(edge_types.items(), key=lambda x: x[1], reverse=True):
-                description.append(f"  {relation}: {pct:.1f}%")
+        # Edge density analysis
+        edge_density = patterns.get("edge_density", {})
+        if edge_density:
+            description.append(f"\n🔗 Graph Connectivity:")
+            description.append(f"  Total edges: {edge_density.get('total_edges', 0)}")
+            description.append(f"  Edge density: {edge_density.get('edge_density_pct', 0):.2f}%")
+            description.append(f"  Avg edges per node: {edge_density.get('avg_edges_per_node', 0):.1f}")
         
         # Depth and branching
         depths = patterns.get("chain_depths", {})
@@ -567,12 +566,12 @@ def main():
         
         print(f"\n📊 Detailed Metrics:")
         
-        # Edge types
-        edge_types = patterns.get("edge_types", {})
-        if edge_types:
-            print(f"Edge Distribution:")
-            for relation, pct in edge_types.items():
-                print(f"  {relation}: {pct:.1f}%")
+        # Edge density
+        edge_density = patterns.get("edge_density", {})
+        if edge_density:
+            print(f"Graph Connectivity:")
+            print(f"  Total edges: {edge_density.get('total_edges', 0)}")
+            print(f"  Edge density: {edge_density.get('edge_density_pct', 0):.2f}%")
         
         # Depth and branching
         depths = patterns.get("chain_depths", {})

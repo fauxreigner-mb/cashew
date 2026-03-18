@@ -30,7 +30,6 @@ class ThoughtNode:
 class DerivationEdge:
     parent_id: str
     child_id: str
-    relation: str
     weight: float
     reasoning: str
 
@@ -86,7 +85,7 @@ class TraversalEngine:
         cursor = conn.cursor()
         
         cursor.execute("""
-            SELECT de.parent_id, de.relation, de.weight, de.reasoning,
+            SELECT de.parent_id, de.weight, de.reasoning,
                    tn.content, tn.node_type, tn.confidence, tn.mood_state, 
                    tn.metadata, tn.source_file, tn.timestamp
             FROM derivation_edges de
@@ -100,19 +99,18 @@ class TraversalEngine:
             edge = DerivationEdge(
                 parent_id=row[0],
                 child_id=node_id,
-                relation=row[1],
-                weight=row[2],
-                reasoning=row[3]
+                weight=row[1],
+                reasoning=row[2]
             )
             parent = ThoughtNode(
                 id=row[0],
-                content=row[4],
-                node_type=row[5],
-                confidence=row[6],
-                mood_state=row[7],
-                metadata=json.loads(row[8]) if row[8] else {},
-                source_file=row[9],
-                timestamp=row[10]
+                content=row[3],
+                node_type=row[4],
+                confidence=row[5],
+                mood_state=row[6],
+                metadata=json.loads(row[7]) if row[7] else {},
+                source_file=row[8],
+                timestamp=row[9]
             )
             results.append((parent, edge))
         
@@ -202,7 +200,6 @@ class TraversalEngine:
             for parent_node, edge in parents:
                 parent_chain = traverse(parent_node.id, depth + 1, new_path)
                 chain[0]["derived_from"].append({
-                    "relation": edge.relation,
                     "weight": edge.weight,
                     "reasoning": edge.reasoning,
                     "parent_chain": parent_chain
@@ -247,15 +244,15 @@ class TraversalEngine:
             
             # Get all connected nodes (both directions)
             cursor.execute("""
-                SELECT child_id as connected_id, 'outgoing' as direction, relation, weight, reasoning
+                SELECT child_id as connected_id, 'outgoing' as direction, weight, reasoning
                 FROM derivation_edges WHERE parent_id = ?
                 UNION
-                SELECT parent_id as connected_id, 'incoming' as direction, relation, weight, reasoning
+                SELECT parent_id as connected_id, 'incoming' as direction, weight, reasoning
                 FROM derivation_edges WHERE child_id = ?
             """, (current_id, current_id))
             
             for row in cursor.fetchall():
-                connected_id, direction, relation, weight, reasoning = row
+                connected_id, direction, weight, reasoning = row
                 
                 if connected_id == node_b:
                     # Found target - build path
@@ -276,7 +273,6 @@ class TraversalEngine:
                         
                         if i > 0:
                             step["connection"] = {
-                                "relation": relation,
                                 "weight": weight,
                                 "reasoning": reasoning,
                                 "direction": direction
@@ -308,16 +304,16 @@ class TraversalEngine:
         cursor.execute("SELECT id, node_type FROM thought_nodes")
         nodes = {row[0]: row[1] for row in cursor.fetchall()}
         
-        cursor.execute("SELECT parent_id, child_id, relation, weight FROM derivation_edges")
+        cursor.execute("SELECT parent_id, child_id, weight, reasoning FROM derivation_edges")
         edges = [(row[0], row[1], row[2], row[3]) for row in cursor.fetchall()]
         
         # Build adjacency lists
         graph = defaultdict(list)
         reverse_graph = defaultdict(list)
         
-        for parent, child, relation, weight in edges:
-            graph[parent].append((child, relation, weight))
-            reverse_graph[child].append((parent, relation, weight))
+        for parent, child, weight, reasoning in edges:
+            graph[parent].append((child, reasoning, weight))
+            reverse_graph[child].append((parent, reasoning, weight))
         
         # 1. Detect cycles using DFS
         cycles = []
@@ -347,16 +343,16 @@ class TraversalEngine:
             if node_id not in visited:
                 dfs_cycle(node_id, [])
         
-        # 2. Find contradictions
+        # 2. Find contradictions by checking reasoning text
         contradictions = []
-        for parent, child, relation, weight in edges:
-            if relation == "contradicts":
+        for parent, child, weight, reasoning in edges:
+            if any(word in reasoning.lower() for word in ['contradict', 'conflict', 'oppose']):
                 parent_node = self._load_node(parent)
                 child_node = self._load_node(child)
                 contradictions.append((
                     parent_node.content if parent_node else parent,
                     child_node.content if child_node else child,
-                    f"Contradiction detected (weight: {weight})"
+                    f"Contradiction detected: {reasoning} (weight: {weight})"
                 ))
         
         # 3. Find orphan nodes (no parents, not seeds)

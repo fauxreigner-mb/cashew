@@ -120,7 +120,7 @@ def _build_hotspot_hierarchy(db_path: str, domain_filter: Optional[str] = None) 
         JOIN thought_nodes tn_parent ON de.parent_id = tn_parent.id
         JOIN thought_nodes tn_child ON de.child_id = tn_child.id
         WHERE tn_parent.node_type = ? AND tn_child.node_type = ?
-        AND de.relation = 'summarizes'
+        AND de.reasoning LIKE '%summarizes%'
         AND (tn_parent.decayed IS NULL OR tn_parent.decayed = 0)
         AND (tn_child.decayed IS NULL OR tn_child.decayed = 0)
     """, (HOTSPOT_TYPE, HOTSPOT_TYPE))
@@ -140,7 +140,7 @@ def _build_hotspot_hierarchy(db_path: str, domain_filter: Optional[str] = None) 
         JOIN thought_nodes tn_parent ON de.parent_id = tn_parent.id
         JOIN thought_nodes tn_child ON de.child_id = tn_child.id
         WHERE tn_parent.node_type = ? AND tn_child.node_type != ?
-        AND de.relation = 'summarizes'
+        AND de.reasoning LIKE '%summarizes%'
         AND (tn_parent.decayed IS NULL OR tn_parent.decayed = 0)
         AND (tn_child.decayed IS NULL OR tn_child.decayed = 0)
     """, (HOTSPOT_TYPE, HOTSPOT_TYPE))

@@ -32,7 +32,6 @@ class ExportedNode:
 class ExportedEdge:
     source: str  # parent_id
     target: str  # child_id
-    relation: str
     weight: float
     reasoning: str
 
@@ -85,7 +84,7 @@ class GraphExporter:
         cursor = conn.cursor()
         
         cursor.execute("""
-            SELECT parent_id, child_id, relation, weight, reasoning
+            SELECT parent_id, child_id, weight, reasoning
             FROM derivation_edges
             ORDER BY weight DESC
         """)
@@ -95,9 +94,8 @@ class GraphExporter:
             edge = {
                 "source": row[0],  # parent_id becomes source
                 "target": row[1],  # child_id becomes target
-                "relation": row[2],
-                "weight": row[3],
-                "reasoning": row[4] or ""
+                "weight": row[2],
+                "reasoning": row[3] or ""
             }
             edges.append(edge)
         
@@ -123,11 +121,19 @@ class GraphExporter:
         for node_type, confidences in confidence_by_type.items():
             avg_confidence[node_type] = sum(confidences) / len(confidences)
         
-        # Relation type counts
-        relation_types = {}
+        # Edge reasoning patterns (simplified analysis)
+        reasoning_keywords = {}
         for edge in edges:
-            relation = edge["relation"]
-            relation_types[relation] = relation_types.get(relation, 0) + 1
+            reasoning = edge["reasoning"].lower()
+            # Extract key patterns from reasoning
+            if "summariz" in reasoning:
+                reasoning_keywords["summarizes"] = reasoning_keywords.get("summarizes", 0) + 1
+            elif "cross" in reasoning:
+                reasoning_keywords["cross_links"] = reasoning_keywords.get("cross_links", 0) + 1
+            elif "contradict" in reasoning or "conflict" in reasoning:
+                reasoning_keywords["contradictions"] = reasoning_keywords.get("contradictions", 0) + 1
+            else:
+                reasoning_keywords["other"] = reasoning_keywords.get("other", 0) + 1
         
         # Source file distribution
         source_files = {}
@@ -174,7 +180,7 @@ class GraphExporter:
             "total_edges": len(edges),
             "node_types": node_types,
             "avg_confidence_by_type": avg_confidence,
-            "relation_types": relation_types,
+            "reasoning_patterns": reasoning_keywords,
             "source_files": source_files,
             "avg_in_degree": sum(in_degrees) / len(in_degrees) if in_degrees else 0,
             "avg_out_degree": sum(out_degrees) / len(out_degrees) if out_degrees else 0,
@@ -291,10 +297,10 @@ class GraphExporter:
             avg_conf = stats['avg_confidence_by_type'].get(node_type, 0)
             report.append(f"  {node_type}: {count} nodes (avg confidence: {avg_conf:.2f})")
         
-        # Relation types
-        report.append(f"\n🔗 Relation Types:")
-        for relation, count in sorted(stats['relation_types'].items(), key=lambda x: x[1], reverse=True):
-            report.append(f"  {relation}: {count} edges")
+        # Reasoning patterns
+        report.append(f"\n🔗 Reasoning Patterns:")
+        for pattern, count in sorted(stats['reasoning_patterns'].items(), key=lambda x: x[1], reverse=True):
+            report.append(f"  {pattern}: {count} edges")
         
         # Hub nodes
         if stats['hub_nodes']:

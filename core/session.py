@@ -107,7 +107,7 @@ def _get_tree_overview(db_path: str) -> str:
         cursor.execute("""
             SELECT substr(content, 1, 30), COUNT(e.child_id) as members
             FROM thought_nodes h
-            LEFT JOIN derivation_edges e ON h.id = e.parent_id AND e.relation = 'summarizes'
+            LEFT JOIN derivation_edges e ON h.id = e.parent_id AND e.reasoning LIKE '%summarizes%'
             WHERE h.node_type = 'hotspot' 
             AND (h.decayed IS NULL OR h.decayed = 0)
             AND h.last_updated LIKE ?
@@ -125,7 +125,7 @@ def _get_tree_overview(db_path: str) -> str:
         cursor.execute("""
             SELECT COUNT(e.child_id) as inbox_count
             FROM thought_nodes h
-            LEFT JOIN derivation_edges e ON h.id = e.parent_id AND e.relation = 'summarizes'
+            LEFT JOIN derivation_edges e ON h.id = e.parent_id AND e.reasoning LIKE '%summarizes%'
             WHERE h.node_type = 'hotspot' 
             AND (h.decayed IS NULL OR h.decayed = 0)
             AND (LOWER(h.content) LIKE '%inbox%' OR LOWER(h.content) LIKE '%uncategorized%')
@@ -472,9 +472,9 @@ def _create_edge(db_path: str, parent_id: str, child_id: str, reasoning: str):
     
     # Insert new edge
     cursor.execute("""
-        INSERT INTO derivation_edges (parent_id, child_id, relation, weight, reasoning)
-        VALUES (?, ?, 'extracted_from', 0.8, ?)
-    """, (parent_id, child_id, reasoning))
+        INSERT INTO derivation_edges (parent_id, child_id, weight, reasoning)
+        VALUES (?, ?, 0.8, ?)
+    """, (parent_id, child_id, f"extracted_from - {reasoning}"))
     
     conn.commit()
     conn.close()

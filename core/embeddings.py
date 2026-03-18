@@ -86,11 +86,9 @@ def _ensure_embeddings_table(db_path: str):
     if 'mood_state' not in tn_columns:
         cursor.execute("ALTER TABLE thought_nodes ADD COLUMN mood_state TEXT")
     
-    # Ensure derivation_edges has relation + weight + reasoning columns
+    # Ensure derivation_edges has weight + reasoning columns
     cursor.execute("PRAGMA table_info(derivation_edges)")
     de_columns = {row[1] for row in cursor.fetchall()}
-    if 'relation' not in de_columns:
-        cursor.execute("ALTER TABLE derivation_edges ADD COLUMN relation TEXT")
     if 'weight' not in de_columns:
         cursor.execute("ALTER TABLE derivation_edges ADD COLUMN weight REAL")
     if 'reasoning' not in de_columns:

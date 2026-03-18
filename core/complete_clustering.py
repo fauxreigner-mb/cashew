@@ -530,7 +530,7 @@ def _get_existing_hotspot_clusters(db_path: str) -> Dict[str, Set[str]]:
         SELECT de.parent_id, de.child_id
         FROM derivation_edges de
         JOIN thought_nodes tn ON de.parent_id = tn.id
-        WHERE tn.node_type = ? AND de.relation = 'summarizes'
+        WHERE tn.node_type = ? AND de.reasoning LIKE '%summarizes%'
     """, (HOTSPOT_TYPE,))
     
     hotspot_clusters = {}
@@ -782,9 +782,9 @@ def _create_hierarchical_edges(db_path: str, clusters: List[CompleteClusterInfo]
                 try:
                     cursor.execute("""
                         INSERT OR IGNORE INTO derivation_edges 
-                        (parent_id, child_id, relation, weight, reasoning)
-                        VALUES (?, ?, 'summarizes', 0.9, 'Complete clustering - parent to child hotspot')
-                    """, (parent_hotspot_id, child_hotspot_id))
+                        (parent_id, child_id, weight, reasoning)
+                        VALUES (?, ?, 0.9, ?)
+                    """, (parent_hotspot_id, child_hotspot_id, 'summarizes - Complete clustering parent to child hotspot'))
                     edges_created += 1
                 except sqlite3.IntegrityError:
                     pass  # Edge already exists

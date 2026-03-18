@@ -122,7 +122,7 @@ class ContextRetriever:
             
             # Get parents
             cursor.execute("""
-                SELECT de.parent_id, de.relation, de.weight, de.reasoning, tn.content
+                SELECT de.parent_id, de.weight, de.reasoning, tn.content
                 FROM derivation_edges de
                 JOIN thought_nodes tn ON de.parent_id = tn.id
                 WHERE de.child_id = ?
@@ -140,8 +140,8 @@ class ContextRetriever:
                     "confidence": confidence
                 },
                 "depth": depth,
-                "derived_from": parent_row[1] if parent_row else None,
-                "reasoning": parent_row[3] if parent_row else None
+                "derived_from": parent_row[0] if parent_row else None,  # parent_id
+                "reasoning": parent_row[2] if parent_row else None  # reasoning (now index 2)
             })
             
             if not parent_row:
@@ -309,7 +309,7 @@ class ContextRetriever:
         
         # Get related nodes through edges (both directions)
         cursor.execute("""
-            SELECT tn.id, tn.content, tn.node_type, tn.confidence, de.relation, de.weight
+            SELECT tn.id, tn.content, tn.node_type, tn.confidence, de.weight
             FROM derivation_edges de
             JOIN thought_nodes tn ON (
                 (de.parent_id = ? AND tn.id = de.child_id) OR 
@@ -323,7 +323,7 @@ class ContextRetriever:
         
         results = []
         for row in cursor.fetchall():
-            rel_id, content, node_type, confidence, relation, weight = row
+            rel_id, content, node_type, confidence, weight = row
             parent_chain = self._get_parent_chain(rel_id)
             
             results.append(RelevantNode(

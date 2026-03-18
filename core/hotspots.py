@@ -114,14 +114,13 @@ def create_hotspot(
         if cursor.fetchone():
             try:
                 cursor.execute("""
-                    INSERT OR IGNORE INTO derivation_edges (parent_id, child_id, relation, weight, reasoning)
-                    VALUES (?, ?, ?, ?, ?)
+                    INSERT OR IGNORE INTO derivation_edges (parent_id, child_id, weight, reasoning)
+                    VALUES (?, ?, ?, ?)
                 """, (
                     node_id,
                     cluster_id,
-                    "summarizes",
                     0.9,
-                    "Hotspot summary node for cluster"
+                    "summarizes - Hotspot summary node for cluster"
                 ))
             except sqlite3.IntegrityError:
                 pass  # Edge already exists
@@ -205,9 +204,9 @@ def update_hotspot(
             if cursor.fetchone():
                 try:
                     cursor.execute("""
-                        INSERT OR IGNORE INTO derivation_edges (parent_id, child_id, relation, weight, reasoning)
-                        VALUES (?, ?, ?, ?, ?)
-                    """, (hotspot_id, cluster_id, "summarizes", 0.9, "Hotspot summary node for cluster"))
+                        INSERT OR IGNORE INTO derivation_edges (parent_id, child_id, weight, reasoning)
+                        VALUES (?, ?, ?, ?)
+                    """, (hotspot_id, cluster_id, 0.9, "summarizes - Hotspot summary node for cluster"))
                 except sqlite3.IntegrityError:
                     pass
     
@@ -258,7 +257,7 @@ def list_hotspots(db_path: str, domain: Optional[str] = None) -> List[Dict]:
         # Count cluster members
         cursor.execute("""
             SELECT COUNT(*) FROM derivation_edges 
-            WHERE parent_id = ? AND relation = 'summarizes'
+            WHERE parent_id = ? AND reasoning LIKE '%summarizes%'
         """, (node_id,))
         cluster_size = cursor.fetchone()[0]
         
@@ -300,7 +299,7 @@ def get_hotspot(db_path: str, hotspot_id: str) -> Optional[Dict]:
         SELECT de.child_id, tn.content, tn.node_type
         FROM derivation_edges de
         JOIN thought_nodes tn ON de.child_id = tn.id
-        WHERE de.parent_id = ? AND de.relation = 'summarizes'
+        WHERE de.parent_id = ? AND de.reasoning LIKE '%summarizes%'
     """, (node_id,))
     
     cluster = [{"id": r[0], "content": r[1], "type": r[2]} for r in cursor.fetchall()]
