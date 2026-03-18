@@ -50,7 +50,8 @@ class TestSessionIntegration:
                 last_accessed TEXT,
                 last_updated TEXT,
                 access_count INTEGER DEFAULT 0,
-                domain TEXT DEFAULT 'raj'
+                domain TEXT DEFAULT 'raj',
+                permanent INTEGER DEFAULT 0
             )
         """)
         
@@ -58,7 +59,6 @@ class TestSessionIntegration:
             CREATE TABLE derivation_edges (
                 parent_id TEXT NOT NULL,
                 child_id TEXT NOT NULL,
-                relation TEXT NOT NULL,
                 weight REAL DEFAULT 1.0,
                 reasoning TEXT,
                 UNIQUE(parent_id, child_id)
@@ -109,15 +109,15 @@ class TestSessionIntegration:
         
         # Add some edges
         test_edges = [
-            ("node1", "node2", "related_to", 0.7, "Both about technical work"),
-            ("node4", "node5", "leads_to", 0.8, "Meeting may discuss goals")
+            ("node1", "node2", 0.7, "related_to - Both about technical work"),
+            ("node4", "node5", 0.8, "leads_to - Meeting may discuss goals")
         ]
         
-        for parent, child, relation, weight, reasoning in test_edges:
+        for parent, child, weight, reasoning in test_edges:
             cursor.execute("""
-                INSERT INTO derivation_edges (parent_id, child_id, relation, weight, reasoning)
-                VALUES (?, ?, ?, ?, ?)
-            """, (parent, child, relation, weight, reasoning))
+                INSERT INTO derivation_edges (parent_id, child_id, weight, reasoning)
+                VALUES (?, ?, ?, ?)
+            """, (parent, child, weight, reasoning))
         
         conn.commit()
         conn.close()

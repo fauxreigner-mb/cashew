@@ -38,7 +38,8 @@ class TestTraversalEngine:
                 confidence REAL NOT NULL,
                 mood_state TEXT,
                 metadata TEXT,
-                source_file TEXT
+                source_file TEXT,
+                permanent INTEGER DEFAULT 0
             )
         """)
         
@@ -46,12 +47,11 @@ class TestTraversalEngine:
             CREATE TABLE derivation_edges (
                 parent_id TEXT NOT NULL,
                 child_id TEXT NOT NULL,
-                relation TEXT NOT NULL,
                 weight REAL NOT NULL,
                 reasoning TEXT,
                 FOREIGN KEY (parent_id) REFERENCES thought_nodes(id),
                 FOREIGN KEY (child_id) REFERENCES thought_nodes(id),
-                PRIMARY KEY (parent_id, child_id, relation)
+                PRIMARY KEY (parent_id, child_id)
             )
         """)
         
@@ -74,19 +74,19 @@ class TestTraversalEngine:
         
         # Create edges to form derivation chains
         edges = [
-            ("seed1", "belief1", "supports", 0.9, "Core belief supports prayer"),
-            ("belief1", "derived1", "derived_from", 0.8, "Logical conclusion from belief"),
-            ("derived1", "question1", "questions", 0.7, "Observation leads to question"),
-            ("question1", "derived2", "derived_from", 0.6, "Question leads to new understanding"),
-            ("belief1", "derived2", "contradicts", 0.5, "New understanding contradicts old belief"),
+            ("seed1", "belief1", 0.9, "supports - Core belief supports prayer"),
+            ("belief1", "derived1", 0.8, "derived_from - Logical conclusion from belief"),
+            ("derived1", "question1", 0.7, "questions - Observation leads to question"),
+            ("question1", "derived2", 0.6, "derived_from - Question leads to new understanding"),
+            ("belief1", "derived2", 0.5, "contradicts - New understanding contradicts old belief"),
             # Add a weak chain for testing
-            ("seed1", "weak1", "supports", 0.1, "Very weak connection")
+            ("seed1", "weak1", 0.1, "supports - Very weak connection")
         ]
         
         cursor.executemany("""
             INSERT INTO derivation_edges 
-            (parent_id, child_id, relation, weight, reasoning)
-            VALUES (?, ?, ?, ?, ?)
+            (parent_id, child_id, weight, reasoning)
+            VALUES (?, ?, ?, ?)
         """, edges)
         
         conn.commit()
@@ -206,8 +206,8 @@ class TestTraversalEngine:
         # Create a cycle: derived2 -> belief1 (which already goes belief1 -> derived1 -> question1 -> derived2)
         cursor.execute("""
             INSERT INTO derivation_edges 
-            (parent_id, child_id, relation, weight, reasoning)
-            VALUES ('derived2', 'belief1', 'questions', 0.3, 'Circular reasoning test')
+            (parent_id, child_id, weight, reasoning)
+            VALUES ('derived2', 'belief1', 0.3, 'questions - Circular reasoning test')
         """)
         conn.commit()
         conn.close()
@@ -263,10 +263,11 @@ class TestTraversalEngine:
         for parent, edge in parents:
             assert edge.child_id == "derived2"
             assert edge.parent_id == parent.id
+            # Relation information is now embedded in reasoning field
             if parent.id == "question1":
-                assert edge.relation == "derived_from"
+                assert "derived_from" in edge.reasoning
             elif parent.id == "belief1":
-                assert edge.relation == "contradicts"
+                assert "contradicts" in edge.reasoning
     
     def test_get_children_returns_correct_ids(self, temp_db):
         """Test that _get_children returns correct child node IDs"""

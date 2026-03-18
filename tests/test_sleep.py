@@ -38,7 +38,8 @@ class TestSleepProtocol:
                 mood_state TEXT,
                 metadata TEXT,
                 source_file TEXT,
-                decayed INTEGER DEFAULT 0
+                decayed INTEGER DEFAULT 0,
+                permanent INTEGER DEFAULT 0
             )
         """)
         
@@ -46,12 +47,11 @@ class TestSleepProtocol:
             CREATE TABLE derivation_edges (
                 parent_id TEXT NOT NULL,
                 child_id TEXT NOT NULL,
-                relation TEXT NOT NULL,
                 weight REAL NOT NULL,
                 reasoning TEXT,
                 FOREIGN KEY (parent_id) REFERENCES thought_nodes(id),
                 FOREIGN KEY (child_id) REFERENCES thought_nodes(id),
-                PRIMARY KEY (parent_id, child_id, relation)
+                PRIMARY KEY (parent_id, child_id)
             )
         """)
         
@@ -76,18 +76,18 @@ class TestSleepProtocol:
         
         # Create edges to establish hierarchy and connectivity
         edges = [
-            ("seed1", "similar1", "supports", 0.9, "Strong support"),
-            ("seed1", "different1", "supports", 0.6, "Moderate support"),
-            ("similar1", "hub1", "derived_from", 0.8, "Derived from similar belief"),
-            ("hub1", "weak1", "derived_from", 0.3, "Weak derivation"),  # Low weight for testing
-            ("hub1", "weak2", "derived_from", 0.2, "Very weak derivation"),
+            ("seed1", "similar1", 0.9, "supports - Strong support"),
+            ("seed1", "different1", 0.6, "supports - Moderate support"),
+            ("similar1", "hub1", 0.8, "derived_from - Derived from similar belief"),
+            ("hub1", "weak1", 0.3, "derived_from - Weak derivation"),  # Low weight for testing
+            ("hub1", "weak2", 0.2, "derived_from - Very weak derivation"),
             # No edges for isolated1 and isolated2 to test orphan detection
         ]
         
         cursor.executemany("""
             INSERT INTO derivation_edges 
-            (parent_id, child_id, relation, weight, reasoning)
-            VALUES (?, ?, ?, ?, ?)
+            (parent_id, child_id, weight, reasoning)
+            VALUES (?, ?, ?, ?)
         """, edges)
         
         conn.commit()
@@ -180,9 +180,9 @@ class TestSleepProtocol:
         
         # Check that bidirectional cross-link edges were created
         cursor.execute("""
-            SELECT parent_id, child_id, relation, weight 
+            SELECT parent_id, child_id, weight, reasoning
             FROM derivation_edges 
-            WHERE relation = 'cross_link'
+            WHERE reasoning LIKE '%cross_link%'
         """)
         
         cross_links = cursor.fetchall()
@@ -334,7 +334,7 @@ class TestSleepProtocol:
                 # Check that dream is connected to bridged nodes
                 cursor.execute("""
                     SELECT COUNT(*) FROM derivation_edges 
-                    WHERE child_id = ? AND relation = 'derived_from'
+                    WHERE child_id = ? AND reasoning LIKE '%derived_from%'
                 """, (dream_id,))
                 
                 connection_count = cursor.fetchone()[0]
@@ -409,7 +409,8 @@ class TestSleepProtocol:
                 mood_state TEXT,
                 metadata TEXT,
                 source_file TEXT,
-                decayed INTEGER DEFAULT 0
+                decayed INTEGER DEFAULT 0,
+                permanent INTEGER DEFAULT 0
             )
         """)
         
@@ -417,7 +418,6 @@ class TestSleepProtocol:
             CREATE TABLE derivation_edges (
                 parent_id TEXT NOT NULL,
                 child_id TEXT NOT NULL,
-                relation TEXT NOT NULL,
                 weight REAL NOT NULL,
                 reasoning TEXT
             )

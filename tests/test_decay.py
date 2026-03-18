@@ -40,7 +40,8 @@ def decay_test_db():
             decayed INTEGER DEFAULT 0,
             metadata TEXT DEFAULT '{}',
             last_updated TEXT,
-            mood_state TEXT
+            mood_state TEXT,
+            permanent INTEGER DEFAULT 0
         )
     ''')
     
@@ -48,12 +49,11 @@ def decay_test_db():
         CREATE TABLE derivation_edges (
             parent_id TEXT,
             child_id TEXT,
-            relation TEXT,
             weight REAL,
             reasoning TEXT,
             confidence REAL,
             timestamp TEXT,
-            PRIMARY KEY (parent_id, child_id, relation),
+            PRIMARY KEY (parent_id, child_id),
             FOREIGN KEY (parent_id) REFERENCES thought_nodes(id),
             FOREIGN KEY (child_id) REFERENCES thought_nodes(id)
         )
@@ -99,7 +99,7 @@ def decay_test_db():
     for parent_id, child_id, relation in edges:
         cursor.execute("""
             INSERT INTO derivation_edges 
-            (parent_id, child_id, relation, confidence, timestamp)
+            (parent_id, child_id, reasoning, confidence, timestamp)
             VALUES (?, ?, ?, 0.8, ?)
         """, (parent_id, child_id, relation, recent_time))
     
