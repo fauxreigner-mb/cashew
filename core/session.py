@@ -245,7 +245,7 @@ def _update_access_tracking(db_path: str, node_ids: List[str]):
     conn.commit()
     conn.close()
 
-def start_session(db_path: str, session_id: str, hints: Optional[List[str]] = None, domain: Optional[str] = None) -> SessionContext:
+def start_session(db_path: str, session_id: str, hints: Optional[List[str]] = None, domain: Optional[str] = None, tags: Optional[List[str]] = None) -> SessionContext:
     """
     Start a session and inject relevant context with three layers:
     Layer 1 - Tree Overview (always)
@@ -281,7 +281,7 @@ def start_session(db_path: str, session_id: str, hints: Optional[List[str]] = No
         # Retrieve relevant nodes using DFS hierarchical approach
         top_k = get_top_k()
         
-        results = retrieve_dfs(db_path, query, top_k, domain)
+        results = retrieve_dfs(db_path, query, top_k, domain, tags=tags)
         
         if results:
             # Apply token budget constraint for hint-driven content

@@ -14,7 +14,7 @@ from core.session import start_session, end_session, think_cycle, tension_detect
 from core.config import config, get_user_domain, get_ai_domain
 
 
-def generate_session_context(db_path: str, hints: Optional[List[str]] = None) -> str:
+def generate_session_context(db_path: str, hints: Optional[List[str]] = None, tags: Optional[List[str]] = None) -> str:
     """
     Generate three-layer session context from the thought graph
     
@@ -36,7 +36,7 @@ def generate_session_context(db_path: str, hints: Optional[List[str]] = None) ->
         session_id = "openclaw_context_generation"
         
         # Get three-layer session context
-        context = start_session(db_path, session_id, hints)
+        context = start_session(db_path, session_id, hints, tags=tags)
         
         if not context.context_str:
             return ""

@@ -107,11 +107,12 @@ from core.stats import get_active_node_count, get_edge_count, get_embedding_cove
 def cmd_context(args):
     """Generate context for current session"""
     hints = args.hints if args.hints else None
-    print(f"🔍 Generating context with hints: {hints}")
+    tags = args.tags.split(",") if getattr(args, 'tags', None) else None
+    print(f"🔍 Generating context with hints: {hints}" + (f" | tags: {tags}" if tags else ""))
     print()
     
     t0 = time.time()
-    context = generate_session_context(args.db, hints)
+    context = generate_session_context(args.db, hints, tags=tags)
     elapsed = time.time() - t0
     
     if context:
@@ -1364,6 +1365,7 @@ def main():
     
     # Context command
     context_parser = subparsers.add_parser("context", help="Generate context for current session")
+    context_parser.add_argument("--tags", help="Comma-separated tags to scope retrieval (e.g. 'philosophy,religion')")
     context_parser.add_argument("--hints", nargs="*", 
                                 help="Topic hints (e.g., 'work promotion manager')")
     context_parser.set_defaults(func=cmd_context)
