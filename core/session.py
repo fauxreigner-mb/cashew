@@ -399,6 +399,17 @@ def _extract_with_heuristics(conversation_text: str) -> List[Dict[str, str]]:
     # Limit to most promising extractions
     return sorted(extractions, key=lambda x: x["confidence"], reverse=True)[:5]
 
+def _set_node_tags(db_path: str, node_id: str, tags: list):
+    """Store tags as comma-separated string on a node."""
+    import json as _json
+    conn = _get_connection(db_path)
+    cursor = conn.cursor()
+    tags_str = ",".join(t.strip().lower() for t in tags if t.strip())
+    cursor.execute("UPDATE thought_nodes SET tags = ? WHERE id = ?", (tags_str, node_id))
+    conn.commit()
+    conn.close()
+
+
 def _create_node(db_path: str, content: str, node_type: str, 
                 session_id: str, confidence: float = 0.7,
                 domain: str = 'default') -> str:
@@ -510,6 +521,8 @@ For each item, classify as:
 
 Each content field must be a specific, standalone statement that makes sense without the conversation context.
 
+For each item, also assign relevant tags — short descriptive labels for the knowledge (e.g. "career", "family", "engineering", "philosophy", "health", "finance", "borrowed-knowledge", "project:cashew"). Use lowercase, keep tags specific and reusable. Multiple tags per node are encouraged.
+
 BAD: "They discussed embeddings" (meta-comment)
 BAD: "The conversation covered several topics" (summary)
 GOOD: "Local embedding models (all-MiniLM-L6-v2) are sufficient for graphs under 100K nodes — brute force cosine similarity stays under 50ms"
@@ -517,7 +530,7 @@ GOOD: "Extraction should be triggered by context fullness monitoring, not left t
 
 Respond with ONLY a JSON array. No markdown, no explanation, no code fences.
 
-[{{"content": "specific knowledge here", "type": "{config.node_type_pipe_list}", "confidence": 0.7}}]
+[{{"content": "specific knowledge here", "type": "{config.node_type_pipe_list}", "confidence": 0.7, "tags": ["engineering", "embeddings"]}}]
 
 Conversation to extract from:
 {conversation_text}
@@ -565,9 +578,15 @@ Conversation to extract from:
         node_type = extraction.get("type", "observation")
         node_type = config.validate_node_type(node_type)
         confidence = extraction.get("confidence", 0.5)
+        tags = extraction.get("tags", [])
         
         # Create the new node
         node_id = _create_node(db_path, content, node_type, session_id, confidence)
+        
+        # Store tags if provided
+        if tags and isinstance(tags, list):
+            _set_node_tags(db_path, node_id, tags)
+        
         new_nodes.append(node_id)
     
     # Embed new nodes

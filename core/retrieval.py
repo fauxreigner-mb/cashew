@@ -39,20 +39,29 @@ def _get_connection(db_path: str) -> sqlite3.Connection:
     """Get database connection"""
     return sqlite3.connect(db_path)
 
-def _load_node_details(db_path: str, node_ids: List[str], domain_filter: Optional[str] = None) -> Dict[str, Dict]:
-    """Load node details for multiple node IDs with optional domain filtering"""
+def _load_node_details(db_path: str, node_ids: List[str], domain_filter: Optional[str] = None, tag_filter: Optional[List[str]] = None) -> Dict[str, Dict]:
+    """Load node details for multiple node IDs with optional domain and tag filtering"""
     if not node_ids:
         return {}
     
     conn = _get_connection(db_path)
     cursor = conn.cursor()
     
-    # Check if domain column exists
+    # Check if domain and tags columns exist
     cursor.execute("PRAGMA table_info(thought_nodes)")
     columns = [row[1] for row in cursor.fetchall()]
     has_domain_column = 'domain' in columns
+    has_tags_column = 'tags' in columns
     
     placeholders = ','.join(['?'] * len(node_ids))
+    
+    # Build tag filter SQL
+    tag_conditions = ""
+    tag_params = []
+    if tag_filter and has_tags_column:
+        tag_clauses = [f"tags LIKE ?" for _ in tag_filter]
+        tag_conditions = " AND (" + " OR ".join(tag_clauses) + ")"
+        tag_params = [f"%{tag}%" for tag in tag_filter]
     
     if has_domain_column:
         if domain_filter:
@@ -62,14 +71,16 @@ def _load_node_details(db_path: str, node_ids: List[str], domain_filter: Optiona
                 WHERE id IN ({placeholders})
                 AND (decayed IS NULL OR decayed = 0)
                 AND domain = ?
-            """, node_ids + [domain_filter])
+                {tag_conditions}
+            """, node_ids + [domain_filter] + tag_params)
         else:
             cursor.execute(f"""
                 SELECT id, content, node_type, COALESCE(metadata, '{{}}') as metadata, COALESCE(domain, 'unknown') as domain
                 FROM thought_nodes 
                 WHERE id IN ({placeholders})
                 AND (decayed IS NULL OR decayed = 0)
-            """, node_ids)
+                {tag_conditions}
+            """, node_ids + tag_params)
     else:
         # Backwards compatibility: no domain column
         cursor.execute(f"""
@@ -292,7 +303,7 @@ def _retrieve_flat(db_path: str, query: str, top_k: int = 5, domain: Optional[st
 
 
 def retrieve_dfs(db_path: str, query: str, top_k: int = 5, 
-                 domain: Optional[str] = None) -> List[RetrievalResult]:
+                 domain: Optional[str] = None, tags: Optional[List[str]] = None) -> List[RetrievalResult]:
     """
     DFS retrieval through hierarchical hotspot tree:
     1. Get root-level hotspots (not children of other hotspots)
