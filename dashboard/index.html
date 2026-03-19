@@ -88,7 +88,8 @@
         }
         .layout-btn.active { border-color: #f5c542; color: #f5c542; background: rgba(245,197,66,0.1); }
 
-        #search-wrap { position: fixed; top: 92px; left: 8px; right: 8px; z-index: 90; }
+        #search-wrap { position: fixed; top: 92px; left: 8px; right: 8px; z-index: 90; transition: top 0.2s; }
+        #search-wrap.tags-open { top: 124px; }
         #search {
             width: 100%; padding: 10px 14px;
             background: rgba(30,30,30,0.92); backdrop-filter: blur(8px);
@@ -121,6 +122,29 @@
             display: inline-block; font-size: 9px; padding: 2px 6px;
             border-radius: 4px; text-transform: uppercase; letter-spacing: 0.5px; margin-left: 6px;
         }
+        .tag-pill {
+            display: inline-block; font-size: 10px; padding: 2px 8px;
+            border-radius: 10px; background: #1a1a1a; border: 1px solid #333;
+            color: #aaa; margin: 2px 3px 2px 0; cursor: pointer; transition: all 0.2s;
+        }
+        .tag-pill:hover { border-color: #f5c542; color: #f5c542; }
+        .tag-pill.active { border-color: #f5c542; color: #f5c542; background: rgba(245,197,66,0.1); }
+        .panel-tags { margin-top: 8px; }
+
+        #tag-filters {
+            position: fixed; top: 84px; left: 0; right: 0; height: 32px;
+            background: rgba(17,17,17,0.85); backdrop-filter: blur(8px);
+            display: none; align-items: center; padding: 0 10px; gap: 4px;
+            z-index: 94; border-bottom: 1px solid #1a1a1a; overflow-x: auto;
+        }
+        #tag-filters.visible { display: flex; }
+        #tag-filters .tag-pill { font-size: 9px; padding: 2px 6px; }
+        .tag-toggle {
+            padding: 4px 10px; border-radius: 14px; font-size: 11px;
+            border: 1px solid #333; background: transparent; color: #999;
+            cursor: pointer; white-space: nowrap; transition: all 0.2s;
+        }
+        .tag-toggle.active { border-color: #f5c542; color: #f5c542; background: rgba(245,197,66,0.1); }
 
         #legend {
             position: fixed; bottom: 44px; right: 8px;
@@ -175,8 +199,11 @@
         <button class="filter-btn" data-type="observation" style="--fc:#da77f2"><span class="filter-dot" style="background:#da77f2"></span>Observation <span class="filter-count" data-type="observation"></span></button>
         <button class="filter-btn" data-type="decision" style="--fc:#22d3ee"><span class="filter-dot" style="background:#22d3ee"></span>Decision <span class="filter-count" data-type="decision"></span></button>
         <button class="filter-btn" data-type="fact" style="--fc:#44aa44"><span class="filter-dot" style="background:#44aa44"></span>Fact <span class="filter-count" data-type="fact"></span></button>
+        <button class="tag-toggle" id="tag-toggle-btn">🏷 Tags</button>
         <button class="layout-btn" id="timeline-btn">⏱ Timeline</button>
     </div>
+
+    <div id="tag-filters"></div>
 
     <div id="analytics" style="display:none; padding:12px 16px;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
@@ -196,6 +223,10 @@
             <div style="flex:1; min-width:200px;">
                 <div style="font-size:10px; color:#555; margin-bottom:6px; text-transform:uppercase;">Domain Breakdown</div>
                 <div id="domain-bars"></div>
+            </div>
+            <div style="flex:1; min-width:200px;">
+                <div style="font-size:10px; color:#555; margin-bottom:6px; text-transform:uppercase;">Top Tags</div>
+                <div id="tag-bars"></div>
             </div>
         </div>
     </div>
@@ -373,6 +404,23 @@ function buildAnalytics(counts) {
         </div>`;
     }).join('');
     document.getElementById('domain-bars').innerHTML = domHTML;
+
+    // Tag distribution
+    const tagCnts = {};
+    allNodes.forEach(n => (n.tags || []).forEach(t => { tagCnts[t] = (tagCnts[t] || 0) + 1; }));
+    const tagSorted = Object.entries(tagCnts).sort((a,b) => b[1] - a[1]).slice(0, 12);
+    const tagMax = tagSorted.length ? tagSorted[0][1] : 1;
+    const tagHTML = tagSorted.map(([tag, count]) => {
+        const pct = (count / tagMax * 100).toFixed(0);
+        return `<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">
+            <span style="width:70px;font-size:10px;color:#f5c542;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${tag}</span>
+            <div style="flex:1;background:#1a1a1a;border-radius:3px;height:14px;overflow:hidden;">
+                <div style="width:${pct}%;background:#f5c542;height:100%;border-radius:3px;opacity:0.7;"></div>
+            </div>
+            <span style="font-size:10px;color:#666;width:30px;">${count}</span>
+        </div>`;
+    }).join('');
+    document.getElementById('tag-bars').innerHTML = tagHTML;
 }
 
 async function initDashboard() {
@@ -486,10 +534,11 @@ async function initDashboard() {
     document.getElementById('search').addEventListener('input', e => {
         const q = e.target.value.toLowerCase();
         if (!q) { applyFilter(); return; }
-        node.style('opacity', d => d.content.toLowerCase().includes(q) ? 1 : 0.08);
-        labels.style('opacity', d => d.content.toLowerCase().includes(q) ? 1 : 0.08);
+        const matchSearch = d => d.content.toLowerCase().includes(q) || (d.tags || []).some(t => t.toLowerCase().includes(q));
+        node.style('opacity', d => matchSearch(d) ? 1 : 0.08);
+        labels.style('opacity', d => matchSearch(d) ? 1 : 0.08);
         link.style('opacity', 0.03);
-        const matches = allNodes.filter(n => n.content.toLowerCase().includes(q));
+        const matches = allNodes.filter(n => matchSearch(n));
         if (matches.length === 1) selectNode(matches[0]);
     });
 
@@ -501,6 +550,45 @@ async function initDashboard() {
             activeDomain = btn.dataset.domain || null;
             applyFilter();
         });
+    });
+
+    // === TAG FILTERS ===
+    const tagCounts = {};
+    allNodes.forEach(n => { (n.tags || []).forEach(t => { tagCounts[t] = (tagCounts[t] || 0) + 1; }); });
+    const topTags = Object.entries(tagCounts).sort((a,b) => b[1] - a[1]).slice(0, 30);
+    const tagBar = document.getElementById('tag-filters');
+    tagBar.innerHTML = topTags.map(([tag, count]) =>
+        `<span class="tag-pill" data-tag="${tag}" onclick="filterByTag('${tag}')">${tag} <span style="color:#555">${count}</span></span>`
+    ).join('');
+
+    let activeTag = null;
+    window.filterByTag = function(tag) {
+        if (activeTag === tag) { activeTag = null; tagBar.querySelectorAll('.tag-pill').forEach(p => p.classList.remove('active')); applyFilter(); return; }
+        activeTag = tag;
+        tagBar.querySelectorAll('.tag-pill').forEach(p => p.classList.toggle('active', p.dataset.tag === tag));
+        const matchIds = new Set(allNodes.filter(n => (n.tags || []).includes(tag)).map(n => n.id));
+        const connected = new Set(matchIds);
+        allEdges.forEach(e => {
+            const sid = typeof e.source === 'object' ? e.source.id : e.source;
+            const tid = typeof e.target === 'object' ? e.target.id : e.target;
+            if (matchIds.has(sid)) connected.add(tid);
+            if (matchIds.has(tid)) connected.add(sid);
+        });
+        node.style('opacity', d => matchIds.has(d.id) ? 1 : (connected.has(d.id) ? 0.3 : 0.05));
+        labels.style('opacity', d => matchIds.has(d.id) ? 1 : (connected.has(d.id) ? 0.3 : 0.05));
+        link.style('opacity', e => {
+            const sid = typeof e.source === 'object' ? e.source.id : e.source;
+            const tid = typeof e.target === 'object' ? e.target.id : e.target;
+            return (matchIds.has(sid) || matchIds.has(tid)) ? 0.6 : 0.02;
+        });
+    };
+
+    document.getElementById('tag-toggle-btn').addEventListener('click', () => {
+        const btn = document.getElementById('tag-toggle-btn');
+        btn.classList.toggle('active');
+        tagBar.classList.toggle('visible');
+        document.getElementById('search-wrap').classList.toggle('tags-open');
+        if (!tagBar.classList.contains('visible') && activeTag) { activeTag = null; tagBar.querySelectorAll('.tag-pill').forEach(p => p.classList.remove('active')); applyFilter(); }
     });
 
     document.getElementById('timeline-btn').addEventListener('click', () => {
@@ -662,6 +750,7 @@ function showPanel(d) {
         <div class="panel-label">Thought ${typeBadge} <span style="color:#555;font-size:9px;margin-left:8px;">depth ${d._depth}</span></div>
         <div class="panel-text" style="font-size:16px;font-weight:500;">${d.content}</div>
         <div class="panel-meta">Confidence: ${d.confidence} · ${d.domain === 'bunny' ? '🐰 Bunny' : '🧠 Raj'} · ${d.source_file === 'system_generated' ? '🤖 AI Generated' : '✍️ Human'}</div>
+        ${d.tags && d.tags.length ? `<div class="panel-tags">${d.tags.map(t => `<span class="tag-pill" onclick="filterByTag('${t}')">${t}</span>`).join('')}</div>` : ''}
     `;
     if (parents.length) {
         html += `<div class="panel-label">Derived From (${parents.length})</div>`;
