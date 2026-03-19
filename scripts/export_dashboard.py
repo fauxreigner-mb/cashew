@@ -25,7 +25,7 @@ def export(db_path: str, output_path: str, title: str = "cashew"):
     
     # Export nodes
     c.execute("""
-        SELECT id, content, node_type, confidence, source_file, timestamp, mood_state, domain
+        SELECT id, content, node_type, confidence, source_file, timestamp, mood_state, domain, tags
         FROM thought_nodes 
         WHERE decayed = 0 OR decayed IS NULL
     """)
@@ -48,7 +48,8 @@ def export(db_path: str, output_path: str, title: str = "cashew"):
             "source_file": row[4] or "",
             "timestamp": row[5] or "",
             "mood_state": row[6] or "",
-            "domain": DOMAIN_MAP.get(db_domain, "raj")
+            "domain": DOMAIN_MAP.get(db_domain, "raj"),
+            "tags": (row[8] or "").split(",") if row[8] else []
         })
     
     # Export edges — use source/target format for dashboard compatibility

@@ -112,7 +112,12 @@ def backfill(db_path: str, model_fn, batch_size: int = 30, max_batches: int = 10
             start = cleaned.find('[')
             end = cleaned.rfind(']')
             if start >= 0 and end > start:
-                tag_results = json.loads(cleaned[start:end+1])
+                json_str = cleaned[start:end+1]
+                # Fix common LLM JSON issues: trailing commas
+                import re
+                json_str = re.sub(r',\s*]', ']', json_str)
+                json_str = re.sub(r',\s*}', '}', json_str)
+                tag_results = json.loads(json_str)
                 applied = apply_tags(db_path, nodes, tag_results)
                 total_applied += applied
                 logger.info(f"  Batch {batch_num+1}: tagged {applied}/{len(nodes)} nodes (total: {total_applied})")
