@@ -1370,6 +1370,10 @@ def main():
                                 help="Topic hints (e.g., 'work promotion manager')")
     context_parser.set_defaults(func=cmd_context)
     
+    # List tags command
+    list_tags_parser = subparsers.add_parser("list-tags", help="List all tags with counts")
+    list_tags_parser.set_defaults(func=cmd_list_tags)
+    
     # Extract command  
     extract_parser = subparsers.add_parser("extract", help="Extract from a conversation file")
     extract_parser.add_argument("--input", help="Input conversation file")
@@ -1511,6 +1515,23 @@ def main():
         print(f"🔧 Command: {args.command}", file=sys.stderr)
     
     return args.func(args) or 0
+
+
+def cmd_list_tags(args):
+    """List all tags in the graph with counts"""
+    import sqlite3
+    from collections import Counter
+    conn = sqlite3.connect(args.db)
+    rows = conn.execute('SELECT tags FROM thought_nodes WHERE tags IS NOT NULL').fetchall()
+    conn.close()
+    c = Counter()
+    for r in rows:
+        for t in r[0].split(','):
+            t = t.strip()
+            if t:
+                c[t] += 1
+    for tag, cnt in c.most_common():
+        print(f"  {tag}: {cnt}")
 
 
 if __name__ == "__main__":
