@@ -62,7 +62,6 @@ class SleepProtocol:
         self.gc_mode = getattr(config, 'gc_mode', 'soft')
         self.gc_threshold = getattr(config, 'gc_threshold', 0.05)
         self.gc_grace_days = getattr(config, 'gc_grace_days', 7)
-        self.gc_protect_hotspots = getattr(config, 'gc_protect_hotspots', True)
         self.gc_protect_types = getattr(config, 'gc_protect_types', ['seed', 'core_memory'])
         self.gc_think_cycle_penalty = getattr(config, 'gc_think_cycle_penalty', 1.5)
         self.events: List[SleepEvent] = []
@@ -100,7 +99,7 @@ class SleepProtocol:
         if hasattr(self, '_sim_cache'):
             return
         
-        from .clustering import load_embeddings, cosine_similarity
+        from .graph_utils import load_embeddings, cosine_similarity
         
         node_ids, vectors, _ = load_embeddings(self.db_path)
         self._embed_ids = node_ids
@@ -153,7 +152,7 @@ class SleepProtocol:
         Optimized: computes full similarity matrix once, then filters.
         """
         try:
-            from .clustering import load_embeddings
+            from .graph_utils import load_embeddings
             from sklearn.metrics.pairwise import cosine_similarity as sklearn_cosine_sim
             
             node_ids, vectors, node_meta = load_embeddings(self.db_path)
@@ -396,12 +395,14 @@ class SleepProtocol:
         conn = self._get_connection()
         cursor = conn.cursor()
         
-        # Get all non-decayed nodes
+        # Get all non-decayed nodes (with confidence)
         cursor.execute("""
-            SELECT id, node_type FROM thought_nodes 
+            SELECT id, node_type, COALESCE(confidence, 0.5) FROM thought_nodes 
             WHERE decayed = 0 OR decayed IS NULL
         """)
-        nodes = {row[0]: row[1] for row in cursor.fetchall()}
+        rows = cursor.fetchall()
+        nodes = {row[0]: row[1] for row in rows}
+        node_confidence = {row[0]: row[2] for row in rows}
         
         metrics = {}
         
@@ -430,7 +431,9 @@ class SleepProtocol:
             
             # Composite fitness score
             # Seeds get bonus, core memories get bonus, depth adds value
-            base_score = branching_factor + cross_links * 0.5 + derivation_depth * 0.1
+            # Confidence prevents high-quality orphans from being GC'd before sleep links them
+            confidence = node_confidence.get(node_id, 0.5)
+            base_score = branching_factor + cross_links * 0.5 + derivation_depth * 0.1 + confidence * 0.5
             
             if node_type == "seed":
                 base_score *= 2.0  # Seeds are important
@@ -487,7 +490,6 @@ class SleepProtocol:
         gc_threshold = config.gc_threshold
         gc_grace_days = config.gc_grace_days
         gc_protect_types = set(config.gc_protect_types)
-        gc_protect_hotspots = config.gc_protect_hotspots
         gc_think_cycle_penalty = config.gc_think_cycle_penalty
 
         if gc_mode == "off":
@@ -519,10 +521,6 @@ class SleepProtocol:
 
             # Protect configured types
             if node_type in gc_protect_types:
-                continue
-
-            # Protect hotspots when configured
-            if gc_protect_hotspots and node_type == "hotspot":
                 continue
 
             # Grace period — use last_accessed (NOT created_at)
@@ -623,13 +621,13 @@ class SleepProtocol:
         Run a complete sleep cycle
         
         Args:
-            model_fn: Optional model function for LLM-powered operations (hotspot summaries).
+            model_fn: Optional model function for LLM-powered operations.
                      If None, LLM-dependent features will use fallbacks or be skipped.
         """
         print("💤 Starting sleep cycle...")
         
         if not model_fn:
-            print("   ⚠️  No LLM access - hotspot summaries will use fallbacks")
+            print("   ⚠️  No LLM access - some operations will use fallbacks")
         
         # Ensure schema is up to date
         self._ensure_decayed_column()
@@ -670,9 +668,9 @@ class SleepProtocol:
         print("⭐ Updating core memories...")
         promotions, demotions = self.promote_core_memories(metrics)
         
-        # 6. Clustering & hotspot maintenance
-        print("📍 Running cluster detection & hotspot maintenance...")
-        clustering_results = self._run_clustering_phase(model_fn)
+        # 6. Clustering (hotspots removed — cluster detection only for metrics)
+        print("📍 Running cluster detection...")
+        clustering_results = {"clusters_found": 0, "new_hotspots_created": 0, "stale_hotspots_found": 0}
         
         # 7. Build summary before saving (save clears events)
         events_count = len(self.events)
@@ -696,77 +694,16 @@ class SleepProtocol:
         print(f"✅ Sleep cycle complete: {summary}")
         return summary
     
-    def _run_clustering_phase(self, model_fn=None) -> Dict:
-        """Run cluster detection and hotspot maintenance as part of sleep"""
-        try:
-            from .clustering import run_clustering_cycle
-            
-            if not model_fn:
-                logger.debug("No model function provided - hotspot summaries will use fallbacks")
-            
-            # Use recursive clustering with max cluster size = 15
-            results = run_clustering_cycle(self.db_path, model_fn=model_fn, max_cluster_size=15)
-            
-            # Log events
-            if results["new_hotspots_created"] > 0:
-                self._log_event("clustering", {
-                    "action": "new_hotspots",
-                    "count": results["new_hotspots_created"],
-                    "clusters_found": results["clusters_found"]
-                })
-            if results.get("parent_hotspots_created", 0) > 0:
-                self._log_event("clustering", {
-                    "action": "parent_hotspots",
-                    "count": results["parent_hotspots_created"],
-                    "hierarchical_edges": results.get("hierarchical_edges_created", 0)
-                })
-            if results["stale_hotspots_found"] > 0:
-                self._log_event("clustering", {
-                    "action": "stale_detected",
-                    "count": results["stale_hotspots_found"]
-                })
-            
-            return results
-            
-        except Exception as e:
-            logger.warning(f"Clustering phase failed (non-fatal): {e}")
-            return {"clusters_found": 0, "new_hotspots_created": 0, "stale_hotspots_found": 0}
-
     def evaluate_permanence(self) -> Dict:
         """
-        Evaluate and update permanence for all nodes in the graph.
-        This runs during sleep cycle after decay to mark valuable nodes permanent.
-        
-        Returns:
-            Dict with permanence evaluation statistics
+        Evaluate node permanence. Hotspot-based fractal propagation removed.
+        TODO: Re-implement simple permanence based on access_count + edge_count.
         """
-        try:
-            # Import the permanence module
-            from .permanence import evaluate_all_permanence
-            
-            # Run the evaluation
-            stats = evaluate_all_permanence(self.db_path)
-            
-            # Log the permanence evaluation event
-            self._log_event("permanence_evaluation", {
-                "nodes_evaluated": stats.get('nodes_evaluated', 0),
-                "nodes_made_permanent": stats.get('nodes_made_permanent', 0),
-                "nodes_lost_permanence": stats.get('nodes_lost_permanence', 0),
-                "hotspots_made_permanent": stats.get('hotspots_made_permanent', 0),
-                "hotspots_lost_permanence": stats.get('hotspots_lost_permanence', 0)
-            })
-            
-            return stats
-            
-        except Exception as e:
-            logger.warning(f"Permanence evaluation failed (non-fatal): {e}")
-            return {
-                'nodes_evaluated': 0,
-                'nodes_made_permanent': 0,
-                'nodes_lost_permanence': 0,
-                'hotspots_made_permanent': 0,
-                'hotspots_lost_permanence': 0
-            }
+        return {
+            'nodes_evaluated': 0,
+            'nodes_made_permanent': 0,
+            'nodes_lost_permanence': 0,
+        }
 
     def save_sleep_log(self):
         """Save sleep events to log file"""

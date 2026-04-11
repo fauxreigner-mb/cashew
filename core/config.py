@@ -50,17 +50,31 @@ class CashewConfig:
     """Configuration class with YAML file and environment variable support"""
     
     def __init__(self, config_path: Optional[str] = None):
-        self.config_path = config_path or self._find_config_file()
+        # Check environment variables for config overrides
+        env_config_path = os.environ.get('CASHEW_CONFIG_PATH')
+        self.config_path = config_path or env_config_path or self._find_config_file()
         self._raw_config = {}
         self._load_config()
     
     def _find_config_file(self) -> Optional[str]:
-        """Find config.yaml in current directory or parent directories"""
+        """Find config.yaml in order: ./config.yaml → ~/.cashew/config.yaml → parent directories"""
+        # First try current directory
+        local_config = Path.cwd() / "config.yaml"
+        if local_config.exists():
+            return str(local_config)
+        
+        # Then try global config
+        global_config = Path.home() / ".cashew" / "config.yaml"
+        if global_config.exists():
+            return str(global_config)
+        
+        # Finally try parent directories (backward compatibility)
         current = Path.cwd()
-        for path in [current] + list(current.parents):
+        for path in list(current.parents):
             config_file = path / "config.yaml"
             if config_file.exists():
                 return str(config_file)
+        
         return None
     
     def _load_config(self):
@@ -83,6 +97,9 @@ class CashewConfig:
         
         # Extract commonly used values for convenience
         self._extract_config_values()
+        
+        # Ensure paths are absolute and expanded
+        self._expand_paths()
         
         # Validation
         self._validate_config()
@@ -159,16 +176,20 @@ class CashewConfig:
                 'mode': 'soft',           # soft | hard | off
                 'threshold': 0.05,        # relevance score below which nodes are eligible
                 'grace_days': 7,          # days since last_accessed before eligible
-                'protect_hotspots': True,
+                
                 'protect_types': ['seed', 'core_memory'],
                 'think_cycle_penalty': 1.5,  # multiplier on threshold for think-cycle nodes
+            },
+            'sleep': {
+                'enabled': True,
+                'frequency': '6h',
+                'schedule': '0 */6 * * *'
             },
             'features': {
                 'auto_extraction': True,
                 'think_cycles': True,
                 'sleep_cycles': True,
                 'decay_pruning': True,
-                'hotspot_generation': True,
                 'pattern_detection': True
             }
         }
@@ -185,8 +206,8 @@ class CashewConfig:
     
     def _extract_config_values(self):
         """Extract commonly used config values for convenience"""
-        # Database configuration
-        self.db_path = self._raw_config['database']['path']
+        # Database configuration (environment variable overrides config file)
+        self.db_path = os.environ.get('CASHEW_DB_PATH') or self._raw_config['database']['path']
         self.backup_dir = self._raw_config['database']['backup_dir']
         self.auto_backup = self._raw_config['database']['auto_backup']
         
@@ -234,7 +255,7 @@ class CashewConfig:
         # Merge: custom can override core descriptions
         self._node_type_map = {**core_types, **custom_types}
         # System types are always valid but not in extraction prompts
-        self._system_types = {'hotspot', 'dream', 'tension', 'core_memory', 'derived'}
+        self._system_types = {'dream', 'tension', 'core_memory', 'derived'}
         self.node_type_names = set(self._node_type_map.keys()) | self._system_types
         
         # Integration configuration
@@ -248,11 +269,56 @@ class CashewConfig:
         self.gc_mode = gc.get('mode', 'soft')
         self.gc_threshold = float(gc.get('threshold', 0.05))
         self.gc_grace_days = int(gc.get('grace_days', 7))
-        self.gc_protect_hotspots = bool(gc.get('protect_hotspots', True))
         self.gc_protect_types = list(gc.get('protect_types', ['seed', 'core_memory']))
         self.gc_think_cycle_penalty = float(gc.get('think_cycle_penalty', 1.5))
 
         # (node type taxonomy loaded above via _node_type_map)
+        
+        # Sleep configuration
+        sleep_config = self._raw_config.get('sleep', {})
+        self.sleep_enabled = sleep_config.get('enabled', True)
+        self.sleep_frequency = sleep_config.get('frequency', '6h')
+        self.sleep_schedule = sleep_config.get('schedule', '0 */6 * * *')
+        
+        # Feature flags
+        features = self._raw_config.get('features', {})
+        self.auto_extraction = features.get('auto_extraction', True)
+        self.think_cycles = features.get('think_cycles', True)
+        self.sleep_cycles = features.get('sleep_cycles', True)
+        self.decay_pruning = features.get('decay_pruning', True)
+        self.pattern_detection = features.get('pattern_detection', True)
+    
+    def _expand_paths(self):
+        """Expand relative paths to absolute paths, relative to config file location"""
+        # Determine base directory for relative path resolution
+        if self.config_path:
+            base_dir = Path(self.config_path).parent
+        else:
+            base_dir = Path.cwd()
+        
+        # Make database path absolute
+        if not Path(self.db_path).is_absolute():
+            self.db_path = str((base_dir / self.db_path).resolve())
+        
+        # Make backup dir absolute
+        if not Path(self.backup_dir).is_absolute():
+            self.backup_dir = str((base_dir / self.backup_dir).resolve())
+        
+        # Expand other paths in the config
+        models = self._raw_config.get('models', {})
+        embedding = models.get('embedding', {})
+        cache_dir = embedding.get('cache_dir', './models')
+        if not Path(cache_dir).is_absolute():
+            embedding['cache_dir'] = str((base_dir / cache_dir).resolve())
+        
+        # Expand log file path
+        logging_config = self._raw_config.get('logging', {})
+        log_file = logging_config.get('file', './logs/cashew.log')
+        if not Path(log_file).is_absolute():
+            expanded_log_path = str((base_dir / log_file).resolve())
+            logging_config['file'] = expanded_log_path
+            # Also update the extracted value
+            Path(expanded_log_path).parent.mkdir(parents=True, exist_ok=True)
     
     def _validate_config(self):
         """Validate configuration values"""
@@ -395,11 +461,32 @@ def get_gc_config() -> dict:
         'mode': config.gc_mode,
         'threshold': config.gc_threshold,
         'grace_days': config.gc_grace_days,
-        'protect_hotspots': config.gc_protect_hotspots,
         'protect_types': config.gc_protect_types,
         'think_cycle_penalty': config.gc_think_cycle_penalty,
     }
 
+
+def get_sleep_config() -> dict:
+    """Get the sleep cycle configuration"""
+    return {
+        'enabled': config.sleep_enabled,
+        'frequency': config.sleep_frequency,
+        'schedule': config.sleep_schedule
+    }
+
+def get_feature_flags() -> dict:
+    """Get the feature flags configuration"""
+    return {
+        'auto_extraction': config.auto_extraction,
+        'think_cycles': config.think_cycles,
+        'sleep_cycles': config.sleep_cycles,
+        'decay_pruning': config.decay_pruning,
+        'pattern_detection': config.pattern_detection
+    }
+
+def is_feature_enabled(feature_name: str) -> bool:
+    """Check if a feature is enabled"""
+    return getattr(config, feature_name, False)
 
 def reload_config(config_path: Optional[str] = None):
     """Reload configuration from file"""

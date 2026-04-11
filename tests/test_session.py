@@ -168,7 +168,7 @@ class TestSessionIntegration:
         assert result.nodes_used == []  # No hint-driven nodes
         assert result.token_estimate > 0  # Overview always has tokens
     
-    @patch('core.session.retrieve_dfs')
+    @patch('core.session.retrieve_recursive_bfs')
     @patch('core.embeddings.embed_nodes')
     def test_start_session_with_results(self, mock_embed, mock_retrieve, test_db_path):
         """Test starting session with retrieval results"""

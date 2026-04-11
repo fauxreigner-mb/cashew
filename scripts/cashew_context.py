@@ -17,12 +17,13 @@ logger = logging.getLogger("cashew")
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from integration.openclaw import generate_session_context, extract_from_conversation, run_think_cycle, run_tension_detection
-from integration.complete_integration import (
-    generate_complete_session_context, extract_from_conversation_complete,
-    run_complete_think_cycle, run_complete_sleep_cycle, migrate_to_complete_coverage,
-    explain_complete_system, get_complete_system_stats
-)
-from core.hotspots import create_hotspot, update_hotspot, list_hotspots, get_hotspot
+# complete_integration removed (depended on hotspots) — lazy import for legacy CLI commands
+def _lazy_complete_import():
+    raise ImportError("complete_integration was removed with hotspots. Use the standard context/extract/think/sleep commands instead.")
+generate_complete_session_context = extract_from_conversation_complete = None
+run_complete_think_cycle = run_complete_sleep_cycle = migrate_to_complete_coverage = None
+explain_complete_system = get_complete_system_stats = None
+# hotspots removed — recursive BFS is the retrieval method now
 
 
 def _build_model_fn():
@@ -112,7 +113,8 @@ def cmd_context(args):
     print()
     
     t0 = time.time()
-    context = generate_session_context(args.db, hints, tags=tags)
+    exclude = args.exclude_tags.split(",") if getattr(args, 'exclude_tags', None) else None
+    context = generate_session_context(args.db, hints, tags=tags, exclude_tags=exclude)
     elapsed = time.time() - t0
     
     if context:
@@ -165,6 +167,24 @@ def cmd_extract(args):
     print(json.dumps(result, indent=2))
     
     if result.get("success"):
+        # Apply tags to newly extracted nodes if --tags specified
+        extract_tags = getattr(args, 'tags', None)
+        if extract_tags and result.get("node_ids"):
+            import sqlite3
+            conn = sqlite3.connect(args.db)
+            cursor = conn.cursor()
+            for node_id in result["node_ids"]:
+                cursor.execute("SELECT tags FROM thought_nodes WHERE id = ?", (node_id,))
+                row = cursor.fetchone()
+                if row:
+                    existing = row[0] or ""
+                    new_tags = set(t.strip() for t in existing.split(",") if t.strip())
+                    new_tags.update(t.strip() for t in extract_tags.split(",") if t.strip())
+                    cursor.execute("UPDATE thought_nodes SET tags = ? WHERE id = ?", (",".join(sorted(new_tags)), node_id))
+            conn.commit()
+            conn.close()
+            print(f"   Tagged {len(result['node_ids'])} nodes with: {extract_tags}")
+        
         print()
         print("✅ Extraction completed successfully")
         print(f"   New nodes: {result['new_nodes']}")
@@ -295,7 +315,7 @@ def _cmd_think_ingest(args):
     
     # Check for novelty before inserting
     try:
-        from core.placement_aware_extraction import check_novelty, load_all_embeddings
+        from core.embeddings import check_novelty, load_all_embeddings
         preloaded = load_all_embeddings(args.db)
     except Exception:
         preloaded = None
@@ -465,7 +485,6 @@ def cmd_prune(args):
                                         decay_factor=decay_factor)
         print(f"📊 Decay candidates:")
         print(f"  Direct candidates: {candidates['candidates']}")
-        print(f"  Hotspots affected: {candidates['hotspot_candidates']}")
         print(f"  Avg confidence: {candidates['avg_confidence']}")
         print(f"  Min confidence: {candidates['min_confidence']}")
         print(f"  Max confidence: {candidates['max_confidence']}")
@@ -563,30 +582,19 @@ def cmd_sleep(args):
     try:
         sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(__file__))))
         
-        # Phase 1: Core sleep protocol (dedup, cross-links, gc, promotions)
+        # Core sleep protocol (dedup, cross-links, gc, promotions)
         from core.sleep import SleepProtocol
+        model_fn = _build_model_fn()
         protocol = SleepProtocol(args.db)
-        core_result = protocol.run_sleep_cycle()
-        
-        print(f"\n📊 Core sleep results:")
+        core_result = protocol.run_sleep_cycle(model_fn=model_fn)
+
+        elapsed = _time.time() - start
+        print(f"\n📊 Sleep results:")
         if isinstance(core_result, dict):
             for k, v in core_result.items():
                 print(f"  {k}: {v}")
-        
-        # Phase 2: Complete clustering + hierarchy evolution
-        print(f"\n🔗 Running clustering + hierarchy evolution...")
-        from integration.complete_integration import run_complete_sleep_cycle
-        cluster_result = run_complete_sleep_cycle(args.db)
-        
-        elapsed = _time.time() - start
-        print(f"\n✅ Full sleep protocol completed in {elapsed:.1f}s")
-        
-        if cluster_result.get("error"):
-            print(f"  ⚠️ Clustering issue: {cluster_result['error']}")
-        else:
-            coverage = cluster_result.get('coverage_verification', {})
-            print(f"  Coverage: {coverage.get('coverage_percentage', 'N/A')}%")
-            print(f"  Actions: {cluster_result.get('total_actions', 0)}")
+
+        print(f"\n✅ Sleep protocol completed in {elapsed:.1f}s")
         
     except Exception as e:
         print(f"❌ Sleep protocol error: {e}")
@@ -720,21 +728,19 @@ def cmd_complete_sleep(args):
     enable_evolution = not getattr(args, 'no_evolution', False)
     
     print("😴 Running complete sleep cycle...")
-    print(f"   Hierarchy evolution: {'enabled' if enable_evolution else 'disabled'}")
     print()
-    
+
     model_fn = _build_model_fn()
     t0 = time.time()
     try:
-        result = run_complete_sleep_cycle(args.db, enable_evolution, model_fn=model_fn)
+        from core.sleep import run_sleep_cycle
+        result = run_sleep_cycle(args.db, model_fn=model_fn)
         elapsed = time.time() - t0
-        
+
         print(json.dumps(result, indent=2))
-        
+
         print()
-        print(f"✅ Complete sleep cycle completed in {elapsed:.1f}s")
-        print(f"   Total actions: {result.get('total_actions', 0)}")
-        print(f"   Coverage: {result.get('coverage_verification', {}).get('coverage_percentage', 'Unknown')}%")
+        print(f"✅ Sleep cycle completed in {elapsed:.1f}s")
     except Exception as e:
         print(f"❌ Error: {e}")
         if args.debug:
@@ -836,7 +842,8 @@ def cmd_init(args):
                 decayed INTEGER DEFAULT 0,
                 metadata TEXT,
                 last_updated TEXT,
-                mood_state TEXT
+                mood_state TEXT,
+                tags TEXT
             )
         ''')
         
@@ -864,17 +871,14 @@ def cmd_init(args):
             )
         ''')
         
+        # Create metrics table
         cursor.execute('''
-            CREATE TABLE hotspots (
-                id TEXT PRIMARY KEY,
-                content TEXT NOT NULL,
-                status TEXT,
-                domain TEXT,
-                file_pointers TEXT,
-                cluster_node_ids TEXT,
-                tags TEXT,
-                created TEXT,
-                last_updated TEXT
+            CREATE TABLE IF NOT EXISTS metrics (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                operation TEXT,
+                duration_ms REAL,
+                timestamp TEXT,
+                details TEXT
             )
         ''')
         
@@ -889,7 +893,7 @@ def cmd_init(args):
         conn.close()
         
         print("✅ Database initialized successfully")
-        print(f"   Schema: thought_nodes, derivation_edges, embeddings, hotspots")
+        print(f"   Schema: thought_nodes, derivation_edges, embeddings")
         print(f"   Indexes: optimized for retrieval")
         print()
         print("🚀 Ready to use! Try:")
@@ -904,7 +908,7 @@ def cmd_init(args):
         return 1
 
 
-def _migrate_extract_file(db_path: str, content: str, filename: str, session_id: str) -> dict:
+def _migrate_extract_file(db_path: str, content: str, filename: str, session_id: str, model_fn=None) -> dict:
     """
     Extract knowledge from a document file for migration.
     Uses a migration-specific prompt that produces semantic summaries
@@ -915,13 +919,60 @@ def _migrate_extract_file(db_path: str, content: str, filename: str, session_id:
     import hashlib
     from datetime import datetime, timezone
     from core.embeddings import ensure_schema, embed_nodes
+    from core.config import get_ai_domain, get_user_domain
     
     ensure_schema(db_path)
     
-    # CLI usage doesn't have direct LLM access - use heuristic extraction only
-    # When called from OpenClaw cron jobs, the LLM processing happens at the orchestrator level
-    print(f"   📝 CLI extraction - using heuristic method (LLM extraction available through OpenClaw crons)")
-    return _migrate_extract_heuristic(db_path, content, filename, session_id)
+    # Use passed model_fn or fall back to heuristic
+    if model_fn is None:
+        print(f"   📝 CLI extraction - using heuristic method (LLM extraction available via OpenClaw)")
+        return _migrate_extract_heuristic(db_path, content, filename, session_id)
+    
+    print(f"   🤖 LLM extraction - using smart extraction via OpenClaw")
+    
+    # Use LLM to extract semantic knowledge
+    prompt = f"""Extract knowledge from this document into structured facts, insights, observations, and decisions.
+
+For each item, output a JSON object on its own line with fields:
+- "content": the knowledge statement (clear, self-contained, pattern-level — not raw quotes)
+- "type": one of "fact", "observation", "insight", "decision", "belief"
+- "confidence": 0.0-1.0 (how certain/important)
+
+Focus on:
+- Decisions and their reasoning
+- Patterns and behavioral observations  
+- Insights that connect multiple ideas
+- Facts about people, projects, relationships
+- Beliefs and preferences
+
+Skip: transient logistics, greetings, trivial statements.
+Output ONLY JSON lines, no other text.
+
+Document ({filename}):
+{content[:8000]}"""
+    
+    try:
+        response = model_fn(prompt)
+        extractions = []
+        for line in response.strip().split('\n'):
+            line = line.strip()
+            if not line or not line.startswith('{'):
+                continue
+            try:
+                item = json.loads(line)
+                if item.get('content', '').strip():
+                    extractions.append(item)
+            except json.JSONDecodeError:
+                continue
+        
+        if not extractions:
+            print(f"   ⚠️  LLM returned no extractions, falling back to heuristic")
+            return _migrate_extract_heuristic(db_path, content, filename, session_id)
+        
+        print(f"   📊 LLM extracted {len(extractions)} items")
+    except Exception as e:
+        print(f"   ⚠️  LLM extraction failed ({e}), falling back to heuristic")
+        return _migrate_extract_heuristic(db_path, content, filename, session_id)
     
     # Insert nodes
     now = datetime.now(timezone.utc).isoformat()
@@ -929,13 +980,8 @@ def _migrate_extract_file(db_path: str, content: str, filename: str, session_id:
     cursor = conn.cursor()
     new_nodes = []
     
-    # Load embeddings once before the loop for performance
-    try:
-        from core.placement_aware_extraction import check_novelty, load_all_embeddings
-        preloaded_embeddings = load_all_embeddings(db_path)
-    except Exception as e:
-        print(f"   ⚠️  Failed to preload embeddings, falling back to per-call loading: {e}")
-        preloaded_embeddings = None
+    # Use sqlite-vec O(log N) lookup for novelty checks — no preloading needed
+    from core.embeddings import check_novelty
     
     for item in extractions:
         node_content = item.get("content", "").strip()
@@ -944,12 +990,9 @@ def _migrate_extract_file(db_path: str, content: str, filename: str, session_id:
         node_type = item.get("type", "observation")
         confidence = item.get("confidence", 0.7)
         
-        # Primary gate: semantic novelty check
+        # Primary gate: semantic novelty check (uses sqlite-vec O(log N) fast path)
         try:
-            if preloaded_embeddings is not None:
-                is_novel, max_sim, nearest_id = check_novelty(db_path, node_content, preloaded_embeddings=preloaded_embeddings)
-            else:
-                is_novel, max_sim, nearest_id = check_novelty(db_path, node_content)
+            is_novel, max_sim, nearest_id = check_novelty(db_path, node_content)
             if not is_novel:
                 print(f"   ⊘ Rejecting duplicate (sim={max_sim:.3f}): {node_content[:60]}")
                 continue
@@ -969,7 +1012,10 @@ def _migrate_extract_file(db_path: str, content: str, filename: str, session_id:
         ai_signals = [ai_domain.lower(), 'operating principle', 'engineering philosophy', 
                       f'belief ({ai_domain.lower()}', f'decision ({ai_domain.lower()}', f'insight ({ai_domain.lower()}',
                       'boot sequence', 'heartbeat', 'cron job', 'brain query',
-                      'self-context', 'my personality', 'my beliefs']
+                      'self-context', 'my personality', 'my beliefs',
+                      'bunny must', 'bunny should', 'bunny behavioral',
+                      'writing style', 'writing tell', 'stop using',
+                      'communication rule', 'rhetorical crutch']
         domain = ai_domain if any(s in content_lower for s in ai_signals) else user_domain
         
         try:
@@ -985,7 +1031,8 @@ def _migrate_extract_file(db_path: str, content: str, filename: str, session_id:
     conn.commit()
     conn.close()
     
-    # Generate embeddings for new nodes
+    # Generate embeddings for new nodes immediately so subsequent files
+    # can use sqlite-vec for novelty checks against these nodes
     try:
         embed_nodes(db_path)
     except Exception:
@@ -1004,6 +1051,7 @@ def _migrate_extract_heuristic(db_path: str, content: str, filename: str, sessio
     import hashlib
     from datetime import datetime, timezone
     from core.embeddings import ensure_schema, embed_nodes
+    from core.config import get_ai_domain, get_user_domain
     
     ensure_schema(db_path)
     
@@ -1032,7 +1080,10 @@ def _migrate_extract_heuristic(db_path: str, content: str, filename: str, sessio
                       'boot sequence', 'heartbeat', 'cron job', 'brain query',
                       'self-context', 'my personality', 'my beliefs',
                       'think cycle', 'cross-domain insight', 'meta-analysis',
-                      'graph structure', 'openclaw', 'system_generated']
+                      'graph structure', 'openclaw', 'system_generated',
+                      'bunny must', 'bunny should', 'bunny behavioral',
+                      'writing style', 'writing tell', 'stop using',
+                      'communication rule', 'rhetorical crutch']
         domain = ai_domain if any(s in clean_lower for s in ai_signals) else user_domain
         
         try:
@@ -1119,13 +1170,38 @@ def cmd_migrate_files(args):
         print("❌ Error: Database not found. Run `cashew init` first.")
         return 1
     
+    # Check which files were already migrated (checkpoint/resume support)
+    import sqlite3 as _sqlite3
+    already_migrated = set()
+    try:
+        _conn = _sqlite3.connect(args.db)
+        _cur = _conn.cursor()
+        _cur.execute("SELECT DISTINCT source_file FROM thought_nodes WHERE source_file LIKE 'migration:%'")
+        already_migrated = {row[0].replace('migration:', '') for row in _cur.fetchall()}
+        _conn.close()
+        if already_migrated:
+            print(f"📋 Resuming: {len(already_migrated)} files already migrated, skipping them")
+            print()
+    except Exception:
+        pass
+    
+    # Build model_fn ONCE for the entire migration
+    _migration_model_fn = _build_model_fn()
+    
     # Extract from each file using migration-aware extraction
     extracted_count = 0
     errors = 0
+    skipped = 0
     
-    for md_file in md_files:
+    for i, md_file in enumerate(md_files, 1):
         try:
-            print(f"📖 Processing: {md_file.name}")
+            # Skip already-migrated files (checkpoint support)
+            if md_file.name in already_migrated:
+                skipped += 1
+                print(f"📖 [{i}/{len(md_files)}] {md_file.name} — already migrated, skipping")
+                continue
+            
+            print(f"📖 [{i}/{len(md_files)}] Processing: {md_file.name}")
             content = md_file.read_text(encoding='utf-8')
             
             if len(content.strip()) < 100:
@@ -1137,7 +1213,8 @@ def cmd_migrate_files(args):
                 args.db, 
                 content, 
                 md_file.name,
-                f"migration_{md_file.stem}"
+                f"migration_{md_file.stem}",
+                model_fn=_migration_model_fn
             )
             
             if result.get("success"):
@@ -1156,31 +1233,40 @@ def cmd_migrate_files(args):
     if extracted_count > 0:
         print()
         print(f"🧠 Running consolidation cycle...")
-        
+
         try:
-            # Run a sleep cycle to consolidate and connect the extracted knowledge
-            result = run_complete_sleep_cycle(args.db)
-            if result.get("error"):
-                print(f"⚠️  Consolidation had issues: {result['error']}")
-                print("   Graph is usable but hierarchy may be incomplete.")
-                print("   Run `cashew sleep` later to retry consolidation.")
+            from core.sleep import run_sleep_cycle
+            model_fn = _build_model_fn()
+            if not model_fn:
+                print("   ⚠️  No LLM access — running core consolidation (cross-links, dedup, GC)")
+                print("   Consolidation requires LLM access. Either run OpenClaw (openclaw gateway start)")
+                print("   or run `cashew sleep` later when LLM is available.")
+            result = run_sleep_cycle(args.db, model_fn=model_fn)
+            if isinstance(result, dict):
+                print(f"✅ Consolidation completed:")
+                print(f"     Cross-links created: {result.get('cross_links_created', 0)}")
+                print(f"     Deduplications: {result.get('deduplications', 0)}")
+                print(f"     Nodes decayed: {result.get('nodes_decayed', 0)}")
+                print(f"     Core promotions: {result.get('core_promotions', 0)}")
             else:
-                coverage = result.get('coverage_verification', {}).get('coverage_percentage', 'Unknown')
-                actions = result.get('total_actions', 0)
-                print(f"✅ Consolidation completed ({actions} actions)")
-                print(f"   Final coverage: {coverage}%")
+                print(f"✅ Consolidation completed")
         except Exception as e:
-            print(f"⚠️  Consolidation skipped: {e}")
-            print("   Graph is usable but hierarchy may be incomplete.")
-            print("   Run `cashew sleep` later to retry consolidation.")
+            print(f"⚠️  Consolidation failed: {e}")
+            print("   Your graph has nodes but no structure yet.")
+            print("   Run `cashew sleep` later to consolidate.")
     
     print()
     print("📊 MIGRATION COMPLETE")
-    print(f"   Files processed: {len(md_files)}")
+    print(f"   Files found: {len(md_files)}")
+    if skipped > 0:
+        print(f"   Files skipped (already migrated): {skipped}")
+    print(f"   Files processed: {len(md_files) - skipped}")
     print(f"   Nodes extracted: {extracted_count}")
     print(f"   Errors: {errors}")
-    if errors == 0:
+    if errors == 0 and extracted_count > 0:
         print("   🎉 All files migrated successfully!")
+    elif skipped == len(md_files):
+        print("   ✅ All files were already migrated — nothing to do")
 
 
 def cmd_system_stats(args):
@@ -1206,7 +1292,6 @@ def cmd_system_stats(args):
         print("\n📊 SUMMARY:")
         print(f"   Coverage: {coverage.get('coverage_percentage', 'Unknown')}%")
         print(f"   Total nodes: {result.get('node_statistics', {}).get('total_nodes', 'Unknown')}")
-        print(f"   Total hotspots: {hierarchy.get('total_hotspots', 'Unknown')}")
         print(f"   Hierarchy depth: {hierarchy.get('hierarchy_depth', 'Unknown')}")
         print(f"   Complete coverage: {health.get('has_complete_coverage', 'Unknown')}")
         print(f"   Emergent domains: {health.get('emergent_domains', 'Unknown')}")
@@ -1217,116 +1302,6 @@ def cmd_system_stats(args):
             import traceback
             traceback.print_exc()
         return 1
-
-
-def cmd_hotspot(args):
-    """Manage hotspot nodes"""
-    action = args.hotspot_action
-    
-    if action == "create":
-        if not args.content:
-            print("❌ --content required for create")
-            return 1
-        
-        # Parse file pointers from --files "label:path,label:path"
-        file_pointers = {}
-        if args.files:
-            for pair in args.files.split(","):
-                if ":" in pair:
-                    label, path = pair.split(":", 1)
-                    file_pointers[label.strip()] = path.strip()
-        
-        # Parse cluster IDs
-        cluster_ids = args.cluster.split(",") if args.cluster else []
-        tags = args.tags.split(",") if args.tags else []
-        
-        hotspot_id = create_hotspot(
-            db_path=args.db,
-            content=args.content,
-            status=args.status or "active",
-            file_pointers=file_pointers,
-            cluster_node_ids=cluster_ids,
-            domain=args.domain or get_ai_domain(),
-            tags=tags
-        )
-        print(f"✅ Created hotspot: {hotspot_id}")
-        print(f"   Content: {args.content[:80]}...")
-        print(f"   Status: {args.status or 'active'}")
-        print(f"   Files: {file_pointers}")
-        print(f"   Cluster: {len(cluster_ids)} nodes")
-    
-    elif action == "update":
-        if not args.id:
-            print("❌ --id required for update")
-            return 1
-        
-        file_pointers = None
-        if args.files:
-            file_pointers = {}
-            for pair in args.files.split(","):
-                if ":" in pair:
-                    label, path = pair.split(":", 1)
-                    file_pointers[label.strip()] = path.strip()
-        
-        add_ids = args.cluster.split(",") if args.cluster else None
-        
-        success = update_hotspot(
-            db_path=args.db,
-            hotspot_id=args.id,
-            content=args.content,
-            status=args.status,
-            file_pointers=file_pointers,
-            add_cluster_ids=add_ids
-        )
-        if success:
-            print(f"✅ Updated hotspot: {args.id}")
-        else:
-            print(f"❌ Failed to update hotspot: {args.id}")
-            return 1
-    
-    elif action == "list":
-        hotspots = list_hotspots(args.db, args.domain)
-        if not hotspots:
-            print("No hotspots found.")
-            return
-        
-        print(f"📍 {len(hotspots)} Hotspot(s)")
-        print("=" * 60)
-        for h in hotspots:
-            print(f"\n🔵 [{h['id']}] {h['content'][:80]}")
-            print(f"   Status: {h['status']} | Domain: {h['domain']} | Cluster: {h['cluster_size']} nodes")
-            if h['file_pointers']:
-                for label, path in h['file_pointers'].items():
-                    print(f"   📄 {label}: {path}")
-            if h['tags']:
-                print(f"   🏷  Tags: {', '.join(h['tags'])}")
-            print(f"   Updated: {h['last_updated']}")
-    
-    elif action == "show":
-        if not args.id:
-            print("❌ --id required for show")
-            return 1
-        
-        h = get_hotspot(args.db, args.id)
-        if not h:
-            print(f"❌ Hotspot not found: {args.id}")
-            return 1
-        
-        print(f"📍 Hotspot: {h['id']}")
-        print(f"   Content: {h['content']}")
-        print(f"   Status: {h['status']}")
-        print(f"   Domain: {h['domain']}")
-        print(f"   Updated: {h['last_updated']}")
-        if h['file_pointers']:
-            print(f"   Files:")
-            for label, path in h['file_pointers'].items():
-                print(f"     📄 {label}: {path}")
-        if h['tags']:
-            print(f"   Tags: {', '.join(h['tags'])}")
-        if h['cluster']:
-            print(f"   Cluster ({len(h['cluster'])} nodes):")
-            for node in h['cluster']:
-                print(f"     - [{node['type']}] {node['content'][:60]}...")
 
 
 def _preprocess_db_flag(argv):
@@ -1348,16 +1323,147 @@ def _preprocess_db_flag(argv):
     return result
 
 
+def cmd_metrics(args):
+    """Metrics command handler"""
+    from core.metrics import (
+        get_metrics_summary, get_metrics_timeseries, 
+        get_retrieval_stats, get_recent_metrics,
+        clear_metrics, export_metrics, is_metrics_enabled
+    )
+    
+    # Check if metrics are enabled
+    if not is_metrics_enabled():
+        print("⚠️  Metrics collection is disabled.")
+        print("   Set CASHEW_METRICS=1 environment variable to enable.")
+        print()
+    
+    if args.reset:
+        print("🗑️  Clearing all metrics...")
+        clear_metrics(args.db)
+        print("✅ Metrics cleared")
+        return 0
+    
+    if args.export:
+        print(f"📊 Exporting metrics ({args.hours}h)...")
+        data = export_metrics(args.db, args.hours)
+        print(json.dumps(data, indent=2))
+        return 0
+    
+    if args.live:
+        print(f"🚀 Starting live dashboard on {args.host}:{args.port}...")
+        print("   Press Ctrl+C to stop")
+        print()
+        
+        # Import and run the dashboard
+        import subprocess
+        import sys
+        
+        # Run the dashboard script with the same arguments
+        cmd = [
+            sys.executable, 
+            os.path.join(os.path.dirname(__file__), "metrics_dashboard.py"),
+            "--port", str(args.port),
+            "--host", args.host,
+            "--db", args.db
+        ]
+        
+        try:
+            subprocess.run(cmd, check=True)
+        except KeyboardInterrupt:
+            print("\n👋 Dashboard stopped")
+        except subprocess.CalledProcessError as e:
+            print(f"❌ Dashboard failed: {e}")
+            return 1
+        
+        return 0
+    
+    # Default: show summary
+    print("📊 Cashew Metrics Summary")
+    print("=" * 40)
+    print()
+    
+    if not is_metrics_enabled():
+        print("❌ No metrics available (collection disabled)")
+        print("   Enable with: export CASHEW_METRICS=1")
+        return 0
+    
+    try:
+        summary = get_metrics_summary(args.db, args.hours)
+        
+        if not summary:
+            print("📭 No metrics data available")
+            print(f"   Showing data for last {args.hours} hours")
+            return 0
+        
+        # Overview
+        print(f"⏰ Period: Last {args.hours} hours")
+        print(f"🔢 Total queries: {summary.get('total_queries', 0)}")
+        print(f"⚡ Avg retrieval time: {summary.get('avg_retrieval_time', 0):.1f}ms")
+        print(f"🕐 Recent activity (1h): {summary.get('recent_queries_1h', 0)} queries")
+        print()
+        
+        # By type breakdown
+        by_type = summary.get('by_type', {})
+        if by_type:
+            print("📋 By Type:")
+            for metric_type, stats in by_type.items():
+                print(f"   {metric_type:10}: {stats['count']:4} calls, {stats['avg_duration']:6.1f}ms avg")
+            print()
+        
+        # System health
+        health = summary.get('system_health', {})
+        if health:
+            print("🏥 System Health:")
+            print(f"   Nodes: {health.get('node_count', '-')}")
+            print(f"   Edges: {health.get('edge_count', '-')}")
+            vec_ratio = health.get('vec_sync_ratio', 0)
+            print(f"   Vec sync: {vec_ratio * 100:.0f}%" if vec_ratio else "   Vec sync: -")
+            print()
+        
+        # Recent activity
+        recent = get_recent_metrics(args.db, 5)
+        if recent:
+            print("🕐 Recent Activity:")
+            for metric in recent:
+                time_str = metric['timestamp'][-8:]  # Just show time part
+                print(f"   {time_str} {metric['metric_type']:10} {metric['duration_ms']:6.1f}ms")
+        
+        print()
+        print("💡 Use --live to start the web dashboard")
+        print("💡 Use --export to get JSON data")
+        
+    except Exception as e:
+        print(f"❌ Error retrieving metrics: {e}")
+        if args.debug:
+            import traceback
+            traceback.print_exc()
+        return 1
+    
+    return 0
+
+
 def main():
     parser = argparse.ArgumentParser(description="Cashew Context CLI")
     # Import here to avoid circular imports
     import sys
     import os
     sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(__file__))))
-    from core.config import get_db_path, get_user_domain, get_ai_domain
     
-    parser.add_argument("--db", default=get_db_path(), 
-                       help="Database path (default: ./data/graph.db, or CASHEW_DB env var)")
+    # Check for environment variable overrides BEFORE loading config
+    env_config_path = os.environ.get('CASHEW_CONFIG_PATH')
+    env_db_path = os.environ.get('CASHEW_DB_PATH')
+    
+    # If environment variables are set, reload config to pick them up
+    if env_config_path or env_db_path:
+        from core.config import reload_config, get_db_path, get_user_domain, get_ai_domain
+        reload_config(env_config_path)
+        default_db = get_db_path()
+    else:
+        from core.config import get_db_path, get_user_domain, get_ai_domain
+        default_db = get_db_path()
+    
+    parser.add_argument("--db", default=default_db, 
+                       help="Database path (default: from config, or CASHEW_DB_PATH/CASHEW_CONFIG_PATH env vars)")
     parser.add_argument("--verbose", "-v", action="store_true", help="Verbose output")
     parser.add_argument("--debug", action="store_true", help="Debug output (timing, diagnostics to stderr)")
     
@@ -1366,6 +1472,7 @@ def main():
     # Context command
     context_parser = subparsers.add_parser("context", help="Generate context for current session")
     context_parser.add_argument("--tags", help="Comma-separated tags to scope retrieval (e.g. 'philosophy,religion')")
+    context_parser.add_argument("--exclude-tags", dest="exclude_tags", help="Comma-separated tags to exclude from results (e.g. 'vault:private')")
     context_parser.add_argument("--hints", nargs="*", 
                                 help="Topic hints (e.g., 'work promotion manager')")
     context_parser.set_defaults(func=cmd_context)
@@ -1378,6 +1485,7 @@ def main():
     extract_parser = subparsers.add_parser("extract", help="Extract from a conversation file")
     extract_parser.add_argument("--input", help="Input conversation file")
     extract_parser.add_argument("--session-id", help="Optional session ID")
+    extract_parser.add_argument("--tags", help="Comma-separated tags to apply to extracted nodes (e.g. 'vault:private')")
     extract_parser.add_argument("--prepare-only", action="store_true",
                                help="Output extraction plan as JSON without executing")
     extract_parser.add_argument("--ingest", help="Ingest a JSON file of pre-prepared extractions")
@@ -1418,18 +1526,15 @@ def main():
     compact_parser.add_argument("--similarity-threshold", type=float, default=0.82, help="Cosine similarity threshold for merging (default: 0.82)")
     compact_parser.set_defaults(func=cmd_compact)
     
-    # Hotspot command
-    hotspot_parser = subparsers.add_parser("hotspot", help="Manage hotspot nodes")
-    hotspot_parser.add_argument("hotspot_action", choices=["create", "update", "list", "show"],
-                                help="Hotspot action")
-    hotspot_parser.add_argument("--content", help="Hotspot summary content")
-    hotspot_parser.add_argument("--status", help="Status string")
-    hotspot_parser.add_argument("--files", help="File pointers as 'label:path,label:path'")
-    hotspot_parser.add_argument("--cluster", help="Comma-separated cluster node IDs")
-    hotspot_parser.add_argument("--tags", help="Comma-separated search tags")
-    hotspot_parser.add_argument("--domain", help="Domain (user/ai)")
-    hotspot_parser.add_argument("--id", help="Hotspot ID (for update/show)")
-    hotspot_parser.set_defaults(func=cmd_hotspot)
+    # Metrics command
+    metrics_parser = subparsers.add_parser("metrics", help="Performance metrics and monitoring")
+    metrics_parser.add_argument("--live", action="store_true", help="Start live dashboard server")
+    metrics_parser.add_argument("--port", type=int, default=8787, help="Dashboard port (default: 8787)")
+    metrics_parser.add_argument("--host", default="localhost", help="Dashboard host (default: localhost)")
+    metrics_parser.add_argument("--reset", action="store_true", help="Clear all metrics")
+    metrics_parser.add_argument("--export", action="store_true", help="Export metrics as JSON")
+    metrics_parser.add_argument("--hours", type=int, default=24, help="Hours of data to include (default: 24)")
+    metrics_parser.set_defaults(func=cmd_metrics)
     
     # === COMPLETE COVERAGE SYSTEM COMMANDS ===
     

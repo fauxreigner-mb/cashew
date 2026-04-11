@@ -7,14 +7,16 @@ Bridge between cashew's session layer and OpenClaw's lifecycle
 import os
 import json
 import logging
+import time
 from typing import List, Dict, Optional, Any, Callable
 from pathlib import Path
 
 from core.session import start_session, end_session, think_cycle, tension_detection, SessionContext, ExtractionResult, ThinkResult
 from core.config import config, get_user_domain, get_ai_domain
+from core.metrics import record_metric, is_metrics_enabled
 
 
-def generate_session_context(db_path: str, hints: Optional[List[str]] = None, tags: Optional[List[str]] = None) -> str:
+def generate_session_context(db_path: str, hints: Optional[List[str]] = None, tags: Optional[List[str]] = None, exclude_tags: Optional[List[str]] = None) -> str:
     """
     Generate three-layer session context from the thought graph
     
@@ -36,7 +38,7 @@ def generate_session_context(db_path: str, hints: Optional[List[str]] = None, ta
         session_id = "openclaw_context_generation"
         
         # Get three-layer session context
-        context = start_session(db_path, session_id, hints, tags=tags)
+        context = start_session(db_path, session_id, hints, tags=tags, exclude_tags=exclude_tags)
         
         if not context.context_str:
             return ""
@@ -78,8 +80,22 @@ def extract_from_conversation(db_path: str, conversation_text: str, session_id: 
         if not model_fn:
             logging.warning("No model function provided - LLM-dependent extraction features disabled")
         
-        # Extract from conversation
+        # Extract from conversation with timing
+        start_time = time.perf_counter() if is_metrics_enabled() else None
         result = end_session(db_path, session_id, conversation_text, model_fn)
+        
+        # Record extraction metrics
+        if is_metrics_enabled() and start_time is not None:
+            duration = (time.perf_counter() - start_time) * 1000
+            
+            # Count novelty rejections (if available in result)
+            novelty_rejections = getattr(result, 'novelty_rejections', 0)
+            
+            record_metric(db_path, 'extraction', duration,
+                          nodes_created=len(result.new_nodes),
+                          edges_created=len(result.new_edges),
+                          nodes_updated=len(result.updated_nodes),
+                          novelty_rejections=novelty_rejections)
         
         # Format response
         response = {
@@ -233,14 +249,14 @@ def get_ai_context(db_path: str, hints: Optional[List[str]] = None) -> str:
             logging.warning(f"Database not found at {db_path}")
             return ""
         
-        from core.retrieval import retrieve_dfs
+        from core.retrieval import retrieve_recursive_bfs
         
         # Build query from hints or use default
         query = " ".join(hints) if hints else "operational knowledge patterns decisions"
         
-        # Retrieve only AI domain nodes using DFS
+        # Retrieve only AI domain nodes using recursive BFS
         ai_domain = get_ai_domain()
-        results = retrieve_dfs(db_path, query, top_k=10, domain=ai_domain)
+        results = retrieve_recursive_bfs(db_path, query, top_k=10, domain=ai_domain)
         
         if not results:
             return ""
@@ -279,14 +295,14 @@ def get_user_context(db_path: str, hints: Optional[List[str]] = None) -> str:
             logging.warning(f"Database not found at {db_path}")
             return ""
         
-        from core.retrieval import retrieve_dfs
+        from core.retrieval import retrieve_recursive_bfs
         
         # Build query from hints or use default
         query = " ".join(hints) if hints else "thoughts insights patterns decisions"
         
-        # Retrieve only user domain nodes using DFS
+        # Retrieve only user domain nodes using recursive BFS
         user_domain = get_user_domain()
-        results = retrieve_dfs(db_path, query, top_k=10, domain=user_domain)
+        results = retrieve_recursive_bfs(db_path, query, top_k=10, domain=user_domain)
         
         if not results:
             return ""

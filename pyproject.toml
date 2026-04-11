@@ -3,7 +3,7 @@ requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "cashew"
+name = "cashew-brain"
 version = "1.0.0"
 description = "Persistent thought-graph memory for AI agents. Provides context generation, knowledge extraction, and autonomous think cycles."
 authors = [{name = "jugaad-lab"}]

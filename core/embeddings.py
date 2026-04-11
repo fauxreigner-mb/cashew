@@ -6,11 +6,22 @@ Local sentence-transformer embeddings for semantic search
 
 import sqlite3
 import numpy as np
-from typing import List, Tuple, Optional
+import time
+from typing import List, Tuple, Optional, Dict
 from datetime import datetime
 import logging
 import sys
 import argparse
+
+from .metrics import record_metric, is_metrics_enabled
+
+# sqlite-vec for O(log N) vector search
+_vec_available = False
+try:
+    import sqlite_vec
+    _vec_available = True
+except ImportError:
+    logging.info("sqlite-vec not installed — falling back to brute-force search")
 
 # Lazy import pattern - only load when first called
 _model = None
@@ -48,6 +59,26 @@ def embed_text(text: str) -> List[float]:
 def ensure_schema(db_path: str):
     """Ensure all tables have the correct schema (call before any DB writes)"""
     _ensure_embeddings_table(db_path)
+
+
+def _load_vec(conn: sqlite3.Connection):
+    """Load sqlite-vec extension into a connection"""
+    if _vec_available:
+        try:
+            conn.enable_load_extension(True)
+            sqlite_vec.load(conn)
+            conn.enable_load_extension(False)
+        except Exception as e:
+            logging.warning(f"Failed to load sqlite-vec: {e}")
+
+
+def _has_vec_table(conn: sqlite3.Connection) -> bool:
+    """Check if vec_embeddings virtual table exists"""
+    try:
+        row = conn.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='vec_embeddings'").fetchone()
+        return row is not None
+    except Exception:
+        return False
 
 
 def _ensure_embeddings_table(db_path: str):
@@ -94,6 +125,22 @@ def _ensure_embeddings_table(db_path: str):
     if 'reasoning' not in de_columns:
         cursor.execute("ALTER TABLE derivation_edges ADD COLUMN reasoning TEXT")
     
+    # sqlite-vec virtual table for O(log N) nearest neighbor search
+    if _vec_available:
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='vec_embeddings'")
+        if cursor.fetchone() is None:
+            try:
+                conn.enable_load_extension(True)
+                sqlite_vec.load(conn)
+                conn.enable_load_extension(False)
+                cursor.execute("""
+                    CREATE VIRTUAL TABLE IF NOT EXISTS vec_embeddings 
+                    USING vec0(node_id text primary key, embedding float[384] distance_metric=cosine)
+                """)
+                logging.info("Created vec_embeddings virtual table")
+            except Exception as e:
+                logging.warning(f"Could not create vec_embeddings table: {e}")
+    
     conn.commit()
     conn.close()
 
@@ -108,9 +155,12 @@ def embed_nodes(db_path: str, batch_size: int = 100) -> dict:
     Returns:
         Dictionary with statistics about the embedding process
     """
+    start_time = time.perf_counter() if is_metrics_enabled() else None
+    
     _ensure_embeddings_table(db_path)
     
     conn = sqlite3.connect(db_path)
+    _load_vec(conn)
     cursor = conn.cursor()
     
     # Get nodes that need embedding (don't have decayed flag or are not decayed)
@@ -146,14 +196,26 @@ def embed_nodes(db_path: str, batch_size: int = 100) -> dict:
             embeddings = model.encode(batch_texts, convert_to_numpy=True)
             
             # Store embeddings
+            has_vec = _vec_available and _has_vec_table(conn)
             for j, (node_id, content) in enumerate(batch):
-                vector_bytes = embeddings[j].tobytes()
+                vector_bytes = embeddings[j].astype(np.float32).tobytes()
                 
                 cursor.execute("""
                     INSERT OR REPLACE INTO embeddings 
                     (node_id, vector, model, updated_at)
                     VALUES (?, ?, ?, ?)
                 """, (node_id, vector_bytes, "all-MiniLM-L6-v2", datetime.now().isoformat()))
+                
+                # Dual-write to vec_embeddings for O(log N) search
+                if has_vec:
+                    try:
+                        cursor.execute("DELETE FROM vec_embeddings WHERE node_id = ?", (node_id,))
+                        cursor.execute(
+                            "INSERT INTO vec_embeddings(node_id, embedding) VALUES (?, ?)",
+                            (node_id, vector_bytes)
+                        )
+                    except Exception as e:
+                        logging.warning(f"vec_embeddings write failed for {node_id}: {e}")
                 
                 embedded_count += 1
             
@@ -166,6 +228,19 @@ def embed_nodes(db_path: str, batch_size: int = 100) -> dict:
     
     conn.close()
     
+    # Record metrics
+    if is_metrics_enabled() and start_time is not None:
+        duration = (time.perf_counter() - start_time) * 1000
+        
+        # Check dual-write success
+        has_vec = _vec_available and _has_vec_table(conn)
+        dual_write_success = has_vec and (embedded_count > 0)
+        
+        record_metric(db_path, 'embed', duration,
+                      nodes_embedded=embedded_count,
+                      total_nodes=total_nodes,
+                      dual_write_success=dual_write_success)
+    
     return {
         "total_nodes": total_nodes,
         "embedded": embedded_count,
@@ -174,7 +249,8 @@ def embed_nodes(db_path: str, batch_size: int = 100) -> dict:
 
 def search(db_path: str, query: str, top_k: int = 10) -> List[Tuple[str, float]]:
     """
-    Semantic search using cosine similarity
+    Semantic search using cosine similarity.
+    Uses sqlite-vec for O(log N) search when available, falls back to brute force.
     
     Args:
         db_path: Path to SQLite database
@@ -187,15 +263,48 @@ def search(db_path: str, query: str, top_k: int = 10) -> List[Tuple[str, float]]
     if not query or not query.strip():
         return []
     
+    start_time = time.perf_counter() if is_metrics_enabled() else None
+    used_vec = False
+    
     _ensure_embeddings_table(db_path)
     
     # Embed the query
-    query_embedding = np.array(embed_text(query))
+    query_embedding = np.array(embed_text(query), dtype=np.float32)
     
     conn = sqlite3.connect(db_path)
-    cursor = conn.cursor()
     
-    # Get all embeddings
+    # Try sqlite-vec first (O(log N))
+    if _vec_available and _has_vec_table(conn):
+        try:
+            _load_vec(conn)
+            cursor = conn.cursor()
+            query_bytes = query_embedding.tobytes()
+            
+            # sqlite-vec returns cosine distance (0 = identical, 2 = opposite)
+            # Convert to similarity: sim = 1 - distance
+            rows = cursor.execute("""
+                SELECT node_id, distance FROM vec_embeddings 
+                WHERE embedding MATCH ?
+                ORDER BY distance LIMIT ?
+            """, (query_bytes, top_k)).fetchall()
+            
+            conn.close()
+            results = [(node_id, 1.0 - distance) for node_id, distance in rows]
+            used_vec = True
+            
+            # Record metrics
+            if is_metrics_enabled() and start_time is not None:
+                duration = (time.perf_counter() - start_time) * 1000
+                record_metric(db_path, 'search', duration,
+                              used_sqlite_vec=True,
+                              result_count=len(results))
+            
+            return results
+        except Exception as e:
+            logging.warning(f"sqlite-vec search failed, falling back to brute force: {e}")
+    
+    # Brute-force fallback (O(N))
+    cursor = conn.cursor()
     cursor.execute("""
         SELECT e.node_id, e.vector 
         FROM embeddings e
@@ -204,30 +313,155 @@ def search(db_path: str, query: str, top_k: int = 10) -> List[Tuple[str, float]]
     """)
     
     results = []
+    query_norm = np.linalg.norm(query_embedding)
     
     for node_id, vector_bytes in cursor.fetchall():
         try:
-            # Convert bytes back to numpy array
             stored_embedding = np.frombuffer(vector_bytes, dtype=np.float32)
-            
-            # Calculate cosine similarity
-            dot_product = np.dot(query_embedding, stored_embedding)
-            query_norm = np.linalg.norm(query_embedding)
             stored_norm = np.linalg.norm(stored_embedding)
             
             if query_norm > 0 and stored_norm > 0:
-                similarity = dot_product / (query_norm * stored_norm)
-                results.append((node_id, float(similarity)))
-        
+                similarity = float(np.dot(query_embedding, stored_embedding) / (query_norm * stored_norm))
+                results.append((node_id, similarity))
         except Exception as e:
             logging.warning(f"Error processing embedding for node {node_id}: {e}")
             continue
     
     conn.close()
-    
-    # Sort by similarity (descending) and return top_k
     results.sort(key=lambda x: x[1], reverse=True)
-    return results[:top_k]
+    final_results = results[:top_k]
+    
+    # Record metrics
+    if is_metrics_enabled() and start_time is not None:
+        duration = (time.perf_counter() - start_time) * 1000
+        record_metric(db_path, 'search', duration,
+                      used_sqlite_vec=False,
+                      result_count=len(final_results))
+    
+    return final_results
+
+# Quality gate parameters
+# MiniLM-L6 cosine similarity distribution: mean ~0.13, P99 ~0.49, true dupes peak ~0.85-0.90
+NOVELTY_THRESHOLD = 0.82  # reject if nearest neighbor similarity > this
+
+
+def load_all_embeddings(db_path: str) -> Dict[str, np.ndarray]:
+    """Load all non-decayed node embeddings from DB. Call once, pass to check_novelty."""
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT e.node_id, e.vector 
+        FROM embeddings e
+        JOIN thought_nodes tn ON e.node_id = tn.id
+        WHERE tn.decayed IS NULL OR tn.decayed = 0
+    """)
+    embeddings = {}
+    for node_id, vector_bytes in cursor.fetchall():
+        try:
+            embeddings[node_id] = np.frombuffer(vector_bytes, dtype=np.float32)
+        except Exception:
+            continue
+    conn.close()
+    return embeddings
+
+
+def check_novelty(db_path: str, content: str, threshold: float = NOVELTY_THRESHOLD,
+                  preloaded_embeddings: Optional[Dict[str, np.ndarray]] = None) -> Tuple[bool, float, Optional[str]]:
+    """
+    Check if content is sufficiently novel compared to existing graph.
+    Uses sqlite-vec when available for O(log N) nearest-neighbor lookup.
+    
+    Returns:
+        (is_novel, max_similarity, nearest_node_id)
+    """
+    try:
+        candidate_embedding = np.array(embed_text(content), dtype=np.float32)
+    except Exception as e:
+        logging.warning(f"Failed to embed candidate for novelty check: {e}")
+        return True, 0.0, None  # fail open
+    
+    # Fast path: sqlite-vec nearest neighbor
+    if preloaded_embeddings is None:
+        conn = sqlite3.connect(db_path)
+        if _vec_available and _has_vec_table(conn):
+            try:
+                _load_vec(conn)
+                row = conn.execute(
+                    "SELECT node_id, distance FROM vec_embeddings WHERE embedding MATCH ? ORDER BY distance LIMIT 1",
+                    (candidate_embedding.tobytes(),)
+                ).fetchone()
+                conn.close()
+                if row:
+                    max_sim = 1.0 - row[1]  # cosine distance → similarity
+                    return max_sim < threshold, max_sim, row[0]
+                return True, 0.0, None
+            except Exception:
+                pass
+        conn.close()
+    
+    # Brute-force fallback (or when preloaded_embeddings provided)
+    if preloaded_embeddings is None:
+        preloaded_embeddings = load_all_embeddings(db_path)
+    
+    max_sim = 0.0
+    nearest_id = None
+    cn = np.linalg.norm(candidate_embedding)
+    if cn == 0:
+        return True, 0.0, None
+    
+    for node_id, stored in preloaded_embeddings.items():
+        sn = np.linalg.norm(stored)
+        if sn > 0:
+            sim = float(np.dot(candidate_embedding, stored) / (cn * sn))
+            if sim > max_sim:
+                max_sim = sim
+                nearest_id = node_id
+    
+    return max_sim < threshold, max_sim, nearest_id
+
+
+def backfill_vec_index(db_path: str) -> dict:
+    """
+    Backfill vec_embeddings from existing embeddings table.
+    Call once after adding sqlite-vec to an existing database.
+    """
+    if not _vec_available:
+        return {"error": "sqlite-vec not installed"}
+    
+    _ensure_embeddings_table(db_path)
+    
+    conn = sqlite3.connect(db_path)
+    _load_vec(conn)
+    cursor = conn.cursor()
+    
+    if not _has_vec_table(conn):
+        conn.close()
+        return {"error": "vec_embeddings table not found"}
+    
+    # Get all active embeddings
+    cursor.execute("""
+        SELECT e.node_id, e.vector FROM embeddings e
+        JOIN thought_nodes tn ON e.node_id = tn.id
+        WHERE tn.decayed IS NULL OR tn.decayed = 0
+    """)
+    rows = cursor.fetchall()
+    
+    inserted = 0
+    for node_id, vector_bytes in rows:
+        try:
+            cursor.execute("DELETE FROM vec_embeddings WHERE node_id = ?", (node_id,))
+            cursor.execute(
+                "INSERT INTO vec_embeddings(node_id, embedding) VALUES (?, ?)",
+                (node_id, vector_bytes)
+            )
+            inserted += 1
+        except Exception as e:
+            logging.warning(f"Failed to backfill {node_id}: {e}")
+    
+    conn.commit()
+    conn.close()
+    return {"backfilled": inserted, "total": len(rows)}
+
 
 def get_embedding_stats(db_path: str) -> dict:
     """

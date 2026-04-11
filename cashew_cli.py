@@ -26,28 +26,29 @@ logger = logging.getLogger("cashew")
 def cmd_init(args):
     """Initialize a new cashew brain"""
     print("🧠 Initializing Cashew brain...")
-    
-    # Create config.yaml from template if it doesn't exist
-    config_path = Path("config.yaml")
+
+    # Resolve config path from args or default
+    config_path = Path(args.config) if args.config else Path("config.yaml")
+    config_path.parent.mkdir(parents=True, exist_ok=True)
     template_path = Path(__file__).parent / "config.yaml.template"
-    
+
     if not config_path.exists():
         if template_path.exists():
-            print(f"📝 Creating config.yaml from template...")
+            print(f"📝 Creating {config_path} from template...")
             shutil.copy(template_path, config_path)
         else:
             print("❌ Error: config.yaml.template not found")
             return 1
-        
-        print("✅ Created config.yaml - edit this file to customize your setup")
+
+        print(f"✅ Created {config_path} - edit this file to customize your setup")
     else:
-        print("📝 Using existing config.yaml")
-    
-    # Reload config to pick up any changes
-    reload_config("config.yaml")
-    
-    # Create data directory
-    db_path = Path(get_db_path())
+        print(f"📝 Using existing {config_path}")
+
+    # Reload config from the resolved path
+    reload_config(str(config_path))
+
+    # Resolve db path from args, config, or default
+    db_path = Path(args.db) if args.db else Path(get_db_path())
     db_path.parent.mkdir(parents=True, exist_ok=True)
     
     # Create logs directory
@@ -81,7 +82,8 @@ def cmd_init(args):
                 decayed INTEGER DEFAULT 0,
                 metadata TEXT,
                 last_updated TEXT,
-                mood_state TEXT
+                mood_state TEXT,
+                tags TEXT DEFAULT ""
             )
         ''')
         
@@ -106,20 +108,6 @@ def cmd_init(args):
                 model TEXT NOT NULL,
                 updated_at TEXT NOT NULL,
                 FOREIGN KEY (node_id) REFERENCES thought_nodes(id)
-            )
-        ''')
-        
-        conn.execute('''
-            CREATE TABLE IF NOT EXISTS hotspots (
-                id TEXT PRIMARY KEY,
-                content TEXT NOT NULL,
-                status TEXT,
-                domain TEXT,
-                file_pointers TEXT,
-                cluster_node_ids TEXT,
-                tags TEXT,
-                created TEXT,
-                last_updated TEXT
             )
         ''')
         
@@ -358,6 +346,7 @@ Examples:
     
     # init command
     init_parser = subparsers.add_parser('init', help='Initialize new cashew brain')
+    init_parser.add_argument('--db', dest='sub_db', default=None, help='Database path')
     init_parser.set_defaults(func=cmd_init)
     
     # install-crons command
@@ -422,6 +411,7 @@ Examples:
     mf_parser = subparsers.add_parser('migrate-files', help='Migrate markdown files to cashew')
     mf_parser.add_argument('--dir', required=True, help='Directory containing markdown files')
     mf_parser.add_argument('--dry-run', action='store_true', help='Preview without changes')
+    mf_parser.add_argument('--db', dest='sub_db', default=None, help='Database path')
     mf_parser.set_defaults(func=cmd_migrate_files)
     
     # complete-context command
@@ -448,6 +438,10 @@ Examples:
     # Load configuration
     if args.config:
         reload_config(args.config)
+    
+    # Allow --db after subcommand (sub_db overrides top-level --db)
+    if hasattr(args, 'sub_db') and args.sub_db is not None:
+        args.db = args.sub_db
     
     # Ensure args.db is always set (needed by delegated commands from cashew_context.py)
     if args.db:

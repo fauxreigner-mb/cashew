@@ -86,6 +86,7 @@ Thumbs.db
 # User-specific data
 personal/
 backups/
+vault/
 *.bak
 
 # Cron output

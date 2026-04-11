@@ -97,6 +97,12 @@ def main():
         try:
             env = os.environ.copy()
             env["KMP_DUPLICATE_LIB_OK"] = "TRUE"
+            # Pass through cashew environment overrides
+            if "CASHEW_CONFIG_PATH" in os.environ:
+                env["CASHEW_CONFIG_PATH"] = os.environ["CASHEW_CONFIG_PATH"]
+            if "CASHEW_DB_PATH" in os.environ:
+                env["CASHEW_DB_PATH"] = os.environ["CASHEW_DB_PATH"]
+            
             result = subprocess.run(
                 [sys.executable, "scripts/cashew_context.py", "extract", "--input", tmp_path],
                 capture_output=True, text=True, timeout=120,
@@ -114,17 +120,30 @@ def main():
                     if json_start >= 0:
                         json_end = output.find('\n}', json_start) + 2
                         stats = json.loads(output[json_start:json_end])
-                        nodes = stats.get("new_nodes", 0)
-                        edges = stats.get("new_edges", 0)
-                        total_nodes += nodes
-                        total_edges += edges
-                        print(f"  ✅ +{nodes} nodes, +{edges} edges")
+                        if stats.get("success", False):
+                            nodes = stats.get("new_nodes", 0)
+                            edges = stats.get("new_edges", 0)
+                            total_nodes += nodes
+                            total_edges += edges
+                            print(f"  ✅ +{nodes} nodes, +{edges} edges")
+                            if nodes == 0:
+                                print(f"     ⚠️  WARNING: 0 nodes extracted from {chars} chars - possible LLM/API issue")
+                        else:
+                            error_msg = stats.get("error", "Unknown error")
+                            print(f"  ❌ EXTRACTION FAILED: {error_msg}")
+                            failures.append(name)
                     else:
-                        print(f"  ✅ (couldn't parse stats)")
-                except (json.JSONDecodeError, ValueError):
-                    print(f"  ✅ (couldn't parse stats)")
+                        print(f"  ❌ EXTRACTION FAILED: No valid JSON response")
+                        print(f"     Raw output: {output[-300:]}")
+                        failures.append(name)
+                except (json.JSONDecodeError, ValueError) as e:
+                    print(f"  ❌ EXTRACTION FAILED: Cannot parse response: {e}")
+                    print(f"     Raw output: {output[-300:]}")
+                    failures.append(name)
             else:
-                print(f"  ❌ FAILED: {result.stderr[-200:]}")
+                print(f"  ❌ SUBPROCESS FAILED (exit {result.returncode})")
+                print(f"     STDERR: {result.stderr[-300:]}")
+                print(f"     STDOUT: {result.stdout[-300:]}")
                 failures.append(name)
         except subprocess.TimeoutExpired:
             print(f"  ⏰ TIMEOUT")

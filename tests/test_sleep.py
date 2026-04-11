@@ -688,8 +688,8 @@ class TestGCConfigModes:
 
     # --- protection tests ---
 
-    def test_gc_protects_hotspot_nodes(self, gc_db):
-        """When protect_hotspots=True, hotspot nodes should survive GC."""
+    def test_gc_does_not_protect_hotspot_nodes(self, gc_db):
+        """Hotspot nodes are no longer specially protected — they can be GC'd."""
         protocol = SleepProtocol(gc_db, tempfile.mktemp(suffix=".json"))
         metrics = self._make_metrics(gc_db, fitness=0.0)
 
@@ -698,13 +698,13 @@ class TestGCConfigModes:
             mock_cfg.gc_threshold = 10.0
             mock_cfg.gc_grace_days = 0  # No grace period
             mock_cfg.gc_protect_types = []
-            mock_cfg.gc_protect_hotspots = True
             mock_cfg.gc_think_cycle_penalty = 1.0
 
             with patch("random.sample", return_value=["hot01"]):
                 result = protocol.garbage_collect(metrics, k_nodes=1)
 
-        assert "hot01" not in result
+        # Hotspot nodes are now treated like any other node
+        assert "hot01" in result
 
     def test_gc_protects_configured_types(self, gc_db):
         """Nodes with types in protect_types should survive GC."""

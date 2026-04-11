@@ -110,20 +110,6 @@ def decay_test_db():
     os.unlink(path)
 
 
-def test_hotspot_immunity_removed(decay_test_db):
-    """Test that hotspots are no longer immune to decay"""
-    # Get initial candidates - should include the hotspot
-    candidates = get_decay_candidates(decay_test_db, min_age_days=10, max_confidence_for_decay=0.85)
-    
-    # Should find the root hotspot and isolated_old as candidates
-    assert candidates['candidates'] >= 2
-    assert candidates['hotspot_candidates'] == 1  # Only the root hotspot
-    
-    # Actually decay them
-    result = auto_decay(decay_test_db, min_age_days=10, max_confidence_for_decay=0.85, enable_cascading=False)
-    assert result['pruned'] >= 2  # Should include root hotspot and isolated_old
-
-
 def test_cascade_propagation_basic(decay_test_db):
     """Test that cascade propagates down the tree with confidence penalties"""
     # First manually decay the root node
@@ -331,7 +317,6 @@ def test_empty_database_edge_cases(temp_db):
     
     candidates = get_decay_candidates(temp_db)
     assert candidates['candidates'] == 0
-    assert candidates['hotspot_candidates'] == 0
     
     # Test cascade on non-existent node
     cascade_result = cascade_decay(temp_db, "nonexistent")

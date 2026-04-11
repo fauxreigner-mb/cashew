@@ -2,7 +2,7 @@
 """
 Cashew Graph Statistics Module
 Consolidated query functions for graph metrics. Single source of truth
-for node counts, edge counts, hotspot counts, embedding coverage, etc.
+for node counts, edge counts, embedding coverage, etc.
 
 All functions accept a sqlite3.Cursor. Use get_connection() to obtain one.
 """
@@ -38,15 +38,6 @@ def get_total_node_count(cursor: sqlite3.Cursor, include_decayed: bool = False) 
 def get_edge_count(cursor: sqlite3.Cursor) -> int:
     """Count total derivation edges."""
     cursor.execute("SELECT COUNT(*) FROM derivation_edges")
-    return cursor.fetchone()[0]
-
-
-def get_hotspot_count(cursor: sqlite3.Cursor) -> int:
-    """Count active (non-decayed) hotspot nodes."""
-    cursor.execute(
-        "SELECT COUNT(*) FROM thought_nodes "
-        "WHERE node_type = 'hotspot' AND (decayed IS NULL OR decayed = 0)"
-    )
     return cursor.fetchone()[0]
 
 
@@ -104,14 +95,12 @@ def get_domain_counts(cursor: sqlite3.Cursor) -> Dict[str, int]:
 
 def get_permanence_stats(cursor: sqlite3.Cursor) -> Dict:
     """Return permanence statistics for active nodes."""
-    # Total permanent nodes
     cursor.execute("""
         SELECT COUNT(*) FROM thought_nodes 
         WHERE (decayed IS NULL OR decayed = 0) AND permanent > 0
     """)
     permanent_total = cursor.fetchone()[0]
     
-    # Auto-permanent vs manually pinned breakdown
     cursor.execute("""
         SELECT permanent, COUNT(*) 
         FROM thought_nodes 
@@ -120,27 +109,17 @@ def get_permanence_stats(cursor: sqlite3.Cursor) -> Dict:
     """)
     permanence_breakdown = dict(cursor.fetchall())
     
-    # Permanent hotspots
-    cursor.execute("""
-        SELECT COUNT(*) FROM thought_nodes 
-        WHERE node_type = 'hotspot' AND (decayed IS NULL OR decayed = 0) AND permanent > 0
-    """)
-    permanent_hotspots = cursor.fetchone()[0]
-    
     return {
         "permanent_total": permanent_total,
         "auto_permanent": permanence_breakdown.get(1, 0),
         "manually_pinned": permanence_breakdown.get(2, 0),
-        "permanent_hotspots": permanent_hotspots
     }
 
 
 def get_graph_summary(db_path_or_cursor: Union[str, sqlite3.Cursor]) -> Dict:
     """
     Convenience function returning all key metrics as a dict.
-
     Accepts either a db_path string or an existing cursor.
-    If given a db_path, opens and closes its own connection.
     """
     own_conn = None
     if isinstance(db_path_or_cursor, str):
@@ -154,7 +133,6 @@ def get_graph_summary(db_path_or_cursor: Union[str, sqlite3.Cursor]) -> Dict:
         total = get_total_node_count(cursor, include_decayed=True)
         edges = get_edge_count(cursor)
         embedded, _ = get_embedding_coverage(cursor)
-        hotspots = get_hotspot_count(cursor)
         orphans = get_orphan_count(cursor)
         domains = get_domain_counts(cursor)
         think_nodes = get_think_node_count(cursor)
@@ -168,7 +146,6 @@ def get_graph_summary(db_path_or_cursor: Union[str, sqlite3.Cursor]) -> Dict:
             "edge_node_ratio": round(edges / max(1, active), 2),
             "embedded_nodes": embedded,
             "embedding_coverage": round(embedded / max(1, active), 4),
-            "hotspot_count": hotspots,
             "orphan_count": orphans,
             "orphan_pct": round(orphans / max(1, active) * 100, 1),
             "domains": domains,
@@ -176,7 +153,6 @@ def get_graph_summary(db_path_or_cursor: Union[str, sqlite3.Cursor]) -> Dict:
             "permanent_nodes": permanence["permanent_total"],
             "auto_permanent": permanence["auto_permanent"],
             "manually_pinned": permanence["manually_pinned"],
-            "permanent_hotspots": permanence["permanent_hotspots"],
             "permanent_ratio": round(permanence["permanent_total"] / max(1, active), 4),
         }
     finally:

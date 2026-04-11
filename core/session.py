@@ -15,10 +15,10 @@ import logging
 import sys
 import argparse
 
-from .config import config, get_token_budget, get_top_k, get_walk_depth
-from .retrieval import retrieve, retrieve_dfs, RetrievalResult
+from .config import config, get_token_budget, get_top_k, get_walk_depth, get_user_domain, get_ai_domain
+from .retrieval import retrieve, retrieve_recursive_bfs, RetrievalResult
 from .embeddings import embed_text, embed_nodes
-from .stats import get_active_node_count, get_hotspot_count
+from .stats import get_active_node_count
 
 @dataclass
 class SessionContext:
@@ -89,7 +89,7 @@ def _estimate_tokens(text: str) -> int:
     return len(text) // 3
 
 def _get_tree_overview(db_path: str) -> str:
-    """Get Layer 1 - Tree Overview: total nodes, hotspots, recent activity, inbox count"""
+    """Get Layer 1 - Tree Overview: total nodes and edges"""
     try:
         conn = _get_connection(db_path)
         cursor = conn.cursor()
@@ -97,55 +97,25 @@ def _get_tree_overview(db_path: str) -> str:
         # Total nodes (excluding decayed)
         total_nodes = get_active_node_count(cursor)
 
-        # Total hotspots/clusters
-        total_hotspots = get_hotspot_count(cursor)
+        # Total edges
+        cursor.execute("SELECT COUNT(*) FROM derivation_edges")
+        total_edges = cursor.fetchone()[0]
         
-        # Recently updated hotspots (today)
-        from datetime import datetime, timezone
-        today = datetime.now(timezone.utc).strftime('%Y-%m-%d')
-        
+        # Count distinct node types for a quick shape overview
         cursor.execute("""
-            SELECT substr(content, 1, 30), COUNT(e.child_id) as members
-            FROM thought_nodes h
-            LEFT JOIN derivation_edges e ON h.id = e.parent_id AND e.reasoning LIKE '%summarizes%'
-            WHERE h.node_type = 'hotspot' 
-            AND (h.decayed IS NULL OR h.decayed = 0)
-            AND h.last_updated LIKE ?
-            GROUP BY h.id
-            ORDER BY h.last_updated DESC
-            LIMIT 3
-        """, (f"{today}%",))
-        
-        recent_hotspots = []
-        for row in cursor.fetchall():
-            content_preview, member_count = row
-            recent_hotspots.append(f"{content_preview} ({member_count} nodes)")
-        
-        # Inbox count (find hotspot with "inbox" in content or specific ID)
-        cursor.execute("""
-            SELECT COUNT(e.child_id) as inbox_count
-            FROM thought_nodes h
-            LEFT JOIN derivation_edges e ON h.id = e.parent_id AND e.reasoning LIKE '%summarizes%'
-            WHERE h.node_type = 'hotspot' 
-            AND (h.decayed IS NULL OR h.decayed = 0)
-            AND (LOWER(h.content) LIKE '%inbox%' OR LOWER(h.content) LIKE '%uncategorized%')
-            GROUP BY h.id
-            LIMIT 1
+            SELECT node_type, COUNT(*) FROM thought_nodes
+            WHERE decayed IS NULL OR decayed = 0
+            GROUP BY node_type ORDER BY COUNT(*) DESC LIMIT 5
         """)
-        inbox_result = cursor.fetchone()
-        inbox_count = inbox_result[0] if inbox_result else 0
+        type_counts = cursor.fetchall()
         
         conn.close()
         
-        # Format overview
-        lines = [f"Graph: {total_nodes} nodes across {total_hotspots} clusters."]
+        lines = [f"Graph: {total_nodes} nodes, {total_edges} edges."]
         
-        if recent_hotspots:
-            active_str = "Most active: " + ", ".join(recent_hotspots[:2])
-            lines.append(active_str)
-        
-        if inbox_count > 0:
-            lines.append(f"Inbox: {inbox_count} awaiting classification.")
+        if type_counts:
+            type_str = ", ".join(f"{count} {ntype}" for ntype, count in type_counts[:3])
+            lines.append(f"Types: {type_str}.")
         
         return " ".join(lines)
         
@@ -159,14 +129,14 @@ def _get_recent_activity(db_path: str, domain: str = None) -> str:
         conn = _get_connection(db_path)
         cursor = conn.cursor()
         
-        # Get 3 most recently updated non-hotspot nodes
+        # Get 3 most recently updated nodes
         if domain:
             cursor.execute("""
                 SELECT substr(content, 1, 80), node_type, 
                        COALESCE(last_updated, timestamp) as update_time
                 FROM thought_nodes 
                 WHERE (decayed IS NULL OR decayed = 0) 
-                AND node_type != 'hotspot'
+                
                 AND COALESCE(last_updated, timestamp) IS NOT NULL
                 AND domain = ?
                 ORDER BY update_time DESC
@@ -178,7 +148,7 @@ def _get_recent_activity(db_path: str, domain: str = None) -> str:
                        COALESCE(last_updated, timestamp) as update_time
                 FROM thought_nodes 
                 WHERE (decayed IS NULL OR decayed = 0) 
-                AND node_type != 'hotspot'
+                
                 AND COALESCE(last_updated, timestamp) IS NOT NULL
                 ORDER BY update_time DESC
                 LIMIT 3
@@ -245,7 +215,7 @@ def _update_access_tracking(db_path: str, node_ids: List[str]):
     conn.commit()
     conn.close()
 
-def start_session(db_path: str, session_id: str, hints: Optional[List[str]] = None, domain: Optional[str] = None, tags: Optional[List[str]] = None) -> SessionContext:
+def start_session(db_path: str, session_id: str, hints: Optional[List[str]] = None, domain: Optional[str] = None, tags: Optional[List[str]] = None, exclude_tags: Optional[List[str]] = None) -> SessionContext:
     """
     Start a session and inject relevant context with three layers:
     Layer 1 - Tree Overview (always)
@@ -281,7 +251,7 @@ def start_session(db_path: str, session_id: str, hints: Optional[List[str]] = No
         # Retrieve relevant nodes using DFS hierarchical approach
         top_k = get_top_k()
         
-        results = retrieve_dfs(db_path, query, top_k, domain, tags=tags)
+        results = retrieve_recursive_bfs(db_path, query, top_k, domain=domain, tags=tags, exclude_tags=exclude_tags)
         
         if results:
             # Apply token budget constraint for hint-driven content
@@ -521,7 +491,9 @@ For each item, classify as:
 
 Each content field must be a specific, standalone statement that makes sense without the conversation context.
 
-For each item, also assign relevant tags — short descriptive labels for the knowledge (e.g. "career", "family", "engineering", "philosophy", "health", "finance", "borrowed-knowledge", "project:cashew"). Use lowercase, keep tags specific and reusable. Multiple tags per node are encouraged.
+For each item, assign:
+- "domain": who this thought belongs to. Use "{get_user_domain()}" for the human's knowledge, experiences, decisions, beliefs, facts about their life, work, relationships. Use "{get_ai_domain()}" for the AI assistant's operational knowledge, engineering decisions about the system, behavioral rules, or self-reflective observations about the AI's own processes.
+- "tags": short descriptive labels (e.g. "career", "family", "engineering", "philosophy", "health", "finance", "project:cashew"). Lowercase, specific, reusable. Multiple tags encouraged.
 
 BAD: "They discussed embeddings" (meta-comment)
 BAD: "The conversation covered several topics" (summary)
@@ -530,7 +502,7 @@ GOOD: "Extraction should be triggered by context fullness monitoring, not left t
 
 Respond with ONLY a JSON array. No markdown, no explanation, no code fences.
 
-[{{"content": "specific knowledge here", "type": "{config.node_type_pipe_list}", "confidence": 0.7, "tags": ["engineering", "embeddings"]}}]
+[{{"content": "specific knowledge here", "type": "{config.node_type_pipe_list}", "confidence": 0.7, "domain": "{get_user_domain()}", "tags": ["engineering", "embeddings"]}}]
 
 Conversation to extract from:
 {conversation_text}
@@ -579,9 +551,14 @@ Conversation to extract from:
         node_type = config.validate_node_type(node_type)
         confidence = extraction.get("confidence", 0.5)
         tags = extraction.get("tags", [])
+        domain = extraction.get("domain", get_user_domain())
+        # Validate domain — only allow configured domains
+        valid_domains = {get_user_domain(), get_ai_domain()}
+        if domain not in valid_domains:
+            domain = config.get_user_domain()
         
         # Create the new node
-        node_id = _create_node(db_path, content, node_type, session_id, confidence)
+        node_id = _create_node(db_path, content, node_type, session_id, confidence, domain=domain)
         
         # Store tags if provided
         if tags and isinstance(tags, list):
@@ -686,19 +663,26 @@ def _find_cluster_for_thinking(db_path: str, focus_domain: Optional[str] = None)
     import random
     total_size = min(config.think_cycle_nodes, 8)  # Cap at 8 for manageability
     
-    high_activation_size = max(1, int(total_size * 0.7))
-    random_walk_size = max(1, total_size - high_activation_size)
-    
-    # Sample from each pool
-    selected_high = random.sample(
-        high_activation_candidates, 
-        min(high_activation_size, len(high_activation_candidates))
-    )
-    
-    selected_random = random.sample(
-        random_walk_candidates,
-        min(random_walk_size, len(random_walk_candidates))
-    ) if random_walk_candidates else []
+    if random_walk_candidates:
+        high_activation_size = max(1, int(total_size * 0.7))
+        random_walk_size = total_size - high_activation_size
+        
+        selected_high = random.sample(
+            high_activation_candidates, 
+            min(high_activation_size, len(high_activation_candidates))
+        )
+        selected_random = random.sample(
+            random_walk_candidates,
+            min(random_walk_size, len(random_walk_candidates))
+        )
+    else:
+        # No random walk candidates (e.g., fresh migration with no system_generated nodes)
+        # Fill entirely from high-activation pool
+        selected_high = random.sample(
+            high_activation_candidates, 
+            min(total_size, len(high_activation_candidates))
+        )
+        selected_random = []
     
     # Combine and extract node IDs
     all_selected = selected_high + selected_random
@@ -792,10 +776,20 @@ JSON format:
         
         # Parse response
         new_thoughts = []
-        if response.strip().startswith('['):
+        # Strip markdown code fences if present (LLMs often wrap JSON in ```json ... ```)
+        cleaned = response.strip()
+        if cleaned.startswith('```'):
+            # Remove opening fence (```json or ```)
+            first_newline = cleaned.index('\n') if '\n' in cleaned else len(cleaned)
+            cleaned = cleaned[first_newline + 1:]
+            # Remove closing fence
+            if cleaned.rstrip().endswith('```'):
+                cleaned = cleaned.rstrip()[:-3].rstrip()
+        
+        if cleaned.startswith('['):
             try:
                 import json
-                new_thoughts = json.loads(response)
+                new_thoughts = json.loads(cleaned)
             except:
                 pass
         

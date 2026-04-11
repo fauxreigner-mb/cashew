@@ -123,12 +123,12 @@ def auto_decay(db_path: str, min_age_days: int = 14, max_confidence_for_decay: f
     cutoff = (datetime.now(timezone.utc) - timedelta(days=min_age_days)).isoformat()
     
     # First, find nodes that will be decayed
-    # Skip permanent nodes and hotspots (structural summary nodes)
+    # Skip permanent nodes
     cursor.execute("""
         SELECT id FROM thought_nodes
         WHERE (decayed IS NULL OR decayed = 0)
         AND (permanent IS NULL OR permanent = 0)
-        AND node_type != 'hotspot'
+        
         AND access_count = 0
         AND confidence < ?
         AND timestamp < ?
@@ -136,12 +136,12 @@ def auto_decay(db_path: str, min_age_days: int = 14, max_confidence_for_decay: f
     
     nodes_to_decay = [row[0] for row in cursor.fetchall()]
     
-    # Mark them as decayed (skip permanent nodes and hotspots)
+    # Mark them as decayed (skip permanent nodes)
     cursor.execute("""
         UPDATE thought_nodes SET decayed = 1, last_updated = ?
         WHERE (decayed IS NULL OR decayed = 0)
         AND (permanent IS NULL OR permanent = 0)
-        AND node_type != 'hotspot'
+        
         AND access_count = 0
         AND confidence < ?
         AND timestamp < ?
@@ -184,7 +184,7 @@ def get_decay_candidates(db_path: str, min_age_days: int = 14, max_confidence_fo
     
     cutoff = (datetime.now(timezone.utc) - timedelta(days=min_age_days)).isoformat()
     
-    # Get direct candidates (including hotspots now, but excluding permanent nodes)
+    # Get direct candidates (excluding permanent nodes)
     cursor.execute("""
         SELECT COUNT(*), AVG(confidence), MIN(confidence), MAX(confidence)
         FROM thought_nodes 
@@ -198,23 +198,8 @@ def get_decay_candidates(db_path: str, min_age_days: int = 14, max_confidence_fo
     result = cursor.fetchone()
     count, avg_conf, min_conf, max_conf = result
     
-    # Count hotspots specifically (excluding permanent ones)
-    cursor.execute("""
-        SELECT COUNT(*)
-        FROM thought_nodes 
-        WHERE (decayed IS NULL OR decayed = 0)
-        AND (permanent IS NULL OR permanent = 0)
-        AND access_count = 0
-        AND confidence < ?
-        AND timestamp < ?
-        AND node_type = 'hotspot'
-    """, (max_confidence_for_decay, cutoff))
-    
-    hotspot_count = cursor.fetchone()[0]
-    
     result_dict = {
         "candidates": count or 0,
-        "hotspot_candidates": hotspot_count or 0,
         "avg_confidence": round(avg_conf, 3) if avg_conf else 0,
         "min_confidence": round(min_conf, 3) if min_conf else 0,
         "max_confidence": round(max_conf, 3) if max_conf else 0

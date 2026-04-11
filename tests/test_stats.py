@@ -10,7 +10,6 @@ from core.stats import (
     get_active_node_count,
     get_total_node_count,
     get_edge_count,
-    get_hotspot_count,
     get_embedding_coverage,
     get_orphan_count,
     get_node_edge_count,
@@ -74,11 +73,6 @@ class TestEmptyDB:
         assert get_edge_count(cur) == 0
         conn.close()
 
-    def test_hotspot_count(self, temp_db):
-        conn, cur = _cursor(temp_db)
-        assert get_hotspot_count(cur) == 0
-        conn.close()
-
     def test_embedding_coverage(self, temp_db):
         conn, cur = _cursor(temp_db)
         embedded, total = get_embedding_coverage(cur)
@@ -133,11 +127,6 @@ class TestPopulatedDB:
         assert get_edge_count(cur) == 2
         conn.close()
 
-    def test_hotspot_count_zero(self, temp_db_with_data):
-        conn, cur = _cursor(temp_db_with_data)
-        assert get_hotspot_count(cur) == 0  # fixture has no hotspot nodes
-        conn.close()
-
     def test_embedding_coverage_none(self, temp_db_with_data):
         conn, cur = _cursor(temp_db_with_data)
         embedded, total = get_embedding_coverage(cur)
@@ -178,9 +167,9 @@ class TestPopulatedDB:
         expected_keys = {
             "active_nodes", "total_nodes", "decayed_nodes", "edges",
             "edge_node_ratio", "embedded_nodes", "embedding_coverage",
-            "hotspot_count", "orphan_count", "orphan_pct", "domains",
+            "orphan_count", "orphan_pct", "domains",
             "think_node_count", "permanent_nodes", "permanent_ratio",
-            "auto_permanent", "manually_pinned", "permanent_hotspots",
+            "auto_permanent", "manually_pinned",
         }
         assert set(summary.keys()) == expected_keys
         assert summary["active_nodes"] == 5
@@ -209,15 +198,6 @@ class TestDecayedNodes:
 
         assert get_total_node_count(cur, include_decayed=True) == 2
         assert get_total_node_count(cur, include_decayed=False) == 1
-        conn.close()
-
-    def test_decayed_excluded_from_hotspot_count(self, temp_db):
-        conn, cur = _cursor(temp_db)
-        _add_node(cur, "h1", node_type="hotspot", decayed=0)
-        _add_node(cur, "h2", node_type="hotspot", decayed=1)
-        conn.commit()
-
-        assert get_hotspot_count(cur) == 1
         conn.close()
 
     def test_decayed_excluded_from_embedding_coverage(self, temp_db):
@@ -256,18 +236,6 @@ class TestDecayedNodes:
 
 
 # ── hotspot counting ─────────────────────────────────────────────────
-
-class TestHotspots:
-    def test_counts_only_hotspot_type(self, temp_db):
-        conn, cur = _cursor(temp_db)
-        _add_node(cur, "h1", node_type="hotspot")
-        _add_node(cur, "n1", node_type="fact")
-        _add_node(cur, "n2", node_type="insight")
-        conn.commit()
-
-        assert get_hotspot_count(cur) == 1
-        conn.close()
-
 
 # ── edge counts ──────────────────────────────────────────────────────
 

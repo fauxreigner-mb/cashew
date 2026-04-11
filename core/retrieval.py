@@ -6,15 +6,16 @@ Combines embedding search with graph traversal for context retrieval
 
 import sqlite3
 import json
-from typing import List, Dict, Set, Tuple, Optional
+import time
+from typing import List, Dict, Optional
 from collections import defaultdict, deque
 from dataclasses import dataclass
 import sys
 import argparse
 
 import numpy as np
-from .embeddings import search as embedding_search
-from .hotspots import HOTSPOT_TYPE, HOTSPOT_BOOST
+from .embeddings import search as embedding_search, embed_text
+from .metrics import record_metric, is_metrics_enabled
 
 @dataclass
 class RetrievalResult:
@@ -39,8 +40,8 @@ def _get_connection(db_path: str) -> sqlite3.Connection:
     """Get database connection"""
     return sqlite3.connect(db_path)
 
-def _load_node_details(db_path: str, node_ids: List[str], domain_filter: Optional[str] = None, tag_filter: Optional[List[str]] = None) -> Dict[str, Dict]:
-    """Load node details for multiple node IDs with optional domain and tag filtering"""
+def _load_node_details(db_path: str, node_ids: List[str], domain_filter: Optional[str] = None, tag_filter: Optional[List[str]] = None, exclude_tags: Optional[List[str]] = None) -> Dict[str, Dict]:
+    """Load node details for multiple node IDs with optional domain, tag, and exclusion filtering"""
     if not node_ids:
         return {}
     
@@ -63,6 +64,14 @@ def _load_node_details(db_path: str, node_ids: List[str], domain_filter: Optiona
         tag_conditions = " AND (" + " OR ".join(tag_clauses) + ")"
         tag_params = [f"%{tag}%" for tag in tag_filter]
     
+    # Build tag exclusion SQL (vault:private etc)
+    exclude_conditions = ""
+    exclude_params = []
+    if exclude_tags and has_tags_column:
+        exclude_clauses = [f"(tags IS NULL OR tags NOT LIKE ?)" for _ in exclude_tags]
+        exclude_conditions = " AND " + " AND ".join(exclude_clauses)
+        exclude_params = [f"%{tag}%" for tag in exclude_tags]
+    
     if has_domain_column:
         if domain_filter:
             cursor.execute(f"""
@@ -72,7 +81,8 @@ def _load_node_details(db_path: str, node_ids: List[str], domain_filter: Optiona
                 AND (decayed IS NULL OR decayed = 0)
                 AND domain = ?
                 {tag_conditions}
-            """, node_ids + [domain_filter] + tag_params)
+                {exclude_conditions}
+            """, node_ids + [domain_filter] + tag_params + exclude_params)
         else:
             cursor.execute(f"""
                 SELECT id, content, node_type, COALESCE(metadata, '{{}}') as metadata, COALESCE(domain, 'unknown') as domain
@@ -80,7 +90,8 @@ def _load_node_details(db_path: str, node_ids: List[str], domain_filter: Optiona
                 WHERE id IN ({placeholders})
                 AND (decayed IS NULL OR decayed = 0)
                 {tag_conditions}
-            """, node_ids + tag_params)
+                {exclude_conditions}
+            """, node_ids + tag_params + exclude_params)
     else:
         # Backwards compatibility: no domain column
         cursor.execute(f"""
@@ -88,7 +99,8 @@ def _load_node_details(db_path: str, node_ids: List[str], domain_filter: Optiona
             FROM thought_nodes 
             WHERE id IN ({placeholders})
             AND (decayed IS NULL OR decayed = 0)
-        """, node_ids)
+            {exclude_conditions}
+        """, node_ids + exclude_params)
     
     nodes = {}
     for row in cursor.fetchall():
@@ -194,7 +206,7 @@ def _graph_walk(db_path: str, entry_points: List[str], walk_depth: int = 2) -> D
     
     return found_nodes
 
-def retrieve(db_path: str, query: str, top_k: int = 5, walk_depth: int = 2, domain: Optional[str] = None) -> List[RetrievalResult]:
+def retrieve(db_path: str, query: str, top_k: int = 5, walk_depth: int = 2, domain: Optional[str] = None, exclude_tags: Optional[List[str]] = None) -> List[RetrievalResult]:
     """
     Hybrid retrieval combining embeddings and graph walking
     
@@ -204,6 +216,7 @@ def retrieve(db_path: str, query: str, top_k: int = 5, walk_depth: int = 2, doma
         top_k: Number of top results to return
         walk_depth: Graph walk depth from embedding entry points
         domain: Optional domain filter (user, ai, etc.). If None, returns all domains.
+        exclude_tags: Optional list of tags to exclude from results (e.g. ['vault:private'])
         
     Returns:
         List of RetrievalResult objects ranked by hybrid score
@@ -227,7 +240,7 @@ def retrieve(db_path: str, query: str, top_k: int = 5, walk_depth: int = 2, doma
     all_node_ids = set(embedding_scores.keys()) | set(walked_nodes.keys())
     
     # Load node details (with domain filtering if specified)
-    node_details = _load_node_details(db_path, list(all_node_ids), domain)
+    node_details = _load_node_details(db_path, list(all_node_ids), domain, exclude_tags=exclude_tags)
     
     # Step 4: Calculate hybrid scores
     results = []
@@ -253,16 +266,7 @@ def retrieve(db_path: str, query: str, top_k: int = 5, walk_depth: int = 2, doma
         
         # Hybrid score: weighted combination
         hybrid_score = embedding_score * 0.5 + graph_score * 0.5
-        
-        # Boost hotspot nodes so they always surface above detail nodes
-        node_type = details.get("node_type", "")
-        if node_type == HOTSPOT_TYPE:
-            # Hotspots get promoted to guaranteed top position
-            # Base score must be > 0 (i.e., it was actually retrieved as relevant)
-            # Then boost ensures it ranks above non-hotspot nodes
-            if hybrid_score > 0:
-                hybrid_score = max(hybrid_score * HOTSPOT_BOOST, 1.0 + hybrid_score)
-        
+
         result = RetrievalResult(
             node_id=node_id,
             content=details["content"],
@@ -276,378 +280,163 @@ def retrieve(db_path: str, query: str, top_k: int = 5, walk_depth: int = 2, doma
     
     # Step 5: Rank and return top results
     results.sort(key=lambda r: r.score, reverse=True)
-    
-    # Step 6: Cluster suppression — if a hotspot is in results, suppress its cluster members
-    hotspot_cluster_members = set()
-    for result in results:
-        if result.node_type == HOTSPOT_TYPE:
-            # Get this hotspot's cluster members
-            conn2 = sqlite3.connect(db_path)
-            cursor2 = conn2.cursor()
-            cursor2.execute("""
-                SELECT child_id FROM derivation_edges 
-                WHERE parent_id = ? AND reasoning LIKE '%summarizes%'
-            """, (result.node_id,))
-            for row in cursor2.fetchall():
-                hotspot_cluster_members.add(row[0])
-            conn2.close()
-    
-    if hotspot_cluster_members:
-        results = [r for r in results if r.node_id not in hotspot_cluster_members or r.node_type == HOTSPOT_TYPE]
-    
+
     return results[:top_k]
 
-def _retrieve_flat(db_path: str, query: str, top_k: int = 5, domain: Optional[str] = None) -> List[RetrievalResult]:
-    """Simple flat retrieval without hotspot logic. Used as fallback."""
-    return retrieve(db_path, query, top_k, domain=domain)
-
-
-def retrieve_dfs(db_path: str, query: str, top_k: int = 5, 
-                 domain: Optional[str] = None, tags: Optional[List[str]] = None) -> List[RetrievalResult]:
+def retrieve_recursive_bfs(db_path: str, query: str, top_k: int = 10, n_seeds: int = 5,
+                           picks_per_hop: int = 3, max_depth: int = 3,
+                           domain: Optional[str] = None, tags: Optional[List[str]] = None,
+                           exclude_tags: Optional[List[str]] = None) -> List[RetrievalResult]:
     """
-    DFS retrieval through hierarchical hotspot tree:
-    1. Get root-level hotspots (not children of other hotspots)
-    2. Compute embedding similarity against root hotspots  
-    3. Pick top-K (K=2-3) best matching root hotspots
-    4. For each: check if it has sub-hotspots (children that are also hotspots)
-    5. If yes: recurse - compare query against sub-hotspots, pick best
-    6. If no (leaf hotspot): return its cluster members ranked by similarity
-    7. Also include unclustered nodes as fallback pool
-    8. Final output: 1 hotspot (the leaf hotspot for context) + N detail nodes
-    
-    Args:
-        db_path: Path to SQLite database
-        query: Search query  
-        top_k: Number of final results to return
-        domain: Optional domain filter
-        
-    Returns:
-        List of RetrievalResult objects
-    """
-    if not query or not query.strip():
-        return []
-    
-    conn = sqlite3.connect(db_path)
-    cursor = conn.cursor()
-    
-    # Get all hotspot IDs and their parent-child relationships  
-    if domain:
-        cursor.execute("""
-            SELECT id FROM thought_nodes 
-            WHERE node_type = ? AND (decayed IS NULL OR decayed = 0) AND domain = ?
-        """, (HOTSPOT_TYPE, domain))
-    else:
-        cursor.execute("""
-            SELECT id FROM thought_nodes 
-            WHERE node_type = ? AND (decayed IS NULL OR decayed = 0)
-        """, (HOTSPOT_TYPE,))
-    
-    all_hotspot_ids = set(row[0] for row in cursor.fetchall())
-    
-    if not all_hotspot_ids:
-        conn.close()
-        return _retrieve_flat(db_path, query, top_k, domain=domain)
-    
-    # Find hotspot hierarchy: parent -> children mapping
-    cursor.execute("""
-        SELECT de.parent_id, de.child_id  
-        FROM derivation_edges de
-        JOIN thought_nodes tn_parent ON de.parent_id = tn_parent.id
-        JOIN thought_nodes tn_child ON de.child_id = tn_child.id
-        WHERE tn_parent.node_type = ? AND tn_child.node_type = ?
-        AND de.reasoning LIKE '%summarizes%'
-        AND (tn_parent.decayed IS NULL OR tn_parent.decayed = 0)
-        AND (tn_child.decayed IS NULL OR tn_child.decayed = 0)
-    """, (HOTSPOT_TYPE, HOTSPOT_TYPE))
-    
-    hotspot_children = defaultdict(set)  # parent_hotspot -> set of child_hotspots
-    hotspot_parents = {}  # child_hotspot -> parent_hotspot
-    
-    for parent_id, child_id in cursor.fetchall():
-        hotspot_children[parent_id].add(child_id)
-        hotspot_parents[child_id] = parent_id
-    
-    # Find root hotspots (hotspots that are not children of other hotspots)
-    root_hotspots = all_hotspot_ids - set(hotspot_parents.keys())
-    
-    if not root_hotspots:
-        # No hierarchical structure, fall back to flat hotspot search
-        conn.close()
-        return retrieve_hierarchical(db_path, query, top_k, top_hotspots=3, domain=domain)
-    
-    # Prepare query embedding
-    from .embeddings import embed_text
-    query_embedding = np.array(embed_text(query), dtype=np.float32)
-    
-    # Function to get embedding similarity for a hotspot
-    def get_hotspot_similarity(hotspot_id: str) -> float:
-        cursor.execute("SELECT vector FROM embeddings WHERE node_id = ?", (hotspot_id,))
-        row = cursor.fetchone()
-        if not row:
-            return 0.0
-        vec = np.frombuffer(row[0], dtype=np.float32)
-        return float(np.dot(query_embedding, vec) / (np.linalg.norm(query_embedding) * np.linalg.norm(vec) + 1e-8))
-    
-    # DFS search through hotspot tree
-    def dfs_search(current_hotspots: Set[str], depth: int = 0, max_depth: int = 5) -> Tuple[str, float]:
-        """
-        DFS search through hotspot hierarchy.
-        Returns: (best_leaf_hotspot_id, best_score)
-        """
-        if depth >= max_depth or not current_hotspots:
-            return None, 0.0
-        
-        # Compute similarities for current level hotspots
-        hotspot_sims = []
-        for hotspot_id in current_hotspots:
-            sim = get_hotspot_similarity(hotspot_id)
-            hotspot_sims.append((hotspot_id, sim))
-        
-        # Sort by similarity
-        hotspot_sims.sort(key=lambda x: x[1], reverse=True)
-        
-        # Take top 2-3 for exploration
-        explore_count = min(3, len(hotspot_sims))
-        best_leaf = None
-        best_leaf_score = 0.0
-        
-        for hotspot_id, sim in hotspot_sims[:explore_count]:
-            # Check if this hotspot has children
-            children = hotspot_children.get(hotspot_id, set())
-            
-            if children:
-                # Has children - recurse
-                child_leaf, child_score = dfs_search(children, depth + 1, max_depth)
-                if child_score > best_leaf_score:
-                    best_leaf = child_leaf
-                    best_leaf_score = child_score
-            else:
-                # Leaf hotspot - candidate for final selection
-                if sim > best_leaf_score:
-                    best_leaf = hotspot_id
-                    best_leaf_score = sim
-        
-        return best_leaf, best_leaf_score
-    
-    # Start DFS from root hotspots
-    best_hotspot_id, best_hotspot_score = dfs_search(root_hotspots)
-    
-    conn.close()
-    
-    if not best_hotspot_id:
-        # DFS failed, fall back to flat retrieval
-        return _retrieve_flat(db_path, query, top_k, domain=domain)
-    
-    # Get cluster members for the best leaf hotspot
-    conn = sqlite3.connect(db_path)
-    cursor = conn.cursor()
-    
-    cursor.execute("""
-        SELECT child_id FROM derivation_edges 
-        WHERE parent_id = ? AND reasoning LIKE '%summarizes%'
-    """, (best_hotspot_id,))
-    
-    cluster_members = set(row[0] for row in cursor.fetchall())
-    
-    # Also get unclustered nodes as fallback
-    cursor.execute("""
-        SELECT DISTINCT child_id FROM derivation_edges 
-        WHERE reasoning LIKE '%summarizes%'
-    """)
-    all_clustered = set(row[0] for row in cursor.fetchall())
-    
-    # Get some unclustered nodes from embedding search
-    all_embedding_results = embedding_search(db_path, query, top_k=50)
-    unclustered_pool = set()
-    for node_id, score in all_embedding_results:
-        if node_id not in all_clustered and node_id not in all_hotspot_ids:
-            unclustered_pool.add(node_id)
-    
-    # Combine cluster members and unclustered pool
-    search_pool = cluster_members | unclustered_pool
-    
-    # Rank by embedding similarity
-    pool_scores = {}
-    for node_id, score in all_embedding_results:
-        if node_id in search_pool:
-            pool_scores[node_id] = score
-    
-    # Load node details
-    all_candidate_ids = list(search_pool) + [best_hotspot_id]
-    node_details = _load_node_details(db_path, all_candidate_ids, domain)
-    
-    conn.close()
-    
-    # Build results
-    results = []
-    
-    # Add the best leaf hotspot as context
-    if best_hotspot_id in node_details:
-        details = node_details[best_hotspot_id]
-        results.append(RetrievalResult(
-            node_id=best_hotspot_id,
-            content=details["content"],
-            node_type=details["node_type"],
-            domain=details["domain"],
-            score=best_hotspot_score * HOTSPOT_BOOST,
-            path=[best_hotspot_id]
-        ))
-    
-    # Add detail nodes ranked by similarity
-    ranked_pool = sorted(pool_scores.items(), key=lambda x: x[1], reverse=True)
-    for node_id, score in ranked_pool:
-        if node_id in node_details and node_id not in all_hotspot_ids:
-            details = node_details[node_id]
-            results.append(RetrievalResult(
-                node_id=node_id,
-                content=details["content"],
-                node_type=details["node_type"],
-                domain=details["domain"],
-                score=score,
-                path=[node_id]
-            ))
-    
-    return results[:top_k]
+    Recursive BFS retrieval: seed by embedding similarity, then explore neighbors
+    guided by embedding scores, picking the best at each hop. All traversed nodes
+    become candidates; final ranking is by cosine similarity to query.
 
-
-def retrieve_hierarchical(db_path: str, query: str, top_k: int = 5, 
-                          top_hotspots: int = 3, domain: Optional[str] = None) -> List[RetrievalResult]:
-    """
-    Two-stage hierarchical retrieval:
-    1. Find the most relevant hotspot(s) for the query
-    2. Search within their cluster members for specific answers
-    3. Include unclustered nodes as fallback
-    
     Args:
         db_path: Path to SQLite database
         query: Search query
-        top_k: Number of final results to return
-        top_hotspots: Number of hotspots to route through (stage 1)
+        top_k: Number of top results to return
+        n_seeds: Number of initial seed nodes from embedding search
+        picks_per_hop: How many neighbors to pick per frontier node per depth level
+        max_depth: Maximum BFS depth
         domain: Optional domain filter
-        
+        tags: Optional tag filter (include nodes matching any of these tags)
+        exclude_tags: Optional tags to exclude
+
     Returns:
-        List of RetrievalResult objects
+        List of RetrievalResult objects ranked by cosine similarity
     """
     if not query or not query.strip():
         return []
+
+    # Start timing if metrics are enabled
+    start_time = time.perf_counter() if is_metrics_enabled() else None
+    embed_start = time.perf_counter() if is_metrics_enabled() else None
+
+    # Step 1: Seed — find top N entry points via embedding search (O(log N) with sqlite-vec)
+    seed_results = embedding_search(db_path, query, top_k=n_seeds)
+    if not seed_results:
+        return []
     
-    conn = sqlite3.connect(db_path)
+    seeds = [nid for nid, _ in seed_results]
+    seed_scores = {nid: score for nid, score in seed_results}
+    candidates = set(seeds)
+    
+    search_time = (time.perf_counter() - embed_start) * 1000 if is_metrics_enabled() else 0
+
+    # Embed the query for BFS neighbor scoring
+    embed_start2 = time.perf_counter() if is_metrics_enabled() else None
+    query_vec = np.array(embed_text(query), dtype=np.float32)
+    query_norm = np.linalg.norm(query_vec)
+    if query_norm == 0:
+        return []
+    
+    embed_time = (time.perf_counter() - embed_start2) * 1000 if is_metrics_enabled() else 0
+
+    conn = _get_connection(db_path)
     cursor = conn.cursor()
+
+    # Preload adjacency list (both directions)
+    neighbors = defaultdict(set)
+    cursor.execute("SELECT parent_id, child_id FROM derivation_edges")
+    for parent, child in cursor.fetchall():
+        neighbors[parent].add(child)
+        neighbors[child].add(parent)
+
+    # Cache for embeddings loaded on-demand during BFS
+    _vec_cache = {}
+
+    def cosine_sim(node_id: str) -> float:
+        if node_id in seed_scores:
+            return seed_scores[node_id]
+        if node_id in _vec_cache:
+            vec = _vec_cache[node_id]
+        else:
+            row = cursor.execute("SELECT vector FROM embeddings WHERE node_id = ?", (node_id,)).fetchone()
+            if row is None:
+                _vec_cache[node_id] = None
+                return 0.0
+            vec = np.frombuffer(row[0], dtype=np.float32)
+            _vec_cache[node_id] = vec
+        if vec is None:
+            return 0.0
+        nv = np.linalg.norm(vec)
+        if nv == 0:
+            return 0.0
+        return float(np.dot(query_vec, vec) / (query_norm * nv))
+
+    # Step 2: Recursive BFS — explore from seeds
+    bfs_start = time.perf_counter() if is_metrics_enabled() else None
+    initial_seed_count = len(seeds)
     
-    # Stage 1: Find relevant hotspots
-    # Get all hotspot node IDs
-    if domain:
-        cursor.execute("""
-            SELECT id FROM thought_nodes 
-            WHERE node_type = ? AND (decayed IS NULL OR decayed = 0) AND domain = ?
-        """, (HOTSPOT_TYPE, domain))
-    else:
-        cursor.execute("""
-            SELECT id FROM thought_nodes 
-            WHERE node_type = ? AND (decayed IS NULL OR decayed = 0)
-        """, (HOTSPOT_TYPE,))
-    
-    hotspot_ids = set(row[0] for row in cursor.fetchall())
-    
-    if not hotspot_ids:
-        conn.close()
-        return _retrieve_flat(db_path, query, top_k, domain=domain)
-    
-    # Get embeddings for ALL hotspots specifically (not relying on top-50 general search)
-    from .embeddings import embed_text
-    
-    query_embedding = np.array(embed_text(query), dtype=np.float32)
-    
-    # Load hotspot embeddings directly
-    hotspot_id_list = list(hotspot_ids)
-    placeholders = ','.join(['?'] * len(hotspot_id_list))
-    cursor.execute(f"""
-        SELECT node_id, vector FROM embeddings 
-        WHERE node_id IN ({placeholders})
-    """, hotspot_id_list)
-    
-    hotspot_scores = []
-    for node_id, vector_blob in cursor.fetchall():
-        vec = np.frombuffer(vector_blob, dtype=np.float32)
-        sim = float(np.dot(query_embedding, vec) / (np.linalg.norm(query_embedding) * np.linalg.norm(vec) + 1e-8))
-        hotspot_scores.append((node_id, sim))
-    
-    hotspot_scores.sort(key=lambda x: x[1], reverse=True)
-    selected_hotspots = hotspot_scores[:top_hotspots]
-    
-    # Also get general embedding results for the non-hotspot pool
-    all_embedding_results = embedding_search(db_path, query, top_k=50)
-    
-    # Stage 2: Get cluster members for selected hotspots
-    search_pool = set()  # Node IDs to search within
-    hotspot_result_ids = set()
-    
-    for hotspot_id, _ in selected_hotspots:
-        hotspot_result_ids.add(hotspot_id)
-        # Get cluster members
-        cursor.execute("""
-            SELECT child_id FROM derivation_edges 
-            WHERE parent_id = ? AND reasoning LIKE '%summarizes%'
-        """, (hotspot_id,))
-        for row in cursor.fetchall():
-            search_pool.add(row[0])
-    
-    # Also get unclustered nodes (not in ANY hotspot's cluster)
-    cursor.execute("""
-        SELECT DISTINCT child_id FROM derivation_edges 
-        WHERE reasoning LIKE '%summarizes%'
-    """)
-    all_clustered = set(row[0] for row in cursor.fetchall())
-    
+    frontier = list(seeds)
+    for _depth in range(max_depth):
+        next_frontier = []
+        for node_id in frontier:
+            nbrs = neighbors.get(node_id, set())
+            if not nbrs:
+                continue
+            scored = [(nid, cosine_sim(nid)) for nid in nbrs if nid not in candidates]
+            scored.sort(key=lambda x: x[1], reverse=True)
+            for nid, _sim in scored[:picks_per_hop]:
+                candidates.add(nid)
+                next_frontier.append(nid)
+        frontier = next_frontier
+        if not frontier:
+            break
+
+    bfs_time = (time.perf_counter() - bfs_start) * 1000 if is_metrics_enabled() else 0
+    bfs_explored = len(candidates)
+
     conn.close()
-    
-    # Add ALL unclustered nodes from embedding results (these aren't covered by any hotspot)
-    for node_id, score in all_embedding_results:
-        if node_id not in all_clustered and node_id not in hotspot_ids:
-            search_pool.add(node_id)
-    
-    # Now rank the search pool by embedding similarity
-    pool_scores = {}
-    for node_id, score in all_embedding_results:
-        if node_id in search_pool:
-            pool_scores[node_id] = score
-    
-    # Load node details for the pool
-    all_candidate_ids = list(search_pool | hotspot_result_ids)
-    node_details = _load_node_details(db_path, all_candidate_ids, domain)
-    
-    # Build results: top-1 hotspot (routing context), then detail nodes
+
+    # Step 3: Final ranking — all candidates scored by cosine similarity
+    final = [(nid, cosine_sim(nid)) for nid in candidates]
+    final.sort(key=lambda x: x[1], reverse=True)
+
+    # Take more than top_k initially so filtering doesn't starve us
+    candidate_ids = [nid for nid, _ in final[:top_k * 3]]
+
+    # Load node details with domain/tag filtering
+    node_details = _load_node_details(db_path, candidate_ids, domain, tag_filter=tags, exclude_tags=exclude_tags)
+
+    # Build results for nodes that passed filtering
+    score_map = dict(final)
     results = []
-    
-    # Add ONLY the top hotspot as context header
-    if selected_hotspots:
-        best_hotspot_id, best_h_score = selected_hotspots[0]
-        if best_hotspot_id in node_details:
-            details = node_details[best_hotspot_id]
-            results.append(RetrievalResult(
-                node_id=best_hotspot_id,
-                content=details["content"],
-                node_type=details["node_type"],
-                domain=details["domain"],
-                score=best_h_score * HOTSPOT_BOOST,
-                path=[best_hotspot_id]
-            ))
-    
-    # Add ranked pool members (the actual answers)
-    ranked_pool = sorted(pool_scores.items(), key=lambda x: x[1], reverse=True)
-    for node_id, score in ranked_pool:
-        if node_id in node_details and node_id not in hotspot_ids:
-            details = node_details[node_id]
-            results.append(RetrievalResult(
-                node_id=node_id,
-                content=details["content"],
-                node_type=details["node_type"],
-                domain=details["domain"],
-                score=score,
-                path=[node_id]
-            ))
-    
-    return results[:top_k]
+    for node_id in candidate_ids:
+        if node_id not in node_details:
+            continue
+        details = node_details[node_id]
+        results.append(RetrievalResult(
+            node_id=node_id,
+            content=details["content"],
+            node_type=details["node_type"],
+            domain=details["domain"],
+            score=score_map[node_id],
+            path=[node_id]
+        ))
+        if len(results) >= top_k:
+            break
+
+    # Record metrics if enabled
+    if is_metrics_enabled() and start_time is not None:
+        total_time = (time.perf_counter() - start_time) * 1000
+        
+        # Calculate overlap ratio: how many results were seeds vs BFS-discovered
+        seed_results_count = len([r for r in results if r.node_id in seeds])
+        overlap_ratio = seed_results_count / max(len(results), 1) if results else 0
+        
+        record_metric(db_path, 'retrieval', total_time,
+                      embed_time_ms=embed_time,
+                      search_time_ms=search_time,
+                      bfs_time_ms=bfs_time,
+                      seeds_found=initial_seed_count,
+                      bfs_explored=bfs_explored,
+                      results_returned=len(results),
+                      overlap_ratio=overlap_ratio)
+
+    return results
+
 
 
 def format_context(results: List[RetrievalResult], include_paths: bool = False) -> str:
