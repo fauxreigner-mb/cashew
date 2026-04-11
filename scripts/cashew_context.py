@@ -218,7 +218,7 @@ def _cmd_extract_prepare_only(args):
         "status": "ready",
         "conversation_text": conversation_text,
         "conversation_length": len(conversation_text),
-        "extraction_prompt": f"Extract insights from the following conversation as a JSON array of objects with 'content', 'type', and 'confidence' fields:\n\n{conversation_text[:500]}",
+        "extraction_prompt": f"Extract insights from the following conversation as a JSON array of objects with 'content', 'type', 'confidence', and 'domain' fields. Domain should be the user domain for the human's knowledge/decisions/preferences, or the AI domain for operational lessons/workflow patterns/tool quirks:\n\n{conversation_text[:500]}",
         "session_id": getattr(args, 'session_id', None) or "prepare_only",
         "file_path": args.input,
         "input_length": len(conversation_text),
@@ -242,14 +242,45 @@ def _cmd_extract_ingest(args):
     _ensure_schema(args.db)
     
     new_nodes = 0
+    new_node_ids = []
     for item in data.get("insights", []):
         content = item.get("content", "")
         node_type = item.get("type", "insight")
         confidence = item.get("confidence", 0.7)
+        domain = item.get("domain", None)
+        # Infer domain if not specified: ai signals → ai domain, else user domain
+        if not domain:
+            from core.config import get_ai_domain, get_user_domain
+            ai_domain = get_ai_domain()
+            user_domain = get_user_domain()
+            content_lower = content.lower()
+            ai_signals = ['operating principle', 'lesson learned', 'bunny', 'cron job',
+                          'delegation', 'workflow', 'tool quirk', 'cli pattern',
+                          'brain query', 'extraction', 'think cycle']
+            domain = ai_domain if any(s in content_lower for s in ai_signals) else user_domain
         if content:
-            _create_node(args.db, content, node_type, "openclaw_extraction",
-                        confidence=confidence, domain="bunny")
+            node_id = _create_node(args.db, content, node_type, "openclaw_extraction",
+                        confidence=confidence, domain=domain)
+            new_node_ids.append(node_id)
             new_nodes += 1
+    
+    # Apply tags if specified (same logic as regular extract path)
+    extract_tags = getattr(args, 'tags', None)
+    if extract_tags and new_node_ids:
+        import sqlite3 as _sqlite3
+        conn = _sqlite3.connect(args.db)
+        cursor = conn.cursor()
+        for node_id in new_node_ids:
+            cursor.execute("SELECT tags FROM thought_nodes WHERE id = ?", (node_id,))
+            row = cursor.fetchone()
+            if row:
+                existing = row[0] or ""
+                tag_set = set(t.strip() for t in existing.split(",") if t.strip())
+                tag_set.update(t.strip() for t in extract_tags.split(",") if t.strip())
+                cursor.execute("UPDATE thought_nodes SET tags = ? WHERE id = ?", (",".join(sorted(tag_set)), node_id))
+        conn.commit()
+        conn.close()
+        print(f"   Tagged {len(new_node_ids)} nodes with: {extract_tags}")
     
     print(json.dumps({"success": True, "new_nodes": new_nodes}))
     return 0

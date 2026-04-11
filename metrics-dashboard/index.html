@@ -1,20 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <script>
-    (function() {
-        const HASH = "8c24cd43fafd4ec0c3c799d53a5fb884832cfdab5322b3280cc3844eed9a4ab7";
-        const stored = sessionStorage.getItem("cashew_auth");
-        if (stored === HASH) return;
-        const pw = prompt("🥜 cashew metrics — enter password:");
-        if (!pw) { document.body.innerHTML = "<h2 style=\"color:#888;text-align:center;margin-top:40vh\">Access denied</h2>"; throw "denied"; }
-        crypto.subtle.digest("SHA-256", new TextEncoder().encode(pw)).then(buf => {
-            const hash = Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,"0")).join("");
-            if (hash === HASH) { sessionStorage.setItem("cashew_auth", HASH); }
-            else { document.body.innerHTML = "<h2 style=\"color:#888;text-align:center;margin-top:40vh\">Wrong password</h2>"; throw "denied"; }
-        });
-    })();
-    </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cashew Metrics Dashboard</title>
@@ -160,6 +146,17 @@
             background: #1a1a1a;
         }
         
+        .card-desc {
+            font-size: 0.78em;
+            color: #888;
+            margin-bottom: 12px;
+            line-height: 1.5;
+        }
+        
+        [title] {
+            cursor: help;
+        }
+        
         canvas {
             max-width: 100%;
             height: 300px !important; min-height: 200px;
@@ -188,21 +185,21 @@
         <div class="grid">
             <!-- Overview Cards -->
             <div class="card overview-cards" id="overview">
-                <h2>Overview (24h)</h2>
+                <h2>Overview</h2>
                 <div class="cards-grid">
-                    <div class="metric-card">
+                    <div class="metric-card" title="Total retrieval queries in the last 24 hours">
                         <div class="metric-value" id="total-queries">-</div>
                         <div class="metric-label">Total Queries</div>
                     </div>
-                    <div class="metric-card">
+                    <div class="metric-card" title="Average end-to-end retrieval time including embedding, seed search, and BFS graph walk">
                         <div class="metric-value" id="avg-retrieval">-</div>
                         <div class="metric-label">Avg Retrieval (ms)</div>
                     </div>
-                    <div class="metric-card">
+                    <div class="metric-card" title="Queries in the last hour — shows current activity level">
                         <div class="metric-value" id="recent-queries">-</div>
                         <div class="metric-label">Recent (1h)</div>
                     </div>
-                    <div class="metric-card">
+                    <div class="metric-card" title="Average extra nodes discovered by BFS graph walk beyond initial seed search. Higher = more value from graph structure vs flat vector search">
                         <div class="metric-value" id="bfs-bonus">-</div>
                         <div class="metric-label">BFS Bonus</div>
                     </div>
@@ -212,18 +209,21 @@
             <!-- Retrieval Breakdown -->
             <div class="card">
                 <h3>Retrieval Timing Breakdown</h3>
+                <p class="card-desc">Where time is spent: seed search (vector similarity) vs full retrieval (search + BFS graph walk). The gap shows BFS overhead — ideally minimal.</p>
                 <canvas id="breakdown-chart" ></canvas>
             </div>
             
             <!-- BFS Value Over Time -->
             <div class="card">
                 <h3>BFS Value (Overlap Ratio)</h3>
+                <p class="card-desc">How much the seed results overlap with BFS results. Lower overlap = BFS is finding more unique nodes the vector search missed. This proves the graph structure adds value beyond flat retrieval.</p>
                 <canvas id="bfs-chart" ></canvas>
             </div>
             
             <!-- Latency Over Time -->
             <div class="card">
                 <h3>Retrieval Latency Over Time</h3>
+                <p class="card-desc">End-to-end retrieval time per query. First query is slow (embedding model cold start), subsequent queries are fast. Should stay constant regardless of graph size — that's the O(log N) guarantee.</p>
                 <canvas id="latency-chart" ></canvas>
             </div>
             
@@ -231,10 +231,10 @@
             <div class="card">
                 <h3>System Health</h3>
                 <div class="health-grid" id="health">
-                    <div>Nodes: <span id="node-count">-</span></div>
-                    <div>Edges: <span id="edge-count">-</span></div>
-                    <div>Vec Sync: <span id="vec-sync">-</span></div>
-                    <div>Uptime: <span id="uptime">-</span></div>
+                    <div title="Total active (non-decayed) thought nodes in the graph">Nodes: <span id="node-count">-</span></div>
+                    <div title="Total connections between nodes">Edges: <span id="edge-count">-</span></div>
+                    <div title="Percentage of nodes with embeddings indexed in sqlite-vec">Vec Sync: <span id="vec-sync">-</span></div>
+                    <div title="Metrics collection window">Uptime: <span id="uptime">-</span></div>
                 </div>
             </div>
             

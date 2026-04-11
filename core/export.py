@@ -239,7 +239,7 @@ class GraphExporter:
         
         return type_colors.get(node_type, "#ADB5BD")  # Default gray
     
-    def export_full_graph(self, output_path: str = EXPORT_PATH) -> Dict:
+    def export_full_graph(self, output_path: str = DEFAULT_EXPORT_PATH) -> Dict:
         """Export complete graph data"""
         print("📊 Exporting graph data...")
         
@@ -320,7 +320,7 @@ def main():
     """CLI interface for graph export"""
     parser = argparse.ArgumentParser(description="Cashew Graph Exporter")
     parser.add_argument("command", choices=["export", "summary"], help="Command to run")
-    parser.add_argument("--output", help="Output file path", default=EXPORT_PATH)
+    parser.add_argument("--output", help="Output file path", default=DEFAULT_EXPORT_PATH)
     
     args = parser.parse_args()
     
