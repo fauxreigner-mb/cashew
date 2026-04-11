@@ -1,218 +1,222 @@
-# Cashew Hierarchical Retrieval Architecture
+# Cashew Recursive BFS Architecture
 
 ## Overview
 
-Cashew implements a hierarchical retrieval system that uses recursive clustering to build a tree of hotspot nodes. Instead of flat search over 1,100+ nodes, the system performs a DFS (Depth-First Search) through a tree of hotspots where search complexity is O(log N).
+Cashew implements a flat-graph retrieval system that uses recursive BFS (Breadth-First Search) combined with sqlite-vec for efficient vector search. Instead of hierarchical hotspots, the system performs O(log N) seed selection followed by graph traversal through organic connectivity patterns built by sleep cycles.
 
 ## Core Principles
 
 1. **Graph is source of truth** - The SQLite database holds the authoritative state of all knowledge
 2. **Files are blob storage** - Markdown files contain raw content but no status information  
-3. **Hotspots are the index** - Hierarchical summary nodes that act as routing points for efficient retrieval
-4. **Emergent clustering** - No hardcoded categories; hierarchy forms organically from thought patterns
+3. **Organic connectivity is the index** - Cross-linked relationships provide implicit hierarchy
+4. **Emergent structure** - No synthetic categories; organization forms through cross-linking and decay
 
 ## Current System State
 
-- **1,142 thought nodes** across 15 distinct node types
-- **3,147 derivation edges** with reasoning annotations  
-- **Hierarchical hotspot tree** with recursive DBSCAN clustering
-- **O(log N) retrieval** via DFS traversal through hotspots
+- **2,160 thought nodes** across 9 distinct node types
+- **3,499 derivation edges** with weight and confidence scores  
+- **Flat graph structure** with organic cross-linking (0 hotspots)
+- **O(log N) retrieval** via sqlite-vec seeding + recursive BFS traversal
 - **Domain separation** with cross-domain insight generation
 
-## Hierarchical Retrieval System
+## Recursive BFS Retrieval System
 
-### Hotspot Tree Structure
+### sqlite-vec Integration
 
-Hotspots form a tree where:
-- **Root hotspots**: High-level domain summaries not children of other hotspots
-- **Parent hotspots**: Summarize large clusters and point to sub-hotspots  
-- **Leaf hotspots**: Summarize final clusters and point to detail nodes
-- **Detail nodes**: Original knowledge nodes (thoughts, facts, decisions, experiences)
+Vector search lives inside the same SQLite file as the graph using sqlite-vec virtual tables:
 
-```
-Root Hotspot: "Technical Work & Engineering"
-├── Parent Hotspot: "System Architecture" 
-│   ├── Leaf Hotspot: "Database Design"
-│   │   ├── Detail: "SQLite schema for thought storage"
-│   │   ├── Detail: "Embedding vector storage optimization"  
-│   │   └── Detail: "Foreign key constraints for graph integrity"
-│   └── Leaf Hotspot: "Graph Algorithms"
-│       ├── Detail: "DFS traversal implementation"
-│       └── Detail: "Recursive clustering with DBSCAN"
-└── Parent Hotspot: "Development Process"
-    └── Leaf Hotspot: "Testing Philosophy" 
-        ├── Detail: "Every behavior gets a test"
-        └── Detail: "Falsifiability as engineering principle"
+```sql
+CREATE VIRTUAL TABLE vec_embeddings USING vec0(
+    node_id TEXT PRIMARY KEY,
+    embedding float[384] distance_metric=cosine
+);
+
+-- Query: O(log N) nearest neighbor search
+SELECT node_id, distance FROM vec_embeddings
+WHERE embedding MATCH ? ORDER BY distance LIMIT 5;
 ```
 
-### Recursive Cluster Detection
+### BFS Search Algorithm
 
-The clustering system (`core/clustering.py` and `core/complete_clustering.py`) uses recursive DBSCAN:
-
-1. **Initial clustering**: Run DBSCAN on all nodes with `eps=0.35`, `min_samples=3`
-2. **Size check**: If cluster > `max_cluster_size=15`, recursively split
-3. **Tighter clustering**: Re-run DBSCAN on large clusters with `eps = eps * 0.7`  
-4. **Hotspot creation**: Generate summaries for clusters via LLM reasoning
-5. **Hierarchy building**: Connect parent→child with `summarizes` edges
-6. **Recursion**: Repeat until all clusters ≤ max_cluster_size
-
-### DFS Search Algorithm
-
-The complete retrieval system (`core/complete_retrieval.py`) implements hierarchical DFS:
+The complete retrieval system (`core/retrieval.py`) implements recursive BFS:
 
 ```python
-def dfs_search_hierarchical(hints: List[str]) -> List[str]:
+def retrieve_recursive_bfs(hints: List[str], n_seeds=5, picks_per_hop=3, max_depth=3) -> List[str]:
     """
-    Hierarchical DFS through hotspot tree
+    Recursive BFS through organic graph structure
     Returns: List of relevant node IDs ranked by relevance
     """
-    # 1. Start at root hotspots (no incoming summarizes edges)
-    root_hotspots = get_root_hotspots()
+    # 1. Embed query hints
+    query_embedding = embed_text(hints)
     
-    # 2. Compute embedding similarity for current level
-    current_level = root_hotspots
+    # 2. O(log N) seed selection via sqlite-vec
+    seeds = search_similar_nodes(query_embedding, limit=n_seeds)
     
-    # 3. DFS traversal
-    for depth in range(MAX_DEPTH):
-        # Rank current level hotspots by similarity to query
-        scored_hotspots = [(id, similarity(hints_embedding, id)) 
-                          for id in current_level]
-        scored_hotspots.sort(reverse=True)
-        
-        # Take top candidates for exploration  
-        best_hotspots = [id for id, score in scored_hotspots[:3] 
-                        if score > threshold]
-        
-        # Check if we can go deeper
+    # 3. BFS traversal from seeds
+    candidates = set(seeds)
+    current_level = seeds
+    
+    for depth in range(max_depth):
         next_level = []
-        for hotspot_id in best_hotspots:
-            children = get_child_hotspots(hotspot_id)
-            if children:
-                next_level.extend(children)
-            else:
-                # Leaf hotspot - collect its detail nodes
-                return get_cluster_members(hotspot_id)
+        
+        # Get all neighbors of current level
+        neighbors = get_graph_neighbors(current_level)
+        
+        # Score neighbors by cosine similarity to query
+        scored_neighbors = [
+            (node_id, cosine_similarity(query_embedding, get_embedding(node_id)))
+            for node_id in neighbors if node_id not in candidates
+        ]
+        
+        # Pick top candidates for next level
+        scored_neighbors.sort(key=lambda x: x[1], reverse=True)
+        best_neighbors = [node_id for node_id, _ in scored_neighbors[:picks_per_hop]]
+        
+        next_level.extend(best_neighbors)
+        candidates.update(best_neighbors)
         
         if not next_level:
             break
         current_level = next_level
     
-    return []
+    # 4. Final ranking by similarity to original query
+    final_results = [
+        (node_id, cosine_similarity(query_embedding, get_embedding(node_id)))
+        for node_id in candidates
+    ]
+    final_results.sort(key=lambda x: x[1], reverse=True)
+    
+    return [node_id for node_id, _ in final_results]
 ```
 
 ### Search Flow
 
-1. **Root discovery**: Find all root-level hotspots (not summarized by others)
-2. **Embedding comparison**: Compare query embedding against current level hotspots  
-3. **Best match selection**: Pick top 2-3 most similar hotspots based on threshold
-4. **Recursive descent**: For each selected hotspot:
-   - Check if it has child hotspots
-   - If yes: compare query against children, select best matches, recurse
-   - If no (leaf): collect cluster members as final results
-5. **Result ranking**: Return detail nodes ranked by similarity to original query
+1. **Query embedding**: Convert search hints to 384-dimensional vector using sentence-transformers
+2. **Seed selection**: Find top-k most similar nodes via sqlite-vec O(log N) search  
+3. **BFS traversal**: For each hop (up to max_depth=3):
+   - Get neighbors of current level nodes
+   - Score neighbors by cosine similarity to original query
+   - Select top picks_per_hop candidates for next level
+   - Add to candidate set
+4. **Final ranking**: Rank all candidates by similarity to original query
+
+**Parameters:**
+- `n_seeds=5` - Initial seed nodes from vector search
+- `picks_per_hop=3` - Nodes selected per BFS hop
+- `max_depth=3` - Maximum traversal depth
 
 ## Sleep Cycle Maintenance  
 
-The sleep protocol (`core/sleep.py`) maintains hierarchical structure through:
+The sleep protocol (`core/sleep.py`) maintains graph structure through organic processes:
 
-### Clustering Phase
-- Runs recursive clustering with configurable `max_cluster_size`
-- Creates new parent/child hotspots for evolved clusters
-- Preserves stable existing hotspot relationships
-- Updates stale hotspots that drift from their cluster centroids
+### Cross-linking Phase
+- Finds semantically similar nodes across domains (0.7-0.85 similarity range)
+- Creates edges between related but previously disconnected knowledge
+- Preserves diversity by not over-connecting highly similar nodes
+- Builds the organic connectivity that BFS traversal exploits
 
-### Staleness Detection
-- Computes cosine similarity between hotspot embedding and cluster centroid
-- Marks hotspots as stale if similarity drops below threshold (typically 0.65)
-- Regenerates stale hotspot summaries using LLM with current cluster content
+### Decay and Fitness Scoring
+- Computes composite fitness scores based on access count, confidence, and age
+- Marks low-fitness nodes as `decayed=1` (excluded from retrieval)
+- Think-cycle-generated nodes face 1.5x higher decay threshold
+- Preserves high-value knowledge while pruning noise
 
-### Dream Generation
-- Identifies connections between previously isolated clusters
-- Creates "dream nodes" that bridge different knowledge domains
-- Parents of dream nodes span multiple clusters, converting forest to connected graph
+### Deduplication
+- Identifies near-duplicate nodes (>0.82 similarity)
+- Merges redundant content, preserving derivation links
+- Redirects edges to canonical versions
+- Prevents graph bloat from repeated information
+
+### Core Memory Promotion
+- Promotes frequently accessed, high-confidence nodes to `permanent=1`
+- Immune to decay cycles
+- Represents stable, foundational knowledge
+
+**No clustering, no hotspot creation, no hierarchy maintenance** - structure emerges through cross-linking and natural decay.
 
 ## Scalability Analysis
 
-| Node Count | Flat Search (O(N)) | Hierarchical DFS (O(log N)) | Speedup |
+| Node Count | Flat Search (O(N)) | sqlite-vec + BFS (O(log N + K)) | Speedup |
 |------------|-------------------|---------------------------|---------|
-| 100        | 100 comparisons   | ~7 comparisons           | 14x     |
-| 1,000      | 1,000 comparisons | ~10 comparisons          | 100x    |
-| 10,000     | 10,000 comparisons| ~15 comparisons          | 667x    |
-| 100,000    | 100,000 comparisons| ~20 comparisons         | 5,000x  |
+| 100        | 100 comparisons   | ~10 comparisons           | 10x     |
+| 1,000      | 1,000 comparisons | ~15 comparisons          | 67x    |
+| 10,000     | 10,000 comparisons| ~20 comparisons          | 500x    |
+| 100,000    | 100,000 comparisons| ~25 comparisons         | 4,000x  |
 
-DFS search achieves logarithmic complexity by:
-- Only comparing against 5-10 hotspots at each tree level
-- Tree depth typically 3-4 levels for reasonable cluster sizes (max 15 nodes)
-- Avoiding brute-force comparison against all detail nodes
-- Pruning irrelevant branches early in traversal
+BFS search achieves sub-linear complexity through:
+- sqlite-vec O(log N) seed selection (not O(N) brute force)
+- Limited BFS traversal depth (3 hops maximum)
+- Picks-per-hop constraint prevents combinatorial explosion
+- Organic connectivity provides efficient pathways to relevant content
 
 ## Implementation Details
 
 ### Core Modules
 
-1. **`core/complete_clustering.py`**: Hierarchical clustering with recursive DBSCAN
-2. **`core/complete_retrieval.py`**: DFS traversal through hotspot trees  
+1. **`core/embeddings.py`**: sqlite-vec integration, embedding generation, similarity search
+2. **`core/retrieval.py`**: BFS traversal implementation  
 3. **`core/context.py`**: Context generation orchestration
-4. **`core/session.py`**: Session lifecycle with hierarchical retrieval
-5. **`core/sleep.py`**: Sleep cycles with cluster maintenance
+4. **`core/session.py`**: Session lifecycle with BFS retrieval
+5. **`core/sleep.py`**: Sleep cycles with cross-linking and decay
 6. **`core/traversal.py`**: Graph traversal operations (why/how/audit)
 
 ### Database Schema Utilization
 
-Uses existing thought graph schema:
-- **Hotspots**: `node_type='hotspot'`, content contains cluster summary
-- **Summarization edges**: `relation='summarizes'` from hotspot to members  
-- **Derivation edges**: `relation='derived_from'` for thought chains
-- **Cross-links**: `relation='relates_to'` from sleep cycle bridge-building
+Uses flat node/edge schema with vector acceleration:
+- **`thought_nodes`**: Content, metadata, confidence, decay status
+- **`derivation_edges`**: Parent-child relationships with weights
+- **`embeddings`**: BLOB storage for backward compatibility 
+- **`vec_embeddings`**: sqlite-vec virtual table for O(log N) search
 
 ### Command-Line Interface
 
 ```bash
-# Complete coverage context (hierarchical DFS)
-python3 scripts/cashew_context.py complete-context --hints "keywords"
-
-# Legacy flat retrieval (for comparison)  
+# Context retrieval via recursive BFS
 python3 scripts/cashew_context.py context --hints "keywords"
 
-# System statistics including cluster metrics
-python3 scripts/cashew_context.py system-stats
+# System statistics
+python3 scripts/cashew_context.py stats
 
-# Run complete sleep cycle with hierarchy evolution
-python3 scripts/cashew_context.py complete-sleep
+# Sleep cycle with cross-linking
+python3 scripts/cashew_context.py sleep
+
+# Think cycle for insight generation
+python3 scripts/cashew_context.py think
 ```
 
 ## Performance Characteristics
 
 ### Search Performance
-- **Cold start**: ~150-300ms (embedding computation + DFS traversal)
-- **Warm retrieval**: ~50-100ms (DFS traversal with cached embeddings)
-- **Memory usage**: O(hotspots) not O(all_nodes), typically 10-15% of total nodes
+- **Cold start**: ~150-300ms (embedding computation + BFS traversal)
+- **Warm retrieval**: ~50-100ms (BFS traversal with cached embeddings)
+- **Memory usage**: O(active_set) not O(all_nodes), typically visits <5% of graph
 
-### Tree Maintenance  
-- **Sleep cycle frequency**: Every 10-20 new nodes or manual trigger
-- **Clustering computation**: O(N²) for distance matrix, amortized over many searches
-- **Hierarchy updates**: O(clusters) for staleness detection and regeneration
-- **Cross-linking**: O(clusters²) for dream node generation
+### Graph Maintenance  
+- **Sleep cycle frequency**: Daily or triggered by growth thresholds
+- **Cross-linking computation**: O(N²) for similarity matrix, amortized across many sessions
+- **Decay operations**: O(N) for fitness scoring, infrequent execution
+- **Deduplication**: O(N log N) for similarity clustering
 
 ### Storage Efficiency
-- **Database size**: ~768KB for 1,142 nodes (smaller than a photo)
+- **Database size**: ~768KB for 2,160 nodes (smaller than a photo)
 - **Embedding vectors**: Local sentence-transformers, no API dependencies
-- **Hotspot overhead**: ~5-10% additional nodes for indexing structure
+- **sqlite-vec overhead**: Minimal additional storage for accelerated search
+- **No synthetic nodes**: 100% of storage used for real knowledge
 
 ## Testing & Validation
 
 ### Automated Test Coverage
 The test suite (`tests/`) covers:
-- **`test_retrieval.py`**: Hierarchical vs flat retrieval accuracy comparison
-- **`test_clustering.py`**: Recursive DBSCAN cluster formation
+- **`test_retrieval.py`**: BFS traversal correctness and performance
+- **`test_embeddings.py`**: sqlite-vec integration and fallback behavior
 - **`test_sleep.py`**: Sleep cycle maintenance operations
 - **`test_traversal.py`**: Graph traversal correctness (why/how/audit)
 
 ### Quality Metrics
 - **Recall@5**: Percentage of relevant results in top 5 hits
 - **Query latency**: Response time for context generation  
-- **Cluster coherence**: Intra-cluster similarity vs inter-cluster similarity
-- **Tree balance**: Distribution of leaf cluster sizes
+- **Graph connectivity**: Distribution of node degrees and path lengths
+- **Storage efficiency**: Ratio of real knowledge to synthetic overhead
 
 ### Integration Testing
 ```bash
@@ -221,73 +225,88 @@ cd cashew
 KMP_DUPLICATE_LIB_OK=TRUE python3 -m pytest tests/ -v
 
 # Test retrieval quality
-python3 scripts/cashew_context.py complete-context --hints "engineering work"
-python3 scripts/cashew_context.py complete-context --hints "system design patterns"  
-python3 scripts/cashew_context.py complete-context --hints "testing philosophy"
+python3 scripts/cashew_context.py context --hints "engineering work"
+python3 scripts/cashew_context.py context --hints "project decisions"  
+python3 scripts/cashew_context.py context --hints "system architecture"
 ```
 
 ## Think Cycle Integration
 
-### Isolated Cluster Reasoning
-The think cycle system (`core/think_cycle.py`) uses hierarchical clustering for insight generation:
+### Cross-Domain Synthesis
+The think cycle system (`core/session.py`) uses BFS retrieval for pattern detection:
 
-1. **Cluster isolation**: Select coherent clusters (leaf hotspots with 5-15 members)
-2. **Context feed**: Send ONLY cluster members to LLM, no external context
-3. **Pattern recognition**: LLM generates hypotheses about cluster patterns
-4. **Derivation linking**: New insights link back to cluster members as parents
-5. **Validation**: Human confirms insights as genuinely novel or derivative
+1. **Diverse context assembly**: BFS retrieval finds connections across knowledge domains
+2. **Pattern recognition**: LLM analyzes retrieved context for insights and tensions
+3. **Novel hypothesis generation**: Creates new understanding from existing knowledge
+4. **Derivation linking**: New insights link to source nodes as parents
+5. **Validation**: Human feedback validates genuinely novel vs. derivative insights
 
 ### Think Cycle Results
-- **Silence cluster (17 nodes)**: Generated insight "Silence is TWO patterns — strategic vs avoidant"  
-- **4/4 insights confirmed** as genuinely novel by human validation
-- **Structural emergence**: Insights not explicitly stated in any parent nodes
+- **Cross-domain insights**: Patterns that span technical, personal, and strategic domains
+- **Validated novelty**: Human confirmation that insights are genuinely new, not mere summaries
+- **Organic knowledge growth**: Graph evolves through autonomous reasoning cycles
 
 ## Domain Separation
 
 ### Multi-Domain Architecture  
 The graph supports multiple knowledge domains within a single database:
 
-- **Domain field**: Each node tagged with domain (personal, technical, philosophical, etc.)
-- **Cross-domain hotspots**: Hotspots can summarize nodes from multiple domains
-- **Boundary spanning**: Think cycles can generate insights across domain boundaries  
-- **Domain-specific retrieval**: Query hints can target specific domains when needed
+- **Domain field**: Each node tagged with domain (user, ai, project-specific, etc.)
+- **Cross-domain edges**: Derivation links can connect across domain boundaries
+- **Unified retrieval**: BFS traversal finds relevant knowledge regardless of domain
+- **Domain-filtered queries**: Optional domain scoping for privacy or focus
 
-### Domain Bridge Generation
-Sleep cycles create cross-domain connections:
-- **Dream nodes**: Generated insights that connect previously separate domains
-- **Cross-pollination**: Technical insights applied to personal situations, etc.
-- **Emergent interdisciplinarity**: No hardcoded cross-domain rules, emerges from content
+### Cross-Domain Bridge Building
+Sleep cycles create connections spanning domains:
+- **Cross-linking**: Semantic similarity connects related concepts across boundaries
+- **Think cycle synthesis**: Autonomous generation of insights bridging domains
+- **Emergent interdisciplinarity**: No hardcoded cross-domain rules
+
+## Privacy and Access Control
+
+### Tag-Based Filtering
+- Nodes can be tagged `vault:private` to exclude from group contexts
+- `--exclude-tags vault:private` filters private content during retrieval
+- Default extraction marks content private; declassification via `scripts/declassify.py`
+
+### Domain Boundaries
+- User vs AI domain separation for attribution and trust
+- Configurable domain names in `config.yaml`
+- Retrieval can be scoped to specific domains when needed
 
 ## Future Enhancements
 
-### Short-term (Next Release)
-1. **Query routing optimization**: Skip irrelevant tree branches based on query analysis
-2. **Incremental clustering**: Update tree structure without full re-clustering  
-3. **Performance benchmarking**: Systematic comparison against flat search baselines
-4. **Cluster rebalancing**: Automatic split/merge based on access patterns
+### Short-term
+1. **Query optimization**: Cache embeddings, batch similarity computations
+2. **Adaptive parameters**: Dynamic picks_per_hop based on graph density  
+3. **Performance benchmarking**: Systematic comparison against baseline retrieval methods
+4. **Advanced filtering**: Time-based, confidence-weighted retrieval
 
 ### Medium-term  
-1. **Temporal hotspots**: Time-aware clustering for recency-biased retrieval
-2. **Confidence-weighted traversal**: Use node confidence scores in DFS path selection
-3. **Adaptive thresholds**: Dynamic similarity thresholds based on query characteristics
-4. **Multi-modal embeddings**: Support for images, audio in thought nodes
+1. **Incremental indexing**: Update sqlite-vec index without full rebuild
+2. **Multi-modal embeddings**: Support for images, audio in thought nodes
+3. **Federation**: Multiple agents sharing graph knowledge
+4. **Explainable retrieval**: Human-readable explanations for result selection
 
 ### Long-term
-1. **Federated graphs**: Multiple agents sharing hierarchical knowledge structures
-2. **Real-time collaboration**: Live multi-agent graph updates with conflict resolution
-3. **Transfer learning**: Hotspot patterns from one domain applying to new domains
-4. **Explainable retrieval**: Human-readable explanations for why specific results were selected
+1. **Distributed graphs**: Multiple databases with synchronized cross-linking
+2. **Real-time collaboration**: Live multi-agent graph updates
+3. **Transfer learning**: Retrieval patterns optimized for specific use cases
+4. **Adaptive architecture**: System automatically tunes parameters for workload
 
 ## Key Architectural Insights
 
-### Emergent Hierarchy
-Unlike traditional knowledge graphs with predetermined categories, cashew's hierarchy emerges from the data itself through recursive clustering. This creates more natural, semantically coherent groupings.
+### Organic Over Synthetic
+Unlike systems with predetermined hierarchies, cashew's connectivity emerges from actual knowledge relationships discovered through cross-linking. This creates more semantically meaningful organization.
 
-### Power Law Properties
-The graph exhibits natural power law behavior with a few highly connected hub nodes and many leaf nodes. Hierarchical clustering preserves this structure while enabling efficient traversal.
+### BFS Over DFS
+Breadth-first search explores diverse neighborhoods before going deep, finding connections across knowledge domains rather than drilling down narrow paths.
 
-### Think-Retrieve Symbiosis  
-The think cycle system both consumes and produces hierarchical structure — isolated clusters generate insights that create new hierarchical relationships, creating a positive feedback loop for organization.
+### sqlite-vec Scaling
+Vector search acceleration within SQLite eliminates external dependencies while providing sub-linear query performance as the graph grows.
 
-### Scalable Self-Organization
-As the graph grows, the hierarchical structure automatically adapts through sleep cycles, maintaining logarithmic retrieval performance without manual reorganization.
+### Cross-linking as Infrastructure
+Sleep cycle cross-linking builds the pathways that BFS traversal exploits, creating a positive feedback loop between structure-building and retrieval efficiency.
+
+### Simplicity Through Emergence
+Complex retrieval behavior emerges from simple rules (similarity-based cross-linking + BFS traversal) without requiring complex hierarchical maintenance algorithms.

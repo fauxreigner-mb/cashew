@@ -1,8 +1,8 @@
 # CLAUDE.md — Cashew Developer Guide
 
-Cashew is a thought-graph memory engine for AI agents. It stores knowledge as nodes in a SQLite graph, connects them with typed edges, clusters them into hierarchical hotspots, and retrieves relevant context via hybrid embedding + graph traversal.
+Cashew is a thought-graph memory engine for AI agents. It stores knowledge as nodes in a SQLite graph, connects them with edges, and retrieves relevant context via recursive BFS over organic graph structure. Everything lives in one SQLite file — no external servers, no separate indexes.
 
-**IMPORTANT**: Cashew does NOT call LLMs directly. It is purely the BRAIN (storage + retrieval + structure). The PROCESSOR (LLM) is external and provided by the orchestrator (OpenClaw) via `model_fn` parameters. This allows cashew to be used by any system that can provide LLM access, without being coupled to specific API keys or providers.
+**IMPORTANT**: Cashew does NOT call LLMs directly. It is purely the BRAIN (storage + retrieval + structure). The PROCESSOR (LLM) is external and provided by the orchestrator (OpenClaw) via `model_fn` parameters.
 
 ## Architecture
 
@@ -18,109 +18,132 @@ integration/               — OpenClaw bridges
 | Module | Purpose |
 |--------|---------|
 | `config.py` | YAML config loading with env var expansion. Global `config` singleton. |
-| `embeddings.py` | Sentence-transformer embeddings (all-MiniLM-L6-v2). `embed_text()` is the key function. |
-| `retrieval.py` | Hybrid retrieval: embedding similarity + DFS graph walk. `retrieve_dfs()` is the primary retrieval function. |
-| `complete_retrieval.py` | Extended retrieval with reranking and domain filtering. |
+| `embeddings.py` | Sentence-transformer embeddings (all-MiniLM-L6-v2). sqlite-vec virtual table for O(log N) search. `search()`, `check_novelty()`, `embed_text()`. |
+| `retrieval.py` | `retrieve_recursive_bfs()` — seeds via sqlite-vec, BFS graph walk, per-hop scoring. The sole retrieval method. |
 | `context.py` | Composes retrieval results into formatted context strings for LLM consumption. |
-| `placement_aware_extraction.py` | Extracts knowledge from text → nodes + edges. Uses LLM with heuristic fallback. |
-| `think_cycle.py` | Autonomous reasoning: reads a cluster, proposes insights, commits above 0.75 confidence. |
-| `sleep.py` | Deep consolidation: cross-linking, decay, hotspot maintenance, clustering. Runs daily. |
+| `session.py` | Session lifecycle: `start_session()`, `end_session()`, `think_cycle()`, `tension_detection()`. |
+| `sleep.py` | Deep consolidation: cross-linking, decay, deduplication, core memory promotion. Runs daily. |
 | `decay.py` | Prunes stale nodes (low access, low confidence, old). Sets `decayed=1`. |
-| `clustering.py` | DBSCAN clustering on embeddings. Groups semantically similar nodes. |
-| `complete_clustering.py` | Extended clustering with domain inference and hierarchy building. |
-| `hotspots.py` | Hierarchical navigation nodes. A hotspot summarizes a cluster of nodes. |
-| `hierarchy_evolution.py` | Evolves the hotspot hierarchy: merge, split, promote, reclassify. |
 | `traversal.py` | Graph walk utilities (DFS, BFS, path finding). |
-| `patterns.py` | Pattern detection across nodes (contradictions, evolutions, cycles). |
-| `questions.py` | Detects open questions in conversations for tracking. |
-| `session.py` | Session lifecycle management (start, end, extract). |
 | `stats.py` | Graph statistics and health metrics. |
 | `export.py` | Export graph data to JSON for dashboard visualization. |
+| `graph_utils.py` | Shared utilities: `load_embeddings()`, `cosine_similarity()`. |
 
 ### Integration
 
 | Module | Purpose |
 |--------|---------|
-| `integration/openclaw.py` | OpenClaw agent lifecycle hooks. `get_ai_context()` and `get_user_context()` for domain-filtered retrieval. |
-| `integration/complete_integration.py` | Full integration layer with health checks and diagnostics. |
+| `integration/openclaw.py` | OpenClaw agent lifecycle hooks. `generate_session_context()`, `extract_from_conversation()`, `run_think_cycle()`. |
 
 ## Database Schema
 
-SQLite with 4 tables:
+SQLite with 3 tables + 1 virtual table:
 
-- **`thought_nodes`** — Knowledge nodes (id, content, node_type, domain, confidence, access_count, decayed, permanent)
+- **`thought_nodes`** — Knowledge nodes (id, content, node_type, domain, confidence, access_count, decayed, permanent, tags)
 - **`derivation_edges`** — Relationships (parent_id, child_id, weight, confidence)
 - **`embeddings`** — Vector embeddings per node (node_id, vector as BLOB, model name)
-- **`hotspots`** — Cluster summary nodes (id, content, status, cluster_node_ids as JSON)
+- **`vec_embeddings`** — sqlite-vec virtual table for O(log N) nearest neighbor search (node_id, embedding float[384], cosine distance)
 
 ### Key Columns
 
-- `domain` — Classifies who the knowledge belongs to. Configurable via config.yaml (default: "user" and "ai").
-- `node_type` — One of: fact, observation, insight, decision, belief, derived, meta, hotspot_summary
+- `domain` — Classifies who the knowledge belongs to. Configurable via config.yaml.
+- `node_type` — One of: fact, observation, insight, decision, belief, derived, meta, core_memory, cross_link
 - `decayed` — 0 or 1. Decayed nodes are excluded from retrieval but kept in DB.
 - `permanent` — 0 or 1. Permanent nodes are immune to decay.
 - `confidence` — Float 0-1. Think cycle outputs are gated at 0.75.
+- `tags` — Comma-separated tags (e.g., `vault:private` for privacy classification).
+
+## Retrieval: Recursive BFS
+
+The sole retrieval method. No hotspots, no hierarchy, no DFS.
+
+1. **Seed selection** — Embed query, find top-k nearest nodes via `vec_embeddings MATCH` (O(log N) with sqlite-vec, brute-force fallback)
+2. **BFS traversal** — From seeds, explore graph neighbors up to `max_depth` hops. At each hop, score neighbors by cosine similarity, keep top `picks_per_hop`.
+3. **Final ranking** — All candidates scored and sorted by similarity.
+
+Parameters: `n_seeds=5`, `picks_per_hop=3`, `max_depth=3`.
+
+The graph's organic connectivity (built by sleep cycle cross-linking) provides implicit hierarchy. No synthetic summary nodes needed.
+
+## sqlite-vec Integration
+
+Vector search lives inside the same SQLite file as the graph:
+
+```sql
+CREATE VIRTUAL TABLE vec_embeddings USING vec0(
+    node_id TEXT PRIMARY KEY,
+    embedding float[384] distance_metric=cosine
+);
+-- Query: O(log N) nearest neighbor
+SELECT node_id, distance FROM vec_embeddings
+WHERE embedding MATCH ? ORDER BY distance LIMIT 5;
+```
+
+- `embed_nodes()` dual-writes to both `embeddings` and `vec_embeddings`
+- `search()` uses sqlite-vec when available, falls back to brute force
+- `check_novelty()` uses sqlite-vec for O(log N) dedup checking
+- `backfill_vec_index()` for one-time migration of existing embeddings
+
+## Novelty Gate
+
+Before any node is inserted, `check_novelty()` checks if content is too similar to existing nodes:
+- Threshold: 0.82 cosine similarity (calibrated for MiniLM-L6 where true dupes peak at 0.85-0.90)
+- Above threshold → reject (duplicate)
+- Below threshold → accept (novel)
+- Fails open — if embedding fails, the node gets through
+
+## Sleep Cycle
+
+Periodic background consolidation (`core/sleep.py`):
+- **Decay** — Node fitness decays over time. Low-fitness nodes get `decayed=1`.
+- **Cross-linking** — Finds semantically similar nodes across domains, creates edges.
+- **Deduplication** — Merges near-identical nodes.
+- **Core memory promotion** — Frequently accessed, high-confidence nodes get promoted.
+- **Think cycle penalty** — Think-cycle-generated nodes face 1.5x higher decay threshold.
+
+No hotspot creation, no clustering, no hierarchy maintenance. The graph self-organizes through cross-linking and decay.
 
 ## Configuration
 
 `config.yaml` at project root. Key settings:
 - `database.path` — SQLite DB location
-- `domains.user` / `domains.ai` — Domain names (replaces old hardcoded values)
+- `domains.user` / `domains.ai` — Domain names
 - `models.embedding.name` — Embedding model
-- `models.llm.model` — LLM for extraction/thinking
 - `performance.*` — Token budgets, thresholds, top-k
 
 Environment variables override config: `${VAR:-default}` syntax supported in YAML.
 
 ## Conventions
 
-- **Node IDs** — 12-char hex strings generated from content hash (`hashlib.sha256(content)[:12]`)
+- **Node IDs** — 12-char hex strings from content hash (`hashlib.sha256(content)[:12]`)
 - **Timestamps** — ISO 8601 strings
-- **Edges are untyped** — no `relation` column. Ablation testing proved typed edges don't improve retrieval. Edges are pure connections; semantics come from node content + embeddings.
-- **Hotspot cluster_node_ids** — JSON array of node IDs stored as TEXT
-- **Embeddings** — 384-dimensional numpy arrays stored as BLOBs
+- **Edges are untyped** — Ablation testing proved typed edges don't improve retrieval. Edges are pure connections; semantics come from node content + embeddings.
+- **Embeddings** — 384-dimensional numpy arrays stored as BLOBs (and in vec_embeddings as float[384])
+- **Never delete nodes** — set `decayed=1` instead. The graph is append-mostly.
+- **Always embed new nodes** — every node must have rows in both `embeddings` and `vec_embeddings`.
+- **Domain assignment** — every node must have a domain. Use `config.get_user_domain()` and `config.get_ai_domain()`.
+- **No hardcoded paths** — use `config.get_db_path()` or accept `--db` CLI arg.
+- **No direct LLM calls** — Accept `model_fn` parameters, never create LLM clients internally.
 
 ## External LLM Pattern
 
-Cashew follows a strict separation of concerns:
-
-- **Cashew (Brain)**: Stores, retrieves, clusters, and structures knowledge. Embeds nodes locally using sentence-transformers.
-- **Orchestrator (Processor)**: Provides LLM access via `model_fn` parameters when calling cashew functions.
-
-### Functions that accept model_fn:
+Functions that accept `model_fn`:
 - `extract_from_conversation(model_fn=None)` — Uses heuristic extraction if None
-- `run_think_cycle(model_fn=None)` — Skips think cycles if None  
-- `run_sleep_cycle(model_fn=None)` — Uses fallback hotspot summaries if None
-- `run_clustering_cycle(model_fn=None)` — Creates text summaries only if provided
+- `run_think_cycle(model_fn=None)` — Skips think cycles if None
+- `run_sleep_cycle(model_fn=None)` — Uses fallback summaries if None
 
-### CLI LLM Access:
-The CLI auto-discovers a running OpenClaw gateway from `~/.openclaw/openclaw.json` and routes LLM calls through it via the `/v1/chat/completions` endpoint (OpenAI-compatible). This is **provider-agnostic** — works with whatever LLM the user configured in OpenClaw (Anthropic, OpenAI, local models, etc).
+The CLI auto-discovers a running OpenClaw gateway from `~/.openclaw/openclaw.json` and routes LLM calls through it via the `/v1/chat/completions` endpoint (OpenAI-compatible). No API keys or provider-specific code needed.
 
-The `_build_model_fn()` function in `scripts/cashew_context.py` handles discovery. No API keys or provider-specific code needed.
+## Context Injection Pattern
 
-### Never do in cashew:
-- `import anthropic` or any LLM client library
-- Store API keys or auth tokens
-- Make direct API calls to LLM providers
-- Create `Client()` objects
-
-## Prompt Injection Pattern (Canonical)
-
-**This is how brain context must be injected into LLM prompts.** All users should use this pattern — don't roll your own.
-
-The function `generate_session_context(db_path, hints)` in `integration/openclaw.py` returns a **pre-formatted, ready-to-inject string**. The caller drops it into their system prompt as-is.
-
-The output has three layers:
-1. **Graph Overview** — total nodes, clusters, shape of knowledge
-2. **Recent Activity** — last few sessions' worth of new nodes (recency signal)
-3. **Relevant Context** — hint-driven semantic search results with domain labels
+`generate_session_context(db_path, hints)` returns a pre-formatted string for system prompt injection:
 
 ```
 === GRAPH OVERVIEW ===
-Graph: 2124 nodes across 30 clusters.
+Graph: 2160 nodes, 3499 edges. Types: 499 fact, 449 insight, 426 observation.
 
 === RECENT ACTIVITY ===
-1. [fact] Some recent fact... (03-18)
+1. [fact] Some recent fact... (today)
 
 === RELEVANT CONTEXT ===
 1. [FACT] Relevant node content (Domain: user)
@@ -129,36 +152,62 @@ Graph: 2124 nodes across 30 clusters.
 === END CONTEXT ===
 ```
 
-**Rules:**
-- Always use `cashew context --hints "..."` or `generate_session_context()` — never assemble prompts from raw node lists
-- The output is framed as **background knowledge**, not search results. This changes how the LLM uses it.
-- Hotspot summaries are included automatically when relevant nodes connect to them
-- The caller should inject this into the system prompt, not the user message
+Always use `cashew context --hints "..."` or `generate_session_context()` — never assemble prompts from raw node lists.
 
-## Important Rules
+## Privacy
 
-- **Never delete nodes** — set `decayed=1` instead. The graph is append-mostly.
-- **Always embed new nodes** — every node in `thought_nodes` must have a corresponding row in `embeddings`.
-- **Confidence gates** — think cycle outputs below 0.75 confidence get discarded, not stored.
-- **Domain assignment** — every node must have a domain. Use `config.get_user_domain()` and `config.get_ai_domain()`. Never hardcode domain strings.
-- **No hardcoded paths** — use `config.get_db_path()` or accept `--db` CLI arg.
-- **Hotspot integrity** — when modifying cluster membership, update both the hotspot's `cluster_node_ids` AND the `summarizes` edges.
-- **Backward compatibility** — old databases may have 'raj'/'bunny' as domain names. The config system maps these automatically. Don't break this.
-- **No direct LLM calls** — Accept model_fn parameters, never create LLM clients internally.
+- Nodes can be tagged `vault:private` to exclude from group channel queries
+- Extraction defaults to private; periodic declassification via `scripts/declassify.py`
+- `--exclude-tags vault:private` on context queries filters private nodes
+
+## Engineering Philosophy
+
+These are non-negotiable. Every PR, every fix, every new feature. 
+
+Sourced from the cashew brain (bunny domain). For the full set:
+```bash
+cashew_context.py context --hints "bunny engineering principles best practices testing rules"
+```
+
+### Testing
+- **End-to-end tests over unit tests.** Don't write 5 tests for the same helper with varying inputs. Each test should exercise a REAL user flow from start to finish.
+- **Tests ship with the code — not optional, not afterthought.** No PR without tests.
+- **When fixing a bug, write the test that catches it FIRST.** The test is more important than the fix — it prevents regressions forever.
+- **Failures must be LOUD.** Silent failures (returning 0 results, empty arrays, swallowed exceptions) are worse than crashes. If something goes wrong, print why and exit non-zero.
+- **Test isolation is mandatory.** Use `tmp_path`, clean up after yourself, never touch production data from tests.
+
+### Code
+- **Config path isolation.** If a user specifies `--config-path /somewhere/config.yaml`, ALL paths (DB, logs, backups, models) must resolve relative to that location. Never hardcode `~/.cashew/` anywhere.
+- **Environment variables override everything.** `CASHEW_CONFIG_PATH` and `CASHEW_DB_PATH` must be respected by every script, every module, every time.
+- **Backward compatibility is sacred.** Existing setups must not break. Ever. Test this explicitly.
+- **Never `git add -A`.** Always specific files.
+- **Good quality code is a craft.** Human makes all philosophical and design decisions; AI handles syntax.
+- **Every question the setup wizard asks must result in something ACTUALLY happening.** No dead config values.
+
+### Architecture
+- **Dumb graph, smart reasoning layer.** The graph stores connections. The LLM reasons about meaning. Don't put intelligence in the graph structure.
+- **No edge semantics.** Typed edges were ablation-tested and killed. No reintroductions under new names.
+- **No temporal scaffolding.** Timestamps are node metadata, not graph structure.
+- **Fractal simplicity.** Simple rules, emergent behavior. If a feature adds structural complexity, the burden of proof is on the complexity.
+- **Organic decay is the forgetting mechanism.** Don't build structures that fight decay.
+- **The philosophy layer is load-bearing architecture, not optional.** Without it cashew is just a memory tool; with it each instance becomes distinct.
+- **Discovery tool, not prediction engine.** Surface connections you didn't know existed, then human decides what to do. One hop, human in loop immediately.
+- **First-experience philosophy: aim for "holy shit this works" reaction.** Immediate value over technical showcase.
+
+### Process
+- **Write the switchboard, don't BE the switchboard.** If you find yourself doing something manually that should be automated, automate it. Scripts for deterministic tasks.
+- **An AI should be able to install this itself.** If `cashew init` → import → query doesn't work without human intervention, it's broken.
+- **Ship at 80%.** Perfect is the enemy of shipped. Blog 1 shipped at 80% and had massive impact.
+- **One feature per PR.** Always use PRs, never push to main.
+- **3-exchange rule.** If bot-to-bot hits 3 rounds without an artifact, stop.
+- **Pipeline awareness.** Code is 1 month, review is 2 more. Factor this into commitments.
+- **Inject principles into CLAUDE.md** so every worker inherits them. Don't hand-hold individual workers with detailed prompts.
 
 ## Testing
 
 ```bash
-# Run existing tests
-python -m pytest tests/
-
-# Quick end-to-end test
-python scripts/test_e2e.py
-
-# Test in clean environment
-mkdir /tmp/cashew-test && cd /tmp/cashew-test
-python /path/to/cashew_cli.py init
-python /path/to/scripts/cashew_context.py context --hints "test" --db data/graph.db
+python -m pytest tests/          # Full test suite
+python scripts/test_e2e.py       # Quick end-to-end test
 ```
 
 ## Common Tasks
@@ -173,7 +222,3 @@ python /path/to/scripts/cashew_context.py context --hints "test" --db data/graph
 1. Add migration script in `scripts/migrate_*.py`
 2. Update the init schema in `cashew_cli.py` `cmd_init()`
 3. Update this doc's schema section
-
-**Add a CLI command:**
-- User-facing graph operations → `scripts/cashew_context.py`
-- Setup/admin commands → `cashew_cli.py`

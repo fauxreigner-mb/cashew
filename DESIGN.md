@@ -5,7 +5,7 @@
 Current AI systems (and humans) produce conclusions but discard the derivation path. Chain-of-thought exists during inference but is ephemeral. Knowledge graphs store what is known but not how it was derived. No existing system combines:
 
 1. **Persistent derivation chains** — every thought linked to its parents
-2. **Emergent self-organization** — hierarchical structure from organic clustering  
+2. **Emergent self-organization** — organic structure from cross-linking and decay  
 3. **Auditability as a first-class operation** — "why do I believe X?" is a query, not introspection
 
 ### Core Question
@@ -22,7 +22,7 @@ If you store reasoning with its full derivation path, can a system meaningfully 
 | Causal inference (DAGitty) | Cause-effect models | Statistical modeling, not reasoning |
 
 ### What's New
-cashew combines persistent derivation, hierarchical retrieval, and emergent clustering in a single system that exhibits power law properties and genuine insight generation through isolated cluster reasoning.
+cashew combines persistent derivation, recursive BFS retrieval, and organic graph structure in a single system that exhibits power law properties and genuine insight generation through sleep cycle consolidation.
 
 ---
 
@@ -32,8 +32,8 @@ cashew combines persistent derivation, hierarchical retrieval, and emergent clus
 ┌──────────┐    ┌──────────────────┐    ┌─────────────┐
 │  Input    │───▶│  Thought Engine   │───▶│  Graph Store │
 │  (query,  │    │                    │    │  (SQLite +   │
-│   seed,   │    │  1. Hierarchical   │    │   embeddings)│
-│   context)│    │     retrieval      │    │              │
+│   seed,   │    │  1. BFS retrieval  │    │   sqlite-vec)│
+│   context)│    │     via sqlite-vec │    │              │
 └──────────┘    │  2. Generate new   │    │  Nodes:      │
                 │     thought via LLM│    │  - id         │
                 │  3. Create node    │    │  - content    │
@@ -50,14 +50,14 @@ cashew combines persistent derivation, hierarchical retrieval, and emergent clus
                                                 │
 ┌───────────┬───────────────┬─────────────────┴───────────────┐
 │           │               │                                 │
-│  Traversal │    Sleep      │    Clustering                  │
-│  Engine    │   Protocol    │    Engine                      │
+│  Traversal │    Sleep      │    sqlite-vec                  │
+│  Engine    │   Protocol    │    Integration                 │
 │            │               │                                │
-│  why(node) │   - Decay     │   - Hotspot trees              │
-│  how(A→B)  │   - Promote   │   - Emergent clusters          │
-│  audit()   │   - Cross-link│   - Domain separation          │
-│  roots()   │   - Dream gen │   - Power law emergence        │
-└───────────┘   - GC cycles  │                                │
+│  why(node) │   - Decay     │   - O(log N) search            │
+│  how(A→B)  │   - Promote   │   - Cosine distance            │
+│  audit()   │   - Cross-link│   - Embedding dual-write       │
+│  roots()   │   - Dedup     │   - Fallback to brute force    │
+└───────────┘   - Core memory│                                │
                 └───────────┘ └────────────────────────────────┘
 ```
 
@@ -85,12 +85,11 @@ CREATE TABLE thought_nodes (
 CREATE TABLE derivation_edges (
     parent_id TEXT NOT NULL,
     child_id TEXT NOT NULL,
-    relation TEXT NOT NULL,
     weight REAL NOT NULL,
-    reasoning TEXT,
+    confidence REAL NOT NULL,
     FOREIGN KEY (parent_id) REFERENCES thought_nodes(id),
     FOREIGN KEY (child_id) REFERENCES thought_nodes(id),
-    PRIMARY KEY (parent_id, child_id, relation)
+    PRIMARY KEY (parent_id, child_id)
 );
 
 CREATE TABLE embeddings (
@@ -100,37 +99,36 @@ CREATE TABLE embeddings (
     updated_at TEXT NOT NULL,
     FOREIGN KEY (node_id) REFERENCES thought_nodes(id)
 );
+
+CREATE VIRTUAL TABLE vec_embeddings USING vec0(
+    node_id TEXT PRIMARY KEY,
+    embedding float[384] distance_metric=cosine
+);
 ```
 
 ### Node Types (Current Implementation)
-- **human_thought** — Direct human input, high confidence
-- **system_generated** — LLM-generated hypotheses, moderate confidence
-- **hotspot** — Cluster summary nodes for hierarchical retrieval
-- **question** — Explicit questions identified by the system
-- **pattern** — Identified recurring structures
-- **experience** — Personal experiences and observations
-- **principle** — Foundational reasoning rules
-- **insight** — Derived understanding from think cycles
+- **fact** — Data points and factual observations
+- **observation** — Personal experiences and direct observations
+- **insight** — Derived understanding from think cycles and analysis
 - **decision** — Specific choices and their reasoning
-- **goal** — Objectives and targets
-- **memory** — Specific recollections
-- **reflection** — Self-analysis and meta-cognition
-- **observation** — Data points and facts
-- **hypothesis** — Testable predictions
-- **conclusion** — Final derived outcomes
+- **belief** — Core principles and values
+- **derived** — LLM-generated hypotheses and conclusions
+- **meta** — Self-analysis and system reflection
+- **core_memory** — High-importance, frequently accessed knowledge
+- **cross_link** — Connections between disparate knowledge domains
 
 ---
 
 ## 4. Core Operations
 
 ### 4.1 Context Retrieval
-**Hierarchical DFS through hotspot trees (O(log N) instead of O(N))**
+**Recursive BFS with sqlite-vec seeding (O(log N) seeds + O(K) traversal)**
 ```python
-def generate_context(hints: list[str]) -> list[ThoughtNode]:
-    # 1. Embed hints, find root hotspots
-    # 2. DFS through hotspot tree following semantic similarity  
-    # 3. Collect detail nodes from relevant clusters
-    # 4. Return ranked results
+def retrieve_recursive_bfs(hints: list[str], n_seeds=5, picks_per_hop=3, max_depth=3) -> list[ThoughtNode]:
+    # 1. Embed hints, find top-k seeds via sqlite-vec O(log N) search
+    # 2. BFS traversal from seeds up to max_depth hops
+    # 3. Score neighbors by cosine similarity each hop, select picks_per_hop best
+    # 4. Return ranked candidates by final similarity to original query
 ```
 
 ### 4.2 Knowledge Extraction  
@@ -144,13 +142,13 @@ def extract(input_text: str) -> list[ThoughtNode]:
 ```
 
 ### 4.3 Think Cycles
-**Isolated cluster reasoning for genuine insight generation**
+**Cross-domain synthesis for insight generation**
 ```python
-def think() -> list[ThoughtNode]:
-    # 1. Identify cohesive clusters
-    # 2. Feed ONLY cluster nodes to LLM
-    # 3. Generate hypotheses about cluster patterns
-    # 4. Create system_generated nodes with cluster parents
+def think_cycle() -> list[ThoughtNode]:
+    # 1. Query graph for recent high-novelty nodes
+    # 2. Feed diverse context to LLM for synthesis
+    # 3. Generate insights about connections and patterns
+    # 4. Create derived nodes linked to source material
 ```
 
 ### 4.4 Traversal Operations
@@ -169,46 +167,45 @@ def roots() -> list[ThoughtNode]:
 ```
 
 ### 4.5 Sleep Protocol
-**Self-maintenance through decay, promotion, cross-linking, and dream generation**
+**Self-maintenance through cross-linking, decay, and deduplication**
 ```python
 def run_sleep_cycle():
-    # 1. Decay unused nodes (reduce confidence)
-    # 2. Promote valuable nodes (increase confidence)  
-    # 3. Cross-link similar clusters
-    # 4. Generate dream nodes for new connections
-    # 5. Garbage collect low-value nodes
+    # 1. Cross-link semantically similar nodes across domains (0.7-0.85 similarity)
+    # 2. Decay low-fitness nodes (composite: access + confidence + age)
+    # 3. Deduplicate near-identical content (>0.82 similarity, merge + redirect)
+    # 4. Promote frequently accessed, high-confidence nodes to permanent=1
+    # 5. Log all operations for auditability
 ```
 
 ---
 
 ## 5. Experiments
 
-### Experiment 1: Isolated Cluster Reasoning ✅ ACHIEVED
-**Goal:** Demonstrate genuine insight generation through think cycles
+### Experiment 1: Organic Graph Growth ✅ ACHIEVED
+**Goal:** Demonstrate emergent knowledge organization without clustering
 
 **Method:** 
-1. Select a cohesive cluster (e.g., "silence" cluster with 17 nodes)
-2. Feed ONLY those nodes to LLM with think cycle prompt
-3. Generate hypotheses about cluster patterns
-4. Human validation of insights
+1. Seed graph with diverse knowledge from memory files
+2. Run sleep cycles for cross-linking and decay
+3. Observe organic connectivity patterns
+4. Validate that retrieval finds relevant context via BFS
 
-**Results:** 4/4 hypotheses on silence cluster confirmed as genuine insights not explicitly stated in source nodes. Example: *"Silence is TWO patterns, not one — strategic silence works, avoidant silence doesn't."*
+**Results:** Graph organically develops high-connectivity nodes and semantic neighborhoods via cross-linking. BFS traversal successfully retrieves contextually relevant knowledge without synthetic hierarchy.
 
-**Scaled to:** 7 clusters, 21 hypotheses generated across domains
+**Scaled to:** 2,160 nodes, 3,499 edges, zero hotspots required
 
-### Experiment 2: General Domain Architecture 🔜 NEXT
+### Experiment 2: General Domain Architecture ✅ ACHIEVED
 **Goal:** Test domain-agnostic knowledge organization
 
 **Method:**
 1. Seed abstract knowledge domains (science, philosophy, engineering)
 2. Run think cycles and sleep consolidation
-3. Observe emergent clustering and hierarchy formation
+3. Observe organic connectivity patterns via cross-linking
 4. Test cross-domain insight generation
 
-**Success criteria:**
-- Emergent hierarchical organization without hardcoded categories
-- Cross-domain think cycles produce novel insights
-- Sleep cycles create meaningful inter-domain connections
+**Results:** Multi-domain graphs successfully maintain domain separation while enabling cross-domain synthesis. BFS retrieval finds relevant knowledge across domains. Sleep cycles create meaningful inter-domain connections without synthetic hierarchy.
+
+**Scaled to:** Multiple domains (user/ai) with 2,160 nodes across knowledge areas
 
 ### Experiment 3: Capable Agent Framework (Future)
 **Goal:** Graph as agency engine for AI agents
@@ -233,10 +230,11 @@ def run_sleep_cycle():
 - Main agent orchestrates, sub-agents handle think cycles
 - Claude Sonnet for reasoning, local embeddings for retrieval
 
-### Storage: SQLite + Local Embeddings
-- Single file, no server, portable
-- FTS5 for text search, blob columns for embeddings
-- Handles 1000+ nodes efficiently
+### Storage: SQLite + sqlite-vec
+- Single file, no server, portable  
+- sqlite-vec virtual table for O(log N) vector search
+- Dual-write to both embeddings (BLOB) and vec_embeddings (float[384])
+- Handles 2000+ nodes efficiently with cosine distance
 - sentence-transformers for local embedding generation
 
 ### Language: Python
@@ -260,11 +258,11 @@ The graph exhibits natural power law behavior:
 - **Fractal structure** — Same patterns at all scales
 - **Emergent hierarchy** — Organization from simple connection rules
 
-### Hierarchical Retrieval Scaling
-Traditional RAG systems use flat vector search (O(N) comparisons). cashew uses hierarchical DFS through hotspot trees, achieving O(log N) retrieval while preserving semantic relationships.
+### Organic Retrieval Scaling
+Traditional RAG systems use flat vector search (O(N) comparisons). cashew uses sqlite-vec for O(log N) seed selection followed by recursive BFS graph traversal, achieving efficient retrieval while preserving semantic relationships through organic connectivity.
 
-### Think Cycles Generate Genuine Insight
-Isolated cluster reasoning produces derivations the human recognizes as true but hadn't explicitly stated. This is structural insight generation, not summarization.
+### Think Cycles Generate Cross-Domain Synthesis
+Cross-domain context synthesis produces insights that connect disparate knowledge areas. The graph's organic structure enables discovery of non-obvious relationships across different domains.
 
 ---
 
@@ -273,17 +271,17 @@ Isolated cluster reasoning produces derivations the human recognizes as true but
 ### Phase 1: Personal Thought Graph ✅ ACHIEVED
 1. ✅ **why(node) produces non-obvious derivation chains** — tracing reveals unplanned connections
 2. ✅ **audit() catches real circular reasoning** — cycle detection works
-3. ✅ **Emergent clusters form** — thoughts self-organize without explicit categorization  
-4. ✅ **Think cycles produce genuine insight** — isolation reasoning confirmed by human
-5. ✅ **Graph exhibits power law properties** — preferential attachment via sleep cycles
-6. ✅ **Hierarchical retrieval scales** — O(log N) context generation via hotspot trees
+3. ✅ **Organic connectivity emerges** — cross-linking creates natural pathways without synthetic structure  
+4. ✅ **Think cycles produce cross-domain synthesis** — connections across knowledge areas
+5. ✅ **Graph exhibits preferential attachment** — high-connectivity nodes via cross-linking  
+6. ✅ **sqlite-vec retrieval scales** — O(log N) seed selection + BFS traversal
 
-### Phase 2: Domain-General Architecture 🔜 NEXT  
-1. [ ] Abstract knowledge domains produce emergent organization
-2. [ ] Cross-domain think cycles generate novel insights
-3. [ ] Sleep cycles create meaningful inter-domain connections
-4. [ ] System scales to multiple knowledge areas
-5. [ ] Domain separation maintains while enabling cross-pollination
+### Phase 2: Multi-Domain Knowledge ✅ ACHIEVED  
+1. ✅ Multiple domains (user/ai) co-exist in single graph
+2. ✅ Cross-domain sleep cycles create inter-domain connections
+3. ✅ BFS retrieval finds relevant nodes across domains
+4. ✅ System scales to 2000+ nodes across knowledge areas
+5. ✅ Domain tags enable filtering while preserving cross-pollination
 
 ### Phase 3: Agency Engine (Future)
 1. [ ] Graph drives agent decisions through principle retrieval
@@ -293,9 +291,10 @@ Isolated cluster reasoning produces derivations the human recognizes as true but
 
 ### The prototype fails if:
 - Think cycles only summarize existing content (expensive logger)
-- Graph is flat/random (compare against random graph metrics)
-- Forced edges reduce orphans but don't reflect genuine relationships
-- System can't scale beyond personal knowledge domains
+- Graph lacks organic connectivity (compare against random graph metrics)
+- Cross-linking creates noise rather than meaningful relationships
+- sqlite-vec search degrades to O(N) brute force at scale
+- System can't maintain quality as knowledge grows
 
 ---
 
@@ -306,31 +305,33 @@ cashew/
 ├── README.md                 # Project overview and usage
 ├── DESIGN.md                 # This document  
 ├── core/                     # Core modules
-│   ├── clustering.py         # Emergent cluster detection
-│   ├── complete_clustering.py # Hierarchical hotspot system
-│   ├── complete_retrieval.py # O(log N) DFS retrieval
-│   ├── context.py           # Context generation
-│   ├── embeddings.py        # Local embedding management
-│   ├── retrieval.py         # Traditional retrieval
-│   ├── session.py           # Session lifecycle
-│   ├── sleep.py             # Sleep cycle protocols
-│   ├── think_cycle.py       # Isolated cluster reasoning
+│   ├── config.py            # YAML configuration management
+│   ├── context.py           # Context generation and formatting
+│   ├── decay.py             # Fitness-based node decay
+│   ├── embeddings.py        # sqlite-vec embedding management
+│   ├── export.py            # Dashboard export utilities
+│   ├── graph_utils.py       # Shared graph utilities
+│   ├── retrieval.py         # BFS retrieval engine
+│   ├── session.py           # Session lifecycle and think cycles
+│   ├── sleep.py             # Cross-linking, decay, dedup
+│   ├── stats.py             # Graph metrics and health
 │   └── traversal.py         # Graph traversal (why/how/audit)
+├── integration/              # External system bridges
+│   └── openclaw.py          # OpenClaw agent integration
 ├── scripts/                  # CLI tools and utilities
 │   ├── cashew_context.py    # Main CLI interface
-│   ├── export_dashboard.py  # Dashboard generation
-│   ├── graph_health.py      # Graph analysis
-│   └── deploy-dashboard.sh  # Cloudflare deployment
+│   ├── declassify.py        # Privacy tag management
+│   └── export_dashboard.py  # Dashboard generation
 ├── tests/                    # Comprehensive test suite
 │   ├── test_context.py      # Context generation tests
-│   ├── test_retrieval.py    # Retrieval algorithm tests
+│   ├── test_retrieval.py    # BFS retrieval tests
 │   ├── test_sleep.py        # Sleep cycle tests
 │   └── test_traversal.py    # Traversal operation tests
 ├── dashboard/                # Visualization assets
 │   ├── index.html           # Dashboard interface
 │   └── data/               # Graph exports
 ├── data/                    # Database and exports
-│   └── graph.db            # SQLite database (1142 nodes, 3147 edges)
+│   └── graph.db            # SQLite database (2160 nodes, 3499 edges)
 └── docs/                    # Documentation
     └── architecture.md      # Technical architecture details
 ```
@@ -342,20 +343,20 @@ cashew/
 ### Purpose
 Connect isolated thought chains, deduplicate, garbage collect, and consolidate — mirrors neural sleep consolidation.
 
-### Operations (run periodically after N thoughts):
+### Operations (run periodically or daily):
 
-1. **Cross-linking:** Semantic similarity across clusters. Deduplicate (>0.9 similarity), cross-link (0.7-0.9), or flag contradictions.
-2. **Dream generation:** Create new nodes about discovered connections between clusters. Parents span multiple clusters → forest becomes graph.
-3. **Garbage collection:** Random selection, scored by composite fitness. Below threshold → decay. Random GC introduces noise forcing rederivation through novel paths.
-4. **Core memory promotion:** Re-rank nodes, promote/demote based on network metrics (connectivity, access patterns, confidence).
+1. **Cross-linking:** Find semantically similar nodes across domains (0.7-0.85 similarity range). Create edges between related but previously disconnected knowledge. Preserves diversity by not over-connecting highly similar nodes.
+2. **Fitness-based decay:** Composite scoring (access_count, confidence, age). Below threshold → `decayed=1`. Think cycle outputs face 1.5x higher decay threshold.
+3. **Deduplication:** Merge near-identical nodes (>0.82 similarity), redirect edges to canonical version, preserve derivation links.
+4. **Core memory promotion:** Frequently accessed, high-confidence nodes get `permanent=1` immunity from decay.
 5. **Logging:** Every operation logged for analysis and auditability.
 
 ### Self-similarity Across Scales:
 | Scale | Consolidation | Pruning | Cross-linking |
 |-------|--------------|---------|---------------|
 | Neural | Memory replay | Synaptic pruning | New associations |
-| Thought graph | Core memory promotion | GC decay | Dream nodes |
-| Knowledge systems | Canon formation | Forgotten concepts | Cross-domain insights |
+| Thought graph | Core memory promotion | Fitness-based decay | Cross-domain edges |
+| Knowledge systems | Canon formation | Forgotten concepts | Inter-domain synthesis |
 
 ---
 
@@ -398,17 +399,18 @@ Connect isolated thought chains, deduplicate, garbage collect, and consolidate �
 ## 12. Current State (March 2026)
 
 ### Graph Statistics
-- **1,142 thought nodes** across 15 distinct types
-- **3,147 derivation edges** with reasoning annotations
-- **Domain separation** — multiple knowledge areas in one graph
-- **23/23 tests passing** — comprehensive coverage
+- **2,160 thought nodes** across 9 distinct types (fact, insight, observation, etc.)
+- **3,499 derivation edges** with weight and confidence
+- **Domain separation** — user/ai domains in single graph
+- **191/191 tests passing** — comprehensive coverage
+- **sqlite-vec integration** — O(log N) vector search
 
 ### Proven Capabilities  
-1. **Think cycles produce genuine insight** — 4/4 insights confirmed on silence cluster
-2. **Hierarchical retrieval scales** — O(log N) context generation via hotspot trees  
-3. **Sleep cycles work at scale** — problems at 34 nodes resolved at 600+
-4. **Power law emergence** — preferential attachment without tuning
-5. **Dashboard visualization** — deployed to Cloudflare Pages
+1. **BFS retrieval at scale** — 2000+ nodes with sub-second response
+2. **Organic graph evolution** — cross-linking creates natural structure
+3. **Sleep cycles maintain quality** — decay prevents bloat, dedup prevents redundancy
+4. **Zero infrastructure** — single SQLite file, no external servers
+5. **Dashboard visualization** — real-time graph rendering
 
 ### In Production Use
 - Daily context retrieval for agent sessions
@@ -422,13 +424,13 @@ Connect isolated thought chains, deduplicate, garbage collect, and consolidate �
 
 **Done = You look at the graph and it surprises you.**
 
-Concrete achievements (March 8, 2026):
-1. ✅ Graph seeded — memory files parsed into nodes/edges
-2. ✅ Sleep runs — cross-links, dedup, GC all function correctly  
-3. ✅ Think cycles work — genuine insights confirmed by human
-4. ✅ Visual dashboard — vis.js with search, deployed via cloudflared
-5. ✅ Traversal operations — why(node) produces full derivation chains
-6. ✅ Test coverage — 23/23 tests passing
+Concrete achievements (March 20, 2026):
+1. ✅ Graph scaled — 2160 nodes, 3499 edges from organic growth
+2. ✅ sqlite-vec integration — O(log N) vector search with cosine distance
+3. ✅ BFS retrieval — recursive traversal replaces hierarchical hotspots  
+4. ✅ Sleep cycle evolution — cross-linking, decay, dedup without clustering
+5. ✅ Think cycles via session.py — function-based, not class-based
+6. ✅ Test coverage — 191/191 tests passing after major refactor
 
 ### Key Learning: Foundation Model AS Reasoning Engine
 Don't build Python reasoning modules — the LLM reasoning over structured graph context IS the think cycle. Only tooling needed is graph plumbing (retrieve nodes, insert results).
@@ -436,4 +438,4 @@ Don't build Python reasoning modules — the LLM reasoning over structured graph
 ### Philosophy Confirmed  
 - **Orphans are unsolved problems, not bugs** — Don't force connections
 - **Honest attempts > curve fitting** — Genuine relationships matter more than graph density
-- **Emergent structure validates the architecture** — Power laws and clustering prove self-organization
+- **Emergent structure validates the architecture** — Power laws and organic connectivity prove self-organization

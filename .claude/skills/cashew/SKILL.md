@@ -1,0 +1,1 @@
+../../../skills/claude-code/SKILL.md

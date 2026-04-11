@@ -1,370 +1,117 @@
 # Cashew 🥜
 
-**Persistent thought-graph memory for AI agents.** Cashew provides context generation, knowledge extraction, and autonomous think cycles to maintain coherent memory across sessions and compactions.
+**Persistent thought-graph memory for AI agents.**
 
-Never lose context again. Cashew builds a hierarchical graph of interconnected knowledge nodes that grows smarter over time through autonomous reasoning cycles.
+The name comes from asking "do cats eat cashews?" — a question from a curious kid visiting family in India, watching stray cats sneak into kitchens to steal food. That kid never stopped asking questions. Cashew is a system that never stops asking questions either — autonomous think cycles find connections you didn't know existed.
+
+## What It Does
+
+- **Remembers across sessions.** Decisions, patterns, relationships, and project context survive compaction and restart. Your agent picks up where it left off.
+- **Learns autonomously.** Think cycles find cross-domain connections without prompting. A pattern in your work habits connects to a pattern in your communication style — the brain surfaces it.
+- **Stays fast at scale.** sqlite-vec for O(log N) retrieval, recursive BFS graph walk, constant context cost regardless of graph size. 3,000 nodes costs the same as 300.
+
+## What If Forgetting Is the Intelligence?
+
+Cashew doesn't hoard everything. Organic decay means low-value knowledge fades naturally while important patterns strengthen through use. No manual curation needed — the graph self-organizes through cross-linking and natural selection. See [PHILOSOPHY.md](PHILOSOPHY.md) for the full manifesto.
 
 ## Quick Start
 
 ```bash
-# Clone and install
-git clone <your-repo>
-cd cashew
-pip install -e .
-
-# Initialize your brain
+pip install cashew-brain
 cashew init
-
-# Verify setup
 cashew context --hints "test"
+```
 
-# Start using in conversations
+That's it. Your brain is empty but ready. Start extracting knowledge:
+
+```bash
 echo "I prefer TypeScript over JavaScript for complex projects" | cashew extract --input -
 ```
 
-## What is Cashew?
-
-Cashew is a **pure infrastructure** thought-graph memory engine that gives AI agents persistent, hierarchical memory across sessions. This is engine-only: graph database, retrieval, extraction, think cycles, and sleep cycles. No opinionated identity layer or philosophical content.
-
-Unlike simple RAG systems, Cashew:
-
-- **Builds knowledge graphs**: Facts, insights, and decisions become interconnected nodes
-- **Learns autonomously**: Think cycles consolidate and extend knowledge without human input (when LLM access provided)
-- **Provides smart context**: Retrieves relevant information using semantic similarity and graph traversal
-- **Handles scale**: Efficient clustering and indexing keeps performance high as knowledge grows
-- **Integrates seamlessly**: Drop-in enhancement for OpenClaw agents and other AI systems
-
-## LLM Architecture
-
-**Cashew does NOT call LLMs directly.** It follows a strict separation:
-
-- **Cashew (Brain)**: Storage, retrieval, clustering, structure
-- **Orchestrator (Processor)**: Provides LLM access via `model_fn` parameters
-
-### Feature Availability:
-- **CLI usage**: Heuristic extraction, graph operations, context retrieval (no LLM needed)
-- **OpenClaw crons**: Full LLM features (hotspot summaries, think cycles, smart extraction) via orchestrator
-- **Custom integrations**: Any system can provide LLM access through the `model_fn` parameter pattern
-
-## Installation
-
-### Requirements
-- Python 3.10+
-- 2GB RAM (for embedding model)
-- 100MB disk space (grows with your knowledge graph)
-
-### Install
+Query it back:
 
 ```bash
-pip install cashew
+cashew context --hints "programming language preferences"
 ```
 
-Or for development:
-```bash
-git clone <repo>
-cd cashew
-pip install -e .
-```
+## Integration
 
-## Setup
+### Claude Code
 
-### 1. Initialize
-```bash
-cashew init
-```
-
-This creates:
-- `config.yaml` - Configuration (edit this!)
-- `data/graph.db` - Your knowledge graph database
-- `logs/` - Application logs
-- `models/` - Downloaded embedding models
-
-### 2. Configure
-
-Edit `config.yaml` to customize:
-
-```yaml
-# Database and storage
-database:
-  path: "./data/graph.db"
-  backup_dir: "./data/backups"
-
-# Domain names (replaces hardcoded 'raj'/'bunny')
-domains:
-  user: "user"    # Things the human said/decided
-  ai: "ai"        # AI analysis and suggestions
-
-# Performance tuning
-performance:
-  token_budget: 2000      # Context size limit
-  top_k_results: 10       # Max results to retrieve
-  similarity_threshold: 0.3  # Minimum relevance
-  
-# Model configuration  
-models:
-  embedding:
-    name: "all-MiniLM-L6-v2"
-  # LLM config removed - cashew doesn't call LLMs directly
-  # LLM access provided by orchestrator via model_fn parameters
-```
-
-### 3. Verify
+Copy the skill into your personal skills directory:
 
 ```bash
-cashew context --hints "test"
-# Should show: "No relevant context found" (expected for empty brain)
+# From the cashew repo
+cp -r skills/claude-code/ ~/.claude/skills/cashew/
 ```
 
-## Core Usage
+This gives you the `/cashew` slash command and automatic context loading. Claude Code will query your brain before answering substantive questions and extract knowledge during conversations.
 
-### Query for Context
-Before answering questions, query your brain:
-```bash
-cashew context --hints "project status work priorities"
-```
+Or if you cloned the repo, just open it in Claude Code — the `.claude/skills/cashew/` directory auto-discovers.
 
-This returns relevant knowledge to inform your response.
+### OpenClaw
 
-### Extract Knowledge
-After important conversations, extract insights:
-```bash
-# From file (uses heuristic extraction - no LLM)
-cashew extract --input conversation.txt
-
-# From stdin  
-echo "User prefers TypeScript for type safety" | cashew extract --input -
-```
-
-**Note**: CLI extraction uses heuristic methods. For smart LLM-powered extraction, use OpenClaw cron jobs which provide the necessary model functions.
-
-### Think Cycles
-**Note**: Think cycles require LLM access. Use through OpenClaw cron jobs for full functionality.
-```bash
-cashew think  # Limited functionality without LLM
-```
-
-### Sleep Cycles  
-Deep reorganization and clustering (structural operations work without LLM):
-```bash
-cashew sleep  # Clustering works, hotspot summaries use fallbacks
-```
-
-### Statistics
-Check your brain's health:
-```bash
-cashew stats
-```
-
-## Cron Automation
-
-Install automated maintenance:
-
-```bash
-cashew install-crons
-```
-
-This generates `cashew-crons.yaml` with OpenClaw cron job configurations:
-
-- **Brain extraction** (every 2hrs) - Reads session history, extracts to brain
-- **Think cycle** (2x daily) - Consolidation and insight generation  
-- **Sleep cycle** (daily) - Deep reorganization and clustering
-- **Backup** (daily) - Database backup and health checks
-
-Copy the generated jobs to your OpenClaw config file (`~/.openclaw/config/config.yaml`).
-
-## Configuration Reference
-
-### Database Configuration
-```yaml
-database:
-  path: "./data/graph.db"           # Main database location
-  backup_dir: "./data/backups"      # Backup storage
-  auto_backup: true                 # Auto-backup before major operations
-```
-
-### Domain Configuration
-```yaml
-domains:
-  default: "general"                # Fallback domain
-  user: "user"                      # Human user's knowledge
-  ai: "ai"                         # AI-generated insights
-  classifications:                  # Additional categories
-    - personal
-    - work  
-    - projects
-    - learning
-```
-
-### Performance Tuning
-```yaml
-performance:
-  token_budget: 2000               # Max tokens for context generation
-  top_k_results: 10                # Max results per query
-  walk_depth: 2                    # Graph traversal depth
-  similarity_threshold: 0.3         # Minimum relevance score
-  novelty_threshold: 0.82          # Prevent near-duplicates
-  clustering_eps: 0.35             # DBSCAN clustering sensitivity
-  think_cycle_nodes: 5             # Max nodes per think cycle
-```
-
-### Model Configuration
-```yaml
-models:
-  embedding:
-    name: "all-MiniLM-L6-v2"       # Sentence transformer model
-    provider: "sentence-transformers"
-    cache_dir: "./models"           # Local model cache
-    
-  llm:
-    provider: "anthropic"           # or "openai"
-    model: "claude-sonnet-4-20250514"
-    api_key_env: "ANTHROPIC_API_KEY"  # Environment variable name
-```
-
-### Integration Settings
-```yaml
-integration:
-  openclaw:
-    # Path to OpenClaw auth profiles
-    auth_profile_path: "${HOME}/.openclaw/agents/${OPENCLAW_AGENT:-main}/agent/auth-profiles.json"
-    # OpenClaw workspace
-    workspace_path: "${HOME}/.openclaw/workspace"
-```
-
-## API Integration
+Install as an OpenClaw skill for full automation — cron jobs handle extraction, think cycles, and dashboard deployment without manual intervention. See `skills/openclaw/SKILL.md` for setup instructions.
 
 ### Python API
 
 ```python
-from cashew.core.context import ContextRetriever
-from cashew.integration.openclaw import extract_from_conversation
+from core.context import ContextRetriever
+from core.embeddings import load_embeddings
 
 # Query context
-retriever = ContextRetriever("./data/graph.db")
-context = retriever.generate_context_from_hints(["work", "projects"])
-
-# Extract knowledge
-result = extract_from_conversation(
-    db_path="./data/graph.db",
-    conversation="User decided to use React for the frontend",
-    session_id="session_123"
-)
+embeddings = load_embeddings("path/to/graph.db")
+retriever = ContextRetriever("path/to/graph.db", embeddings)
+context = retriever.generate_context(hints=["work", "projects"])
 ```
 
-### CLI Integration
+## Architecture
 
-Perfect for shell scripts and automation:
-```bash
-# Context for current task
-CONTEXT=$(cashew context --hints "$(echo $USER_INPUT | head -c 100)")
+- **Single SQLite file.** No external servers, no separate indexes. Your entire brain is one portable file.
+- **Local embeddings.** all-MiniLM-L6-v2 (384 dims). Downloads ~500MB on first run, then runs locally forever. No API calls for retrieval.
+- **LLM for intelligence.** Extraction and think cycles need an LLM (Claude, GPT, etc). Retrieval and storage don't. Bring your own via `model_fn` parameter or API key.
+- **Retrieval.** sqlite-vec seeds (O(log N) nearest neighbor) → recursive BFS graph walk (seeds=5, picks_per_hop=3, max_depth=3). The graph's organic connectivity provides implicit hierarchy — no synthetic summary nodes needed.
+- **Organic decay.** Nodes that aren't accessed lose fitness over time. Low-fitness nodes get marked decayed and excluded from retrieval. The graph forgets what doesn't matter.
 
-# Extract after completion  
-echo "$CONVERSATION_LOG" | cashew extract --input -
-```
+## CLI Reference
 
-## Advanced Usage
+| Command | Purpose |
+|---------|---------|
+| `cashew init` | Initialize a new brain |
+| `cashew context --hints "..."` | Retrieve relevant context |
+| `cashew extract --input file.md` | Extract knowledge from text |
+| `cashew think` | Run a think cycle |
+| `cashew sleep` | Full sleep cycle (consolidation) |
+| `cashew stats` | Graph statistics |
 
-### Custom Domains
+## Requirements
 
-Add your own domain classifications in `config.yaml`:
+- Python 3.10+
+- ~2GB RAM (for embedding model)
+- ~500MB disk (embedding model, downloaded on first use)
+- An LLM API key for extraction and think cycles (optional for retrieval-only use)
 
-```yaml
-domains:
-  classifications:
-    - work
-    - personal  
-    - learning
-    - projects
-    - research
-```
+## Philosophy
 
-### Performance Optimization
+Cashew ships with a philosophy document that defines how a brain-equipped agent should operate. It covers brain sovereignty, evidence over defaults, the sponge principle, cross-domain vision, and why divergence between instances is the whole point.
 
-For large graphs (10k+ nodes):
-
-```yaml
-performance:
-  clustering_eps: 0.3        # Tighter clustering
-  similarity_threshold: 0.4  # Higher relevance bar
-  token_budget: 1500         # Smaller context window
-```
-
-For real-time applications:
-```yaml
-performance:
-  top_k_results: 5          # Fewer results
-  walk_depth: 1             # Shallow traversal
-  novelty_threshold: 0.9    # Aggressive deduplication
-```
-
-### Database Migration
-
-Moving to a new system:
-```bash
-# Backup current database
-cashew backup
-
-# Copy to new system
-cp data/graph.db /new/location/
-
-# Update config
-vim config.yaml  # Update database.path
-
-# Verify
-cashew stats
-```
-
-## Troubleshooting
-
-### Empty Context Results
-- Check database exists: `ls -la data/graph.db`
-- Verify embeddings: `cashew stats`
-- Try broader hints: `cashew context --hints "general"`
-
-### Extraction Failing
-- Check API key: `echo $ANTHROPIC_API_KEY`
-- Test model access: Try simple extraction
-- Review logs: `tail -f logs/cashew.log`
-
-### Performance Issues
-- Reduce token budget in config.yaml
-- Lower top_k_results
-- Run `cashew sleep` to reorganize clusters
-
-### Database Corruption
-- Restore from backup: `cp data/backups/latest.db data/graph.db`
-- Reinitialize: `rm data/graph.db && cashew init`
+Read it: [PHILOSOPHY.md](PHILOSOPHY.md)
 
 ## Development
 
-### Running Tests
 ```bash
-pip install -e .[dev]
+git clone https://github.com/jugaad-lab/cashew.git
+cd cashew
+pip install -e ".[dev]"
 pytest
 ```
 
-### Adding Features
-1. Core logic goes in `core/`
-2. Integration code in `integration/`
-3. CLI commands in `cashew_cli.py`
-4. Update tests in `tests/`
-
-### Contributing
-1. Fork the repository
-2. Create a feature branch
-3. Add tests for new functionality
-4. Submit a pull request
+See [CLAUDE.md](CLAUDE.md) for the developer guide — architecture, schema, conventions, and engineering philosophy.
 
 ## License
 
-MIT License - see [LICENSE](LICENSE) for details.
-
-## Support
-
-- **Issues**: [GitHub Issues](https://github.com/jugaad-lab/cashew/issues)
-- **Documentation**: See `docs/` directory
-- **Examples**: See `examples/` directory
+MIT — see [LICENSE](LICENSE).
 
 ---
 
-**Built for the OpenClaw ecosystem** - Cashew integrates seamlessly with OpenClaw agents to provide persistent memory across sessions, compactions, and system restarts.
+Built by [jugaad-lab](https://github.com/jugaad-lab).
