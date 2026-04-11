@@ -144,19 +144,21 @@ Each node has a domain. Get this right:
 
 ## Cron Jobs
 
-### Session-to-brain extraction (every 2 hours)
+Frequencies below are sensible defaults. Adjust to your usage patterns — heavy daily use warrants more frequent extraction; light use can dial everything back. Sleep schedule is configurable in `config.yaml` under `sleep.schedule` and `sleep.frequency`.
+
+### Session-to-brain extraction (default: every 2 hours)
 Reads recent session history, extracts knowledge using prepare→ingest pattern. Split private/public nodes into separate ingest calls.
 
-### Think cycle (twice daily)
+### Think cycle (default: twice daily)
 Picks a random cluster, finds cross-domain patterns, generates insights. Use `--prepare-only` + external LLM + `--ingest` pattern.
 
-### Sleep cycle (every 6 hours)
+### Sleep cycle (default: every 6 hours, configurable in config.yaml)
 Full consolidation: cross-linking, decay, deduplication, hierarchy evolution.
 
-### DB backup (every 6 hours)
+### DB backup (default: every 6 hours)
 Copy graph.db to timestamped backup. Never lose the brain.
 
-### Declassify (daily)
+### Declassify (default: daily)
 Review aged `vault:private` nodes for safe declassification.
 
 ## Key Principles

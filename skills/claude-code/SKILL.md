@@ -77,13 +77,15 @@ This finds cross-domain connections, detects tensions (contradictory knowledge),
 
 ## Scheduling with Claude Code Cron
 
+Frequencies below are sensible defaults — adjust to your usage. Sleep schedule is also configurable in `config.yaml` under `sleep.schedule` and `sleep.frequency`.
+
 If Claude Code's `Cron` tool is available, set up automated maintenance:
 
 ```
-# Extract from recent work every 2 hours
+# Extract from recent work (default: every 2 hours)
 /loop 2h "Summarize key decisions and insights from this session into /tmp/cashew-extract.md, then run: KMP_DUPLICATE_LIB_OK=TRUE cashew extract --input /tmp/cashew-extract.md"
 
-# Think cycle once per day
+# Think cycle (default: once per day, increase for heavier use)
 /loop 24h "KMP_DUPLICATE_LIB_OK=TRUE cashew think"
 ```
 
