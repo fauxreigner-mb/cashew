@@ -49,7 +49,7 @@ def run_retrieval_queries(db_path):
     """
     test_queries = [
         "E5 promotion simulation testing manager",
-        "Partner Chiki family personal",
+        "family member names personal",
         "cashew Dagger blog series projects",
         "silence pattern perfectionism streak mentality",
         "Nag Friend-S Cristian Vinny pastor people",

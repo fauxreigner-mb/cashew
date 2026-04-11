@@ -6,7 +6,7 @@ models:
   embedding:
     name: all-MiniLM-L6-v2
     provider: sentence-transformers
-    cache_dir: /Users/bunny/.cashew/data/models
+    cache_dir: ~/.cashew/data/models
 domains:
   default: general
   user: user
@@ -44,7 +44,7 @@ integration:
 logging:
   level: INFO
   format: '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-  file: /Users/bunny/.cashew/data/logs/cashew.log
+  file: ~/.cashew/data/logs/cashew.log
 gc:
   mode: soft
   threshold: 0.05
@@ -72,5 +72,9 @@ extract:
   schedule: 0 */2 * * *
   frequency: 2h
 backup:
+  enabled: true
+  interval: 6h
+  retention_period: 24h
+  auto_backup_enabled: true
   schedule: 0 */6 * * *
   frequency: 6h
