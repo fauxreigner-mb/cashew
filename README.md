@@ -4,6 +4,8 @@
 
 The name comes from asking "do cats eat cashews?" — a question I asked my aunt as a 10-year-old kid in India, because the cashews were left open in the kitchen and I knew stray cats sneak into homes to eat food. My family still brings it up every time I visit. I never stopped asking questions. This system doesn't either — autonomous think cycles find connections you didn't know existed.
 
+📝 **Blog post:** [I Built My AI a Brain and It Started Thinking for Itself](https://open.substack.com/pub/rajkripaldanday/p/i-built-my-ai-a-brain-and-it-started)
+
 ## Architecture
 
 ![Cashew Architecture](docs/architecture-diagram.png)
