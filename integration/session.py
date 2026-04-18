@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-OpenClaw Integration Module for Cashew
-Bridge between cashew's session layer and OpenClaw's lifecycle
+Session Integration Module for Cashew
+Bridge between cashew sessions and host agents
 """
 
 import os
@@ -336,10 +336,10 @@ def run_personal_think_cycle(db_path: str, model_fn: Optional[Callable[[str], st
     return run_think_cycle(db_path, "personal", model_fn)
 
 
-# Main integration point for OpenClaw
+# Main integration entrypoint for host agents
 def integrate_with_openclaw(db_path: str, operation: str, model_fn: Optional[Callable[[str], str]] = None, **kwargs) -> Dict[str, Any]:
     """
-    Main integration function for OpenClaw to call cashew operations
+    Main integration function for host agents to call cashew operations
     
     Args:
         db_path: Path to the SQLite database
@@ -395,7 +395,7 @@ def integrate_with_openclaw(db_path: str, operation: str, model_fn: Optional[Cal
 if __name__ == "__main__":
     import argparse
     
-    parser = argparse.ArgumentParser(description="Cashew OpenClaw Integration")
+    parser = argparse.ArgumentParser(description="Cashew Session Integration")
     parser.add_argument("operation", choices=["context", "extract", "think"], help="Operation to perform")
     from core.config import get_db_path
     parser.add_argument("--db", default=get_db_path(), help="Database path")
@@ -427,6 +427,6 @@ if __name__ == "__main__":
     
     elif args.operation == "think":
         # CLI usage has no model function - will be skipped
-        print("Think cycles require LLM access. Use through OpenClaw cron jobs instead.")
+        print("Think cycles require LLM access. Run via scheduled cron/launchd jobs.")
         result = {"success": False, "error": "No LLM access from CLI", "summary": "CLI think cycles not supported"}
         print(json.dumps(result, indent=2))

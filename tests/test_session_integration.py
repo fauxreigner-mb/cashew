@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""Tests for integration/openclaw.py"""
+"""Tests for integration/session.py"""
 
 import os
 import pytest
 from unittest.mock import patch, MagicMock
 
-from integration.openclaw import (
+from integration.session import (
     generate_session_context,
     extract_from_conversation,
     run_think_cycle,

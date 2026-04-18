@@ -16,7 +16,7 @@ from pathlib import Path
 # Add the parent directory to the path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from integration.openclaw import (
+from integration.session import (
     generate_session_context,
     extract_from_conversation,
     run_think_cycle,
@@ -191,7 +191,7 @@ class TestOpenClawIntegration(unittest.TestCase):
     
     def test_integrate_with_openclaw_context_operation(self):
         """Test the main integration function with context operation"""
-        with patch('integration.openclaw.generate_session_context') as mock_context:
+        with patch('integration.session.generate_session_context') as mock_context:
             mock_context.return_value = "Test context"
             
             result = integrate_with_openclaw(self.test_db, "context", hints=["work"])

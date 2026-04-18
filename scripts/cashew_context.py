@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Cashew Context CLI - Manual testing interface for OpenClaw integration
+Cashew Context CLI - Manual testing interface for session/extract/think/sleep
 """
 
 import sys
@@ -17,7 +17,7 @@ logger = logging.getLogger("cashew")
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from core import db as cdb
-from integration.openclaw import generate_session_context, extract_from_conversation, run_think_cycle, run_tension_detection
+from integration.session import generate_session_context, extract_from_conversation, run_think_cycle, run_tension_detection
 # complete_integration removed (depended on hotspots) — lazy import for legacy CLI commands
 def _lazy_complete_import():
     raise ImportError("complete_integration was removed with hotspots. Use the standard context/extract/think/sleep commands instead.")
@@ -28,100 +28,12 @@ explain_complete_system = get_complete_system_stats = None
 
 
 def _build_model_fn():
-    """Build a model_fn by routing through the OpenClaw gateway.
-    
-    OpenClaw is provider-agnostic — works with Anthropic, OpenAI, local models,
-    whatever the user configured. No need for separate API keys or CLI tools.
-    
-    Discovery order for gateway config:
-    1. OPENCLAW_GATEWAY_URL + OPENCLAW_GATEWAY_TOKEN env vars
-    2. cashew config.yaml (integration.openclaw.gateway_*)
-    3. ~/.openclaw/openclaw.json (auto-discover running gateway)
-    
-    Returns a callable (prompt → response string) or None.
-    """
-    import json as _json
-    import urllib.request
-    import urllib.error
-    
-    gateway_url = os.environ.get("OPENCLAW_GATEWAY_URL", "")
-    gateway_token = os.environ.get("OPENCLAW_GATEWAY_TOKEN", "")
-    
-    # Try cashew config.yaml
-    if not gateway_token:
-        try:
-            config_path = Path(__file__).parent.parent / "config.yaml"
-            if config_path.exists():
-                import yaml
-                with open(config_path) as f:
-                    cfg = yaml.safe_load(f)
-                oc = cfg.get("integration", {}).get("openclaw", {})
-                gateway_url = gateway_url or oc.get("gateway_url", "")
-                gateway_token = oc.get("gateway_token", "")
-        except Exception:
-            pass
-    
-    # Auto-discover from OpenClaw config
-    if not gateway_token:
-        try:
-            oc_config = Path.home() / ".openclaw" / "openclaw.json"
-            if oc_config.exists():
-                with open(oc_config) as f:
-                    oc_data = _json.load(f)
-                gateway_token = oc_data.get("gateway", {}).get("auth", {}).get("token", "")
-                port = oc_data.get("gateway", {}).get("port", 18789)
-                gateway_url = gateway_url or f"http://127.0.0.1:{port}"
-        except Exception:
-            pass
-    
-    if not gateway_url:
-        gateway_url = "http://127.0.0.1:18789"
-    
-    if not gateway_token:
-        print("⚠️  No OpenClaw gateway found. Ensure OpenClaw is running (openclaw gateway start)")
-        print("   Or set OPENCLAW_GATEWAY_TOKEN env var")
-        return None
-    
-    # Cumulative token usage tracker
-    _usage = {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0, "calls": 0}
-    
-    def model_fn(prompt: str) -> str:
-        payload = _json.dumps({
-            "model": "openclaw",
-            "messages": [{"role": "user", "content": prompt}],
-            "max_tokens": 4096
-        }).encode()
-        req = urllib.request.Request(
-            f"{gateway_url}/v1/chat/completions",
-            data=payload,
-            headers={
-                "Authorization": f"Bearer {gateway_token}",
-                "Content-Type": "application/json"
-            }
-        )
-        with urllib.request.urlopen(req, timeout=120) as resp:
-            data = _json.loads(resp.read())
-            # Track token usage
-            usage = data.get("usage", {})
-            prompt_tok = usage.get("prompt_tokens", 0)
-            completion_tok = usage.get("completion_tokens", 0)
-            # Estimate tokens if gateway returns zeros
-            response_text = data["choices"][0]["message"]["content"]
-            if prompt_tok == 0:
-                prompt_tok = len(prompt) // 4  # ~4 chars per token estimate
-            if completion_tok == 0:
-                completion_tok = len(response_text) // 4
-            _usage["prompt_tokens"] += prompt_tok
-            _usage["completion_tokens"] += completion_tok
-            _usage["total_tokens"] += prompt_tok + completion_tok
-            _usage["calls"] += 1
-            return data["choices"][0]["message"]["content"]
-    
-    # Attach usage tracker to function for external access
-    model_fn.usage = _usage
-    
-    print(f"🔑 LLM enabled via OpenClaw ({gateway_url})")
-    return model_fn
+    """Build an LLM callable via core.llm.build_backend. Returns None if unavailable."""
+    from core.llm import build_backend
+    backend = build_backend()
+    if backend is not None:
+        print(f"🔑 LLM enabled via {backend.__class__.__name__} (model={backend.model})")
+    return backend
 from core.decay import auto_decay, get_decay_candidates
 from core.stats import get_active_node_count, get_edge_count, get_embedding_coverage
 
@@ -1032,10 +944,10 @@ def _migrate_extract_file(db_path: str, content: str, filename: str, session_id:
 
     # Use passed model_fn or fall back to heuristic
     if model_fn is None:
-        print(f"   📝 CLI extraction - using heuristic method (LLM extraction available via OpenClaw)")
+        print(f"   📝 CLI extraction - using heuristic method (LLM extraction available via claude_code backend)")
         return _migrate_extract_heuristic(db_path, content, filename, session_id)
     
-    print(f"   🤖 LLM extraction - using smart extraction via OpenClaw")
+    print(f"   🤖 LLM extraction - using smart extraction via claude_code backend")
     
     # Use LLM to extract semantic knowledge
     prompt = f"""Extract knowledge from this document into structured facts, insights, observations, and decisions.
@@ -1344,7 +1256,7 @@ def cmd_migrate_files(args):
             model_fn = _build_model_fn()
             if not model_fn:
                 print("   ⚠️  No LLM access — running core consolidation (cross-links, dedup, GC)")
-                print("   Consolidation requires LLM access. Either run OpenClaw (openclaw gateway start)")
+                print("   Consolidation requires LLM access. Set CASHEW_LLM_BACKEND")
                 print("   or run `cashew sleep` later when LLM is available.")
             result = run_sleep_cycle(args.db, model_fn=model_fn)
             if isinstance(result, dict):

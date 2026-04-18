@@ -220,7 +220,7 @@ def cmd_init(args):
     print("Next steps:")
     print("1. Edit config.yaml to customize settings")
     print("2. Run 'cashew context --hints \"test\"' to verify")
-    print("3. Use 'cashew install-crons' to set up automated maintenance")
+    print("3. Run 'python3 scripts/cashew_init.py' to wire up scheduling")
     if enable_backups:
         print("4. Test backup with 'cashew backup'")
     
@@ -239,97 +239,6 @@ def _interval_to_cron(interval: str) -> str:
         return "0 4 * * *"  # Daily at 4 AM
     else:
         return "0 */6 * * *"  # Default to 6h
-
-
-def cmd_install_crons(args):
-    """Generate OpenClaw cron job configurations"""
-    print("⏰ Generating OpenClaw cron job configurations...")
-    
-    # Get configuration
-    raw_config = config.get_raw_config()
-    cron_config = raw_config.get('integration', {}).get('cron', {})
-    
-    # Define cron job templates
-    cron_jobs = {
-        'brain-extract': {
-            'description': 'Extract knowledge from session history to brain',
-            'schedule': cron_config.get('extract_schedule', '0 */2 * * *'),
-            'command': 'cashew extract-session',
-            'model': cron_config.get('extract_model', 'anthropic/claude-haiku-4-5'),
-            'timeout': 300
-        },
-        'think-cycle': {
-            'description': 'Run think cycle for knowledge consolidation',
-            'schedule': cron_config.get('think_schedule', '0 6,18 * * *'),
-            'command': 'cashew think',
-            'model': cron_config.get('think_model', 'anthropic/claude-sonnet-4-20250514'),
-            'timeout': 600
-        },
-        'sleep-cycle': {
-            'description': 'Run sleep cycle for deep reorganization',
-            'schedule': cron_config.get('sleep_schedule', '0 3 * * *'),
-            'command': 'cashew sleep',
-            'model': cron_config.get('sleep_model', 'anthropic/claude-sonnet-4-20250514'),
-            'timeout': 1800
-        },
-        'backup': {
-            'description': 'Backup graph database',
-            'schedule': cron_config.get('backup_schedule', '0 */6 * * *'),
-            'command': 'cashew backup --retention 24h',
-            'model': None,  # No model needed for backup
-            'timeout': 120
-        },
-        'health-check': {
-            'description': 'Run health check and basic maintenance',
-            'schedule': cron_config.get('health_schedule', '*/30 * * * *'),
-            'command': 'cashew health',
-            'model': 'anthropic/claude-haiku-4-5',
-            'timeout': 60
-        }
-    }
-    
-    # Generate cron job configs for OpenClaw
-    cron_output = {}
-    
-    for job_name, job_config in cron_jobs.items():
-        openclaw_job = {
-            'schedule': job_config['schedule'],
-            'command': job_config['command'],
-            'description': job_config['description'],
-            'timeout': job_config['timeout'],
-            'workdir': '${OPENCLAW_WORKSPACE}/cashew'
-        }
-        
-        if job_config['model']:
-            openclaw_job['model'] = job_config['model']
-            openclaw_job['pty'] = True
-        
-        cron_output[job_name] = openclaw_job
-    
-    # Write to file
-    output_file = 'cashew-crons.yaml'
-    with open(output_file, 'w') as f:
-        yaml.dump({
-            'cron_jobs': cron_output,
-            'instructions': {
-                'setup': 'Add these cron job definitions to your OpenClaw config file',
-                'path': '~/.openclaw/config/config.yaml under the cron_jobs section',
-                'note': 'Adjust schedules and models as needed for your setup'
-            }
-        }, f, default_flow_style=False, sort_keys=True)
-    
-    print(f"✅ Generated cron job configurations in {output_file}")
-    print()
-    print("To install:")
-    print("1. Copy the cron job definitions from cashew-crons.yaml")
-    print("2. Add them to your OpenClaw config file (~/.openclaw/config/config.yaml)")
-    print("3. Restart OpenClaw gateway to pick up the new jobs")
-    print()
-    print("Jobs generated:")
-    for job_name, job_config in cron_output.items():
-        print(f"  - {job_name}: {job_config['description']} ({job_config['schedule']})")
-    
-    return 0
 
 
 def cmd_pin(args):
@@ -583,7 +492,6 @@ Examples:
   cashew pin node123                    # Pin node as permanent
   cashew unpin node123                  # Remove permanent pin
   cashew permanent --stats              # Show permanence statistics
-  cashew install-crons                  # Generate cron job configs
         """)
     
     parser.add_argument("--config", help="Path to config.yaml file")
@@ -596,10 +504,6 @@ Examples:
     init_parser = subparsers.add_parser('init', help='Initialize new cashew brain')
     init_parser.add_argument('--db', dest='sub_db', default=None, help='Database path')
     init_parser.set_defaults(func=cmd_init)
-    
-    # install-crons command
-    crons_parser = subparsers.add_parser('install-crons', help='Generate OpenClaw cron job configs')
-    crons_parser.set_defaults(func=cmd_install_crons)
     
     # pin command
     pin_parser = subparsers.add_parser('pin', help='Pin a node as permanently important')

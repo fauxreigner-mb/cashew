@@ -64,7 +64,7 @@ def _handle(req: dict) -> dict:
         return {"ok": True, "result": embed_text(text)}
 
     if op == "context":
-        from integration.openclaw import generate_session_context
+        from integration.session import generate_session_context
         db = req.get("db")
         if not db:
             return {"ok": False, "error": "missing 'db'"}

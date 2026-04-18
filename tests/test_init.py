@@ -106,7 +106,6 @@ class TestSchedulingSetup:
         backends = detect_scheduling_backends()
         
         assert 'crontab' in backends
-        assert 'openclaw' in backends  
         assert 'manual' in backends
         assert backends['manual'] is True  # manual is always available
         
@@ -270,32 +269,30 @@ class TestSchedulingSetup:
         
     @patch('cashew_init.detect_scheduling_backends')
     def test_setup_scheduling_non_interactive_auto_detect(self, mock_detect, tmp_path):
-        """Test scheduling setup auto-detects best backend in non-interactive mode"""
-        # Mock backend detection to prefer OpenClaw
+        """Non-interactive setup picks system crontab when available."""
         mock_detect.return_value = {
             'crontab': True,
-            'openclaw': True,
-            'manual': True
+            'manual': True,
         }
-        
+
         config = {
             'sleep': {
                 'frequency': '6h',
-                'enabled': True
+                'enabled': True,
             }
         }
-        
-        with patch('cashew_init.setup_openclaw_cron', return_value=True) as mock_openclaw:
+
+        with patch('cashew_init.install_system_crontab', return_value=True) as mock_install:
             result = setup_scheduling(
                 config,
                 str(tmp_path / "config.yaml"),
-                str(tmp_path / "data"), 
+                str(tmp_path / "data"),
                 interactive=False,
-                dry_run=True
+                dry_run=True,
             )
-            
+
             assert result is True
-            mock_openclaw.assert_called_once()
+            mock_install.assert_called_once()
 
 
 class TestFullInitFlow:

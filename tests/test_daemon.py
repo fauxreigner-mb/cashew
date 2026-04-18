@@ -80,7 +80,7 @@ class DaemonProtocolTests(unittest.TestCase):
             captured["args"] = (db, hints, tags, exclude_tags)
             return "FAKE_CONTEXT"
 
-        import integration.openclaw as oc
+        import integration.session as oc
         with mock.patch.object(oc, "generate_session_context", side_effect=fake):
             resp = cashew_daemon.client_request(
                 {"op": "context", "db": "/tmp/x.db", "hints": ["a", "b"]},

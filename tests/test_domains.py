@@ -12,7 +12,7 @@ from datetime import datetime, timezone
 
 from core.retrieval import retrieve, format_context
 from core.session import start_session
-from integration.openclaw import get_ai_context, get_user_context
+from integration.session import get_ai_context, get_user_context
 
 
 def embed_test_nodes(db_path: str):

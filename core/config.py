@@ -151,13 +151,7 @@ class CashewConfig:
                 'confidence_threshold': 0.7,
                 'max_think_iterations': 3
             },
-            'integration': {
-                'openclaw': {
-                    'auth_profile_path': '${HOME}/.openclaw/agents/${OPENCLAW_AGENT:-main}/agent/auth-profiles.json',
-                    'workspace_path': '${HOME}/.openclaw/workspace',
-                    'session_dir': '${HOME}/.openclaw/sessions'
-                }
-            },
+            'integration': {},
             'logging': {
                 'level': 'INFO',
                 'format': '%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -258,12 +252,6 @@ class CashewConfig:
         self._system_types = {'dream', 'tension', 'core_memory', 'derived'}
         self.node_type_names = set(self._node_type_map.keys()) | self._system_types
         
-        # Integration configuration
-        openclaw = self._raw_config['integration']['openclaw']
-        self.auth_profile_path = openclaw['auth_profile_path']
-        self.workspace_path = openclaw['workspace_path']
-        self.session_dir = openclaw.get('session_dir', '${HOME}/.openclaw/sessions')
-
         # GC configuration
         gc = self._raw_config.get('gc', {})
         self.gc_mode = gc.get('mode', 'soft')

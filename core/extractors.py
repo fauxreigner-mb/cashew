@@ -129,9 +129,20 @@ class ExtractorRegistry:
             if nodes:
                 created = self._ingest_nodes(nodes, db_path, extractor.name)
                 result["nodes_created"] = created
-                
+
                 # Call post-ingest hook for additional processing (e.g. edge creation)
                 extractor.post_ingest_hook(source_path, db_path, created)
+
+                # Auto-embed new nodes so retrieval / sleep cycles work out-of-box.
+                # Without this, cross-link + dream stages are silent no-ops.
+                if created > 0:
+                    try:
+                        from .embeddings import embed_nodes
+                        stats = embed_nodes(db_path)
+                        result["embeddings"] = stats
+                    except Exception as e:
+                        logger.warning(f"Auto-embed after ingest failed: {e}")
+                        result["embeddings_error"] = str(e)
             
             # Persist state after successful run
             self._save_state(name, extractor.get_state())

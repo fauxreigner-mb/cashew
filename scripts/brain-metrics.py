@@ -20,7 +20,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
 from core.stats import get_edge_count
 from core import db as cdb
-from integration.openclaw import generate_session_context
+from integration.session import generate_session_context
 
 def load_embedding(blob_data):
     """Load embedding from BLOB data."""

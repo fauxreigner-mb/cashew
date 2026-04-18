@@ -226,12 +226,12 @@ def build_config(interactive: bool = True, config_path: str = None, global_confi
         print("  • anthropic: Claude models (requires ANTHROPIC_API_KEY)")
         print("  • openai: GPT models (requires OPENAI_API_KEY)")
         print("  • ollama: Local models (fully private, no API key)")
-        print("  • openclaw: Use OpenClaw's model access")
-        
+        print("  • claude_code: Headless Claude Code CLI (runs under Max plan, no key needed)")
+
         llm_provider = prompt_with_default(
             "Which LLM provider?",
-            "anthropic",
-            ["anthropic", "openai", "ollama", "openclaw"]
+            "claude_code",
+            ["anthropic", "openai", "ollama", "claude_code"]
         )
         
         # API key prompt (only if needed)
@@ -341,13 +341,7 @@ def build_config(interactive: bool = True, config_path: str = None, global_confi
             'confidence_threshold': 0.7,
             'max_think_iterations': 3
         },
-        'integration': {
-            'openclaw': {
-                'auth_profile_path': '${HOME}/.openclaw/agents/${OPENCLAW_AGENT:-main}/agent/auth-profiles.json',
-                'workspace_path': '${HOME}/.openclaw/workspace',
-                'session_dir': '${HOME}/.openclaw/sessions'
-            }
-        },
+        'integration': {},
         'logging': {
             'level': 'INFO',
             'format': '%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -410,21 +404,6 @@ def detect_scheduling_backends() -> Dict[str, bool]:
     
     # Check system crontab
     backends['crontab'] = shutil.which('crontab') is not None
-    
-    # Check OpenClaw
-    openclaw_config_path = Path.home() / ".openclaw" / "openclaw.json"
-    backends['openclaw'] = False
-    if openclaw_config_path.exists():
-        try:
-            with open(openclaw_config_path, 'r') as f:
-                openclaw_config = json.load(f)
-            gateway_port = openclaw_config.get('gateway', {}).get('port', 8080)
-            
-            # Quick ping to see if gateway is reachable
-            response = requests.get(f"http://127.0.0.1:{gateway_port}/api/status", timeout=1)
-            backends['openclaw'] = response.status_code == 200
-        except (json.JSONDecodeError, FileNotFoundError, requests.RequestException):
-            backends['openclaw'] = False
     
     # Manual is always available
     backends['manual'] = True
@@ -507,44 +486,6 @@ def install_system_crontab(entries: List[str], dry_run: bool = False) -> bool:
         print_error(f"Failed to install crontab: {e}")
         return False
 
-def setup_openclaw_cron(entries: List[str], dry_run: bool = False) -> bool:
-    """Set up OpenClaw cron jobs"""
-    if not entries:
-        return True
-    
-    try:
-        openclaw_config_path = Path.home() / ".openclaw" / "openclaw.json"
-        if not openclaw_config_path.exists():
-            print_error("OpenClaw config not found")
-            return False
-        
-        with open(openclaw_config_path, 'r') as f:
-            openclaw_config = json.load(f)
-        gateway_port = openclaw_config.get('gateway', {}).get('port', 8080)
-        
-        if dry_run:
-            print_info("Would create OpenClaw cron jobs:")
-            for entry in entries:
-                print(f"  {entry}")
-            return True
-        
-        # For simplicity, print the commands for the user to run
-        print_info("Run these commands to set up OpenClaw cron jobs:")
-        for i, entry in enumerate(entries):
-            # Extract schedule and command from cron entry
-            parts = entry.split(' ', 5)
-            schedule = ' '.join(parts[:5])
-            command = parts[5] if len(parts) > 5 else ""
-            
-            job_name = f"cashew-{'sleep' if 'sleep' in command else 'think'}"
-            print(f"  openclaw cron add '{job_name}' '{schedule}' '{command}'")
-        
-        return True
-        
-    except Exception as e:
-        print_error(f"Failed to set up OpenClaw cron: {e}")
-        return False
-
 def setup_scheduling(config: Dict[str, Any], config_path: str, data_dir: str, interactive: bool = True, dry_run: bool = False) -> bool:
     """Set up scheduling for sleep/think cycles"""
     sleep_config = config.get('sleep', {})
@@ -569,19 +510,14 @@ def setup_scheduling(config: Dict[str, Any], config_path: str, data_dir: str, in
             options.append("system")
             print("  ● system crontab (recommended — works everywhere)")
         
-        if backends['openclaw']:
-            options.append("openclaw")
-            print("  ○ openclaw cron (detected: OpenClaw is running ✅)")
-        
         options.append("manual")
         print("  ○ manual — I'll run `cashew sleep` myself")
-        
+
         if not options or options == ['manual']:
             print_warning("No automatic scheduling backends available")
             selected_backend = "manual"
         else:
-            # Default to best available option
-            default_backend = "openclaw" if backends['openclaw'] else ("system" if backends['crontab'] else "manual")
+            default_backend = "system" if backends['crontab'] else "manual"
             selected_backend = prompt_with_default(
                 "Which scheduling method?",
                 default_backend,
@@ -589,9 +525,7 @@ def setup_scheduling(config: Dict[str, Any], config_path: str, data_dir: str, in
             )
     else:
         # Non-interactive: auto-detect best option
-        if backends['openclaw']:
-            selected_backend = "openclaw"
-        elif backends['crontab']:
+        if backends['crontab']:
             selected_backend = "system"
         else:
             selected_backend = "manual"
@@ -603,8 +537,6 @@ def setup_scheduling(config: Dict[str, Any], config_path: str, data_dir: str, in
     success = True
     if selected_backend == "system":
         success = install_system_crontab(entries, dry_run)
-    elif selected_backend == "openclaw":
-        success = setup_openclaw_cron(entries, dry_run)
     elif selected_backend == "manual":
         print_info("\nManual mode selected. Run these commands periodically:")
         print("  cashew sleep    # consolidation (recommended: every 6 hours)")

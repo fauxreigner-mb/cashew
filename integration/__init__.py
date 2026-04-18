@@ -1,8 +1,6 @@
-"""
-Cashew OpenClaw Integration Package
-"""
+"""Cashew integration layer — session lifecycle glue for host agents."""
 
-from .openclaw import (
+from .session import (
     generate_session_context,
     extract_from_conversation,
     run_think_cycle,
@@ -11,17 +9,17 @@ from .openclaw import (
     get_technical_context,
     run_work_think_cycle,
     run_personal_think_cycle,
-    integrate_with_openclaw
+    integrate_with_openclaw,
 )
 
 __all__ = [
     "generate_session_context",
-    "extract_from_conversation", 
+    "extract_from_conversation",
     "run_think_cycle",
     "get_work_context",
     "get_personal_context",
     "get_technical_context",
     "run_work_think_cycle",
     "run_personal_think_cycle",
-    "integrate_with_openclaw"
+    "integrate_with_openclaw",
 ]
