@@ -90,7 +90,12 @@ vault/
 *.bak
 
 # Cron output
-cashew-crons.yamlPHILOSOPHY-private.md
+cashew-crons.yaml
 migration_report.json
+
+# Private / never-commit
+PHILOSOPHY-private.md
+blog/
+pitch/
 .wrangler/
 scripts/archive/
