@@ -80,9 +80,56 @@ def _ensure_schema(db_path: str):
     
     if 'access_count' not in columns:
         cursor.execute("ALTER TABLE thought_nodes ADD COLUMN access_count INTEGER DEFAULT 0")
-    
+
+    # referent_time: event clock (when the fact/event actually happened),
+    # distinct from `timestamp` which is the ingestion clock. Nullable.
+    # See DESIGN notes: operational readers (decay/GC/declassify/embeddings/
+    # recent-activity) stay on `timestamp`. User-facing/biographical readers
+    # use COALESCE(referent_time, timestamp).
+    if 'referent_time' not in columns:
+        cursor.execute("ALTER TABLE thought_nodes ADD COLUMN referent_time TEXT")
+        try:
+            cursor.execute(
+                "CREATE INDEX IF NOT EXISTS idx_nodes_referent_time "
+                "ON thought_nodes(referent_time)"
+            )
+        except sqlite3.OperationalError:
+            pass
+
     conn.commit()
     conn.close()
+
+def _normalize_referent_time(value: Optional[str]) -> Optional[str]:
+    """Normalize a caller-supplied event time to UTC ISO8601.
+
+    Rules:
+    - None/empty → None (no event clock recorded).
+    - Accepts ISO8601 with explicit tz offset ('Z' or +HH:MM). Converted to UTC.
+    - Naive datetimes (no tz) are REJECTED — we refuse to guess local tz.
+    - Any parse failure raises ValueError. Fail loud over silent drift.
+    """
+    if value is None:
+        return None
+    if isinstance(value, str):
+        s = value.strip()
+        if not s:
+            return None
+    else:
+        raise ValueError(f"referent_time must be a string, got {type(value).__name__}")
+
+    # Python's fromisoformat handles 'Z' only from 3.11+; normalize manually.
+    candidate = s.replace('Z', '+00:00') if s.endswith('Z') else s
+    try:
+        dt = datetime.fromisoformat(candidate)
+    except ValueError as e:
+        raise ValueError(f"referent_time is not valid ISO8601: {value!r} ({e})")
+    if dt.tzinfo is None:
+        raise ValueError(
+            f"referent_time is timezone-ambiguous (no offset): {value!r}. "
+            "Supply explicit UTC offset or 'Z' — we will not guess local tz."
+        )
+    return dt.astimezone(timezone.utc).isoformat()
+
 
 def _estimate_tokens(text: str) -> int:
     """Rough token estimation (conservative: ~3.5 chars per token)"""
@@ -380,31 +427,39 @@ def _set_node_tags(db_path: str, node_id: str, tags: list):
     conn.close()
 
 
-def _create_node(db_path: str, content: str, node_type: str, 
+def _create_node(db_path: str, content: str, node_type: str,
                 session_id: str, confidence: float = 0.7,
-                domain: str = 'default') -> str:
-    """Create a new thought node and return its ID"""
+                domain: str = 'default',
+                referent_time: Optional[str] = None) -> str:
+    """Create a new thought node and return its ID.
+
+    `referent_time` (optional) is the event clock — when the fact/event
+    actually happened. Distinct from `timestamp` which is the ingestion
+    clock. Must be a UTC ISO8601 string or None. Callers are responsible
+    for normalizing to UTC; see `_normalize_referent_time` helper.
+    """
     # Generate deterministic ID based on content
     node_id = hashlib.sha256(content.encode()).hexdigest()[:12]
-    
+
     conn = _get_connection(db_path)
     cursor = conn.cursor()
-    
+
     # Check if node already exists
     cursor.execute("SELECT id FROM thought_nodes WHERE id = ?", (node_id,))
     if cursor.fetchone():
         conn.close()
         return node_id  # Node already exists
-    
+
     # Insert new node
     now = datetime.now(timezone.utc).isoformat()
-    
+
     cursor.execute("""
-        INSERT INTO thought_nodes 
-        (id, content, node_type, timestamp, confidence, source_file, 
-         last_accessed, access_count, domain)
-        VALUES (?, ?, ?, ?, ?, ?, ?, 0, ?)
-    """, (node_id, content, node_type, now, confidence, session_id, now, domain))
+        INSERT INTO thought_nodes
+        (id, content, node_type, timestamp, confidence, source_file,
+         last_accessed, access_count, domain, referent_time)
+        VALUES (?, ?, ?, ?, ?, ?, ?, 0, ?, ?)
+    """, (node_id, content, node_type, now, confidence, session_id, now,
+          domain, referent_time))
     
     conn.commit()
     conn.close()
@@ -460,8 +515,41 @@ def _create_edge(db_path: str, parent_id: str, child_id: str, reasoning: str):
     conn.commit()
     conn.close()
 
-def end_session(db_path: str, session_id: str, conversation_text: str, 
-               model_fn: Optional[Callable[[str], str]] = None) -> ExtractionResult:
+def _llm_infer_referent_time(content: str, model_fn: Callable[[str], str]) -> Optional[str]:
+    """Best-effort LLM inference of event time from prose.
+
+    Opt-in only (see --infer-referent-time). LLM-inferred times are
+    untrustworthy — if the prose has no clear temporal anchor the model
+    MUST return NONE. We also reject any output that doesn't parse as
+    tz-aware ISO8601.
+    """
+    prompt = (
+        "Extract the event time (when the fact/event actually happened) from "
+        "this statement as strict ISO8601 with a UTC offset (ending in 'Z' "
+        "or '+00:00'). If no clear temporal anchor is present, reply with "
+        "exactly the word NONE. Do not guess. Do not add prose.\n\n"
+        f"Statement: {content}\n\nAnswer:"
+    )
+    try:
+        resp = (model_fn(prompt) or "").strip()
+    except Exception as e:
+        logging.debug(f"referent_time inference failed: {e}")
+        return None
+    if not resp or resp.upper().startswith("NONE"):
+        return None
+    # Keep only the first whitespace-delimited token
+    token = resp.split()[0].strip().rstrip('.,;')
+    try:
+        _normalize_referent_time(token)
+    except ValueError:
+        return None
+    return token
+
+
+def end_session(db_path: str, session_id: str, conversation_text: str,
+               model_fn: Optional[Callable[[str], str]] = None,
+               default_referent_time: Optional[str] = None,
+               infer_referent_time: bool = False) -> ExtractionResult:
     """
     End a session and extract new knowledge from conversation
     
@@ -475,7 +563,11 @@ def end_session(db_path: str, session_id: str, conversation_text: str,
         ExtractionResult with new nodes, edges, and updated nodes
     """
     _ensure_schema(db_path)
-    
+
+    # Normalize caller-supplied default referent_time once up front — fails
+    # loud on ambiguous/naive input rather than silently assuming local tz.
+    default_referent_time = _normalize_referent_time(default_referent_time)
+
     if not conversation_text or len(conversation_text.strip()) < 20:
         logging.info(f"Session {session_id} ended with minimal content, skipping extraction")
         return ExtractionResult(new_nodes=[], new_edges=[], updated_nodes=[])
@@ -557,8 +649,22 @@ Conversation to extract from:
         if domain not in valid_domains:
             domain = config.get_user_domain()
         
+        # Resolve event clock: explicit > default > (optional) LLM inference > None.
+        # LLM-inferred times are untrustworthy, hence opt-in via infer_referent_time.
+        ref_time_raw = extraction.get("referent_time") or default_referent_time
+        if ref_time_raw is None and infer_referent_time and model_fn is not None:
+            ref_time_raw = _llm_infer_referent_time(content, model_fn)
+        try:
+            node_referent_time = _normalize_referent_time(ref_time_raw)
+        except ValueError as e:
+            logging.warning(
+                f"Dropping unparseable referent_time {ref_time_raw!r}: {e}"
+            )
+            node_referent_time = None
+
         # Create the new node
-        node_id = _create_node(db_path, content, node_type, session_id, confidence, domain=domain)
+        node_id = _create_node(db_path, content, node_type, session_id, confidence,
+                              domain=domain, referent_time=node_referent_time)
         
         # Store tags if provided
         if tags and isinstance(tags, list):

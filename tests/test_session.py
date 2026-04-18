@@ -51,7 +51,8 @@ class TestSessionIntegration:
                 last_updated TEXT,
                 access_count INTEGER DEFAULT 0,
                 domain TEXT DEFAULT 'raj',
-                permanent INTEGER DEFAULT 0
+                permanent INTEGER DEFAULT 0,
+                referent_time TEXT
             )
         """)
         

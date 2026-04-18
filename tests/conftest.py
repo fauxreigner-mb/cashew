@@ -37,7 +37,8 @@ def temp_db():
             metadata TEXT DEFAULT '{}',
             last_updated TEXT,
             mood_state TEXT,
-            permanent INTEGER DEFAULT 0
+            permanent INTEGER DEFAULT 0,
+            referent_time TEXT
         )
     ''')
     
@@ -120,7 +121,8 @@ def temp_db_with_data():
             metadata TEXT DEFAULT '{}',
             last_updated TEXT,
             mood_state TEXT,
-            permanent INTEGER DEFAULT 0
+            permanent INTEGER DEFAULT 0,
+            referent_time TEXT
         )
     ''')
     

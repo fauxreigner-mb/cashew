@@ -16,6 +16,7 @@ logger = logging.getLogger("cashew")
 # Add the parent directory to the path so we can import cashew modules
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
+from core import db as cdb
 from integration.openclaw import generate_session_context, extract_from_conversation, run_think_cycle, run_tension_detection
 # complete_integration removed (depended on hotspots) — lazy import for legacy CLI commands
 def _lazy_complete_import():
@@ -81,6 +82,9 @@ def _build_model_fn():
         print("   Or set OPENCLAW_GATEWAY_TOKEN env var")
         return None
     
+    # Cumulative token usage tracker
+    _usage = {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0, "calls": 0}
+    
     def model_fn(prompt: str) -> str:
         payload = _json.dumps({
             "model": "openclaw",
@@ -97,12 +101,57 @@ def _build_model_fn():
         )
         with urllib.request.urlopen(req, timeout=120) as resp:
             data = _json.loads(resp.read())
+            # Track token usage
+            usage = data.get("usage", {})
+            prompt_tok = usage.get("prompt_tokens", 0)
+            completion_tok = usage.get("completion_tokens", 0)
+            # Estimate tokens if gateway returns zeros
+            response_text = data["choices"][0]["message"]["content"]
+            if prompt_tok == 0:
+                prompt_tok = len(prompt) // 4  # ~4 chars per token estimate
+            if completion_tok == 0:
+                completion_tok = len(response_text) // 4
+            _usage["prompt_tokens"] += prompt_tok
+            _usage["completion_tokens"] += completion_tok
+            _usage["total_tokens"] += prompt_tok + completion_tok
+            _usage["calls"] += 1
             return data["choices"][0]["message"]["content"]
+    
+    # Attach usage tracker to function for external access
+    model_fn.usage = _usage
     
     print(f"🔑 LLM enabled via OpenClaw ({gateway_url})")
     return model_fn
 from core.decay import auto_decay, get_decay_candidates
 from core.stats import get_active_node_count, get_edge_count, get_embedding_coverage
+
+
+def _log_token_usage(model_fn, operation: str, db_path: str):
+    """Log cumulative token usage from model_fn to metrics DB."""
+    usage = getattr(model_fn, 'usage', None)
+    if not usage or usage.get('calls', 0) == 0:
+        return
+    try:
+        import json as _j
+        from core.metrics import ensure_metrics_table
+        from datetime import datetime as _dt
+        ensure_metrics_table(db_path)
+        _conn = cdb.connect(db_path)
+        _conn.execute(
+            "INSERT INTO metrics (timestamp, metric_type, duration_ms, metadata) VALUES (?, ?, ?, ?)",
+            (_dt.now().isoformat(), f"token_usage:{operation}", 0,
+             _j.dumps({"prompt_tokens": usage['prompt_tokens'],
+                       "completion_tokens": usage['completion_tokens'],
+                       "total_tokens": usage['total_tokens'],
+                       "llm_calls": usage['calls']})))
+        _conn.commit()
+        _conn.close()
+    except Exception as e:
+        print(f"⚠️ Token usage logging failed: {e}")
+    # Always print summary
+    print(f"\n📊 Token usage ({operation}): {usage['total_tokens']:,} tokens "
+          f"({usage['prompt_tokens']:,} prompt + {usage['completion_tokens']:,} completion) "
+          f"across {usage['calls']} LLM calls")
 
 
 def cmd_context(args):
@@ -182,7 +231,11 @@ def cmd_extract(args):
     
     model_fn = _build_model_fn()
     t0 = time.time()
-    result = extract_from_conversation(args.db, conversation_text, args.session_id, model_fn=model_fn)
+    result = extract_from_conversation(
+        args.db, conversation_text, args.session_id, model_fn=model_fn,
+        referent_time=getattr(args, 'referent_time', None),
+        infer_referent_time=getattr(args, 'infer_referent_time', False),
+    )
     elapsed = time.time() - t0
     
     print(json.dumps(result, indent=2))
@@ -191,8 +244,7 @@ def cmd_extract(args):
         # Apply tags to newly extracted nodes if --tags specified
         extract_tags = getattr(args, 'tags', None)
         if extract_tags and result.get("node_ids"):
-            import sqlite3
-            conn = sqlite3.connect(args.db)
+            conn = cdb.connect(args.db)
             cursor = conn.cursor()
             for node_id in result["node_ids"]:
                 cursor.execute("SELECT tags FROM thought_nodes WHERE id = ?", (node_id,))
@@ -210,11 +262,15 @@ def cmd_extract(args):
         print("✅ Extraction completed successfully")
         print(f"   New nodes: {result['new_nodes']}")
         print(f"   New edges: {result['new_edges']}")
+        if model_fn:
+            _log_token_usage(model_fn, "extract", args.db)
         if args.debug:
             print(f"⏱  Elapsed: {elapsed:.2f}s", file=sys.stderr)
     else:
         print()
         print(f"❌ Extraction failed")
+        if model_fn:
+            _log_token_usage(model_fn, "extract", args.db)
         if args.debug:
             print(f"⏱  Elapsed: {elapsed:.2f}s", file=sys.stderr)
             print(f"🔍 Result: {json.dumps(result, indent=2)}", file=sys.stderr)
@@ -288,8 +344,7 @@ def _cmd_extract_ingest(args):
     # Apply tags if specified (same logic as regular extract path)
     extract_tags = getattr(args, 'tags', None)
     if extract_tags and new_node_ids:
-        import sqlite3 as _sqlite3
-        conn = _sqlite3.connect(args.db)
+        conn = cdb.connect(args.db)
         cursor = conn.cursor()
         for node_id in new_node_ids:
             cursor.execute("SELECT tags FROM thought_nodes WHERE id = ?", (node_id,))
@@ -452,11 +507,15 @@ def cmd_think(args):
         print(f"   Cluster: {result['cluster_topic']}")
         print(f"   New insights: {result['new_nodes']}")
         print(f"   New connections: {result['new_edges']}")
+        if model_fn:
+            _log_token_usage(model_fn, "think", args.db)
         if args.debug:
             print(f"⏱  Elapsed: {elapsed:.2f}s", file=sys.stderr)
     else:
         print()
         print("❌ Think cycle failed")
+        if model_fn:
+            _log_token_usage(model_fn, "think", args.db)
         if args.debug:
             print(f"⏱  Elapsed: {elapsed:.2f}s", file=sys.stderr)
         return 1
@@ -465,11 +524,9 @@ def cmd_think(args):
 def cmd_stats(args):
     """Show graph statistics"""
     try:
-        import sqlite3
-        
-        conn = sqlite3.connect(args.db)
+        conn = cdb.connect(args.db)
         cursor = conn.cursor()
-        
+
         # Count nodes by type
         cursor.execute("""
             SELECT node_type, COUNT(*) 
@@ -855,7 +912,6 @@ def cmd_explain(args):
 
 def cmd_init(args):
     """Initialize a new cashew database"""
-    import sqlite3
     from pathlib import Path
     
     db_path = Path(args.db)
@@ -876,9 +932,9 @@ def cmd_init(args):
     
     # Create the database with schema
     try:
-        conn = sqlite3.connect(str(db_path))
+        conn = cdb.connect(str(db_path))
         cursor = conn.cursor()
-        
+
         # Create tables (from core schema)
         cursor.execute('''
             CREATE TABLE thought_nodes (
@@ -967,14 +1023,13 @@ def _migrate_extract_file(db_path: str, content: str, filename: str, session_id:
     instead of line-level fragments.
     """
     import json
-    import sqlite3
     import hashlib
     from datetime import datetime, timezone
     from core.embeddings import ensure_schema, embed_nodes
     from core.config import get_ai_domain, get_user_domain
-    
+
     ensure_schema(db_path)
-    
+
     # Use passed model_fn or fall back to heuristic
     if model_fn is None:
         print(f"   📝 CLI extraction - using heuristic method (LLM extraction available via OpenClaw)")
@@ -1028,10 +1083,10 @@ Document ({filename}):
     
     # Insert nodes
     now = datetime.now(timezone.utc).isoformat()
-    conn = sqlite3.connect(db_path)
+    conn = cdb.connect(db_path)
     cursor = conn.cursor()
     new_nodes = []
-    
+
     # Use sqlite-vec O(log N) lookup for novelty checks — no preloading needed
     from core.embeddings import check_novelty
     
@@ -1099,16 +1154,15 @@ Document ({filename}):
 
 def _migrate_extract_heuristic(db_path: str, content: str, filename: str, session_id: str) -> dict:
     """Fallback heuristic extraction for migration when no LLM available"""
-    import sqlite3
     import hashlib
     from datetime import datetime, timezone
     from core.embeddings import ensure_schema, embed_nodes
     from core.config import get_ai_domain, get_user_domain
-    
+
     ensure_schema(db_path)
-    
+
     now = datetime.now(timezone.utc).isoformat()
-    conn = sqlite3.connect(db_path)
+    conn = cdb.connect(db_path)
     cursor = conn.cursor()
     new_nodes = []
     
@@ -1223,10 +1277,9 @@ def cmd_migrate_files(args):
         return 1
     
     # Check which files were already migrated (checkpoint/resume support)
-    import sqlite3 as _sqlite3
     already_migrated = set()
     try:
-        _conn = _sqlite3.connect(args.db)
+        _conn = cdb.connect(args.db)
         _cur = _conn.cursor()
         _cur.execute("SELECT DISTINCT source_file FROM thought_nodes WHERE source_file LIKE 'migration:%'")
         already_migrated = {row[0].replace('migration:', '') for row in _cur.fetchall()}
@@ -1472,6 +1525,38 @@ def cmd_metrics(args):
             print(f"   Vec sync: {vec_ratio * 100:.0f}%" if vec_ratio else "   Vec sync: -")
             print()
         
+        # Token usage summary
+        try:
+            conn = cdb.connect(args.db)
+            token_rows = conn.execute("""
+                SELECT metric_type, SUM(json_extract(metadata, '$.total_tokens')) as total,
+                       SUM(json_extract(metadata, '$.prompt_tokens')) as prompt,
+                       SUM(json_extract(metadata, '$.completion_tokens')) as completion,
+                       SUM(json_extract(metadata, '$.llm_calls')) as calls,
+                       COUNT(*) as sessions
+                FROM metrics
+                WHERE metric_type LIKE 'token_usage:%'
+                AND timestamp > datetime('now', ?)
+                GROUP BY metric_type
+            """, (f"-{args.hours} hours",)).fetchall()
+            conn.close()
+            
+            if token_rows:
+                print("🪙 Token Usage:")
+                total_all = 0
+                for row in token_rows:
+                    op = row[0].replace('token_usage:', '')
+                    total = int(row[1] or 0)
+                    prompt = int(row[2] or 0)
+                    completion = int(row[3] or 0)
+                    calls = int(row[4] or 0)
+                    total_all += total
+                    print(f"   {op:10}: {total:>8,} tokens ({prompt:,} in + {completion:,} out) across {calls} LLM calls")
+                print(f"   {'TOTAL':10}: {total_all:>8,} tokens")
+                print()
+        except Exception:
+            pass
+        
         # Recent activity
         recent = get_recent_metrics(args.db, 5)
         if recent:
@@ -1541,6 +1626,13 @@ def main():
     extract_parser.add_argument("--prepare-only", action="store_true",
                                help="Output extraction plan as JSON without executing")
     extract_parser.add_argument("--ingest", help="Ingest a JSON file of pre-prepared extractions")
+    extract_parser.add_argument("--referent-time", dest="referent_time", default=None,
+                                help="UTC ISO8601 event time applied to all extracted nodes "
+                                     "(e.g. 2019-03-14T12:00:00Z). Required to be tz-aware.")
+    extract_parser.add_argument("--infer-referent-time", dest="infer_referent_time",
+                                action="store_true", default=False,
+                                help="Opt-in: use LLM to infer per-node event time from prose "
+                                     "when no explicit --referent-time is given. Default OFF.")
     extract_parser.set_defaults(func=cmd_extract)
     
     # Think command
@@ -1676,9 +1768,8 @@ def main():
 
 def cmd_list_tags(args):
     """List all tags in the graph with counts"""
-    import sqlite3
     from collections import Counter
-    conn = sqlite3.connect(args.db)
+    conn = cdb.connect(args.db)
     rows = conn.execute('SELECT tags FROM thought_nodes WHERE tags IS NOT NULL').fetchall()
     conn.close()
     c = Counter()

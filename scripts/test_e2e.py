@@ -118,19 +118,19 @@ def show_database_stats():
     print("=" * 50)
 
     try:
-        import sqlite3
         from core.stats import get_active_node_count, get_edge_count, get_embedding_coverage
+        from core import db as cdb
         db_path = get_db_path()
 
-        conn = sqlite3.connect(db_path)
+        conn = cdb.connect(db_path)
         cursor = conn.cursor()
 
         total_nodes = get_active_node_count(cursor)
 
         # Count by type
-        cursor.execute("""
+        cursor.execute(f"""
             SELECT node_type, COUNT(*)
-            FROM thought_nodes
+            FROM {cdb.NODES_TABLE}
             WHERE decayed IS NULL OR decayed = 0
             GROUP BY node_type
             ORDER BY COUNT(*) DESC

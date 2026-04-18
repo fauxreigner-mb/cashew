@@ -174,12 +174,23 @@ Focus on substantive content and skip pleasantries or routine interactions."""
             response = model_fn(prompt)
             statements = [s.strip() for s in response.split('\n') if s.strip()]
             
+            # Event clock: use the latest message timestamp in this batch as the
+            # referent_time for extracted nodes. Session extractors already parse
+            # per-message timestamps — pass them through so imported historical
+            # sessions get proper event times (not today's ingest time).
+            batch_referent_time = None
+            for msg in messages:
+                ts = (msg.get('timestamp') or '').strip()
+                if ts:
+                    batch_referent_time = ts  # last non-empty wins
+
             return [{
                 "content": stmt,
                 "type": self._classify_statement(stmt),
                 "confidence": 0.75,
                 "domain": "conversations",
-                "source_file": f"extractor:session:{session_id}"
+                "source_file": f"extractor:session:{session_id}",
+                "referent_time": batch_referent_time,
             } for stmt in statements if len(stmt) > 20]
             
         except Exception as e:
@@ -194,17 +205,20 @@ Focus on substantive content and skip pleasantries or routine interactions."""
         for msg in messages:
             content = msg.get('content', '').strip()
             role = msg.get('role', '')
-            
+            ts = (msg.get('timestamp') or '').strip() or None
+
             if len(content) < 100:  # Skip short messages
                 continue
-            
-            # Extract longer, substantial messages
+
+            # Extract longer, substantial messages. Per-message timestamp
+            # becomes the node's event clock (referent_time).
             nodes.append({
                 "content": f"{role}: {content}",
                 "type": "observation",
                 "confidence": 0.5,
-                "domain": "conversations", 
-                "source_file": f"extractor:session:{session_id}"
+                "domain": "conversations",
+                "source_file": f"extractor:session:{session_id}",
+                "referent_time": ts,
             })
         
         return nodes

@@ -6,7 +6,6 @@ Usage: python3 scripts/export_dashboard.py <db_path> <output_json_path>
 Also generates a dashboard HTML page if --html <name> is provided.
 """
 
-import sqlite3
 import json
 import sys
 import os
@@ -18,17 +17,18 @@ import networkx as nx
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
 from core.config import get_user_domain, get_ai_domain
+from core import db as cdb
 
 DASHBOARD_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "dashboard")
 
 def export(db_path: str, output_path: str, title: str = "cashew"):
-    conn = sqlite3.connect(db_path)
+    conn = cdb.connect(db_path)
     c = conn.cursor()
-    
+
     # Export nodes
-    c.execute("""
+    c.execute(f"""
         SELECT id, content, node_type, confidence, source_file, timestamp, mood_state, domain, tags
-        FROM thought_nodes 
+        FROM {cdb.NODES_TABLE}
         WHERE decayed = 0 OR decayed IS NULL
     """)
     nodes = []
@@ -55,7 +55,7 @@ def export(db_path: str, output_path: str, title: str = "cashew"):
         })
     
     # Export edges — use source/target format for dashboard compatibility
-    c.execute("SELECT parent_id, child_id, weight, reasoning FROM derivation_edges")
+    c.execute(f"SELECT parent_id, child_id, weight, reasoning FROM {cdb.EDGES_TABLE}")
     edges = []
     node_ids = {n["id"] for n in nodes}
     for row in c.fetchall():

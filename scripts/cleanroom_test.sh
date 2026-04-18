@@ -38,17 +38,21 @@ cashew init --db "$DB"
 echo ""
 echo "🔍 Step 5: Verifying schema..."
 python3 -c "
-import sqlite3
-conn = sqlite3.connect('$DB')
-c = conn.cursor()
-cols = [r[1] for r in c.execute('PRAGMA table_info(thought_nodes)').fetchall()]
-tables = [r[0] for r in c.execute(\"SELECT name FROM sqlite_master WHERE type='table'\").fetchall()]
-print(f'   Tables: {tables}')
-print(f'   Columns: {cols}')
-assert 'tags' in cols, 'MISSING: tags column'
-assert 'hotspots' not in tables, 'UNEXPECTED: hotspots table still exists'
-print('   ✅ Schema correct')
-conn.close()
+# Route DB access through the shared helper — no raw sqlite3 here.
+import os
+os.environ['CASHEW_DB_PATH'] = '$DB'
+from core import db as cdb
+conn = cdb.connect('$DB')
+try:
+    cols = cdb.pragma_columns(conn, cdb.NODES_TABLE)
+    tables = cdb.list_tables(conn)
+    print(f'   Tables: {tables}')
+    print(f'   Columns: {cols}')
+    assert 'tags' in cols, 'MISSING: tags column'
+    assert 'hotspots' not in tables, 'UNEXPECTED: hotspots table still exists'
+    print('   ✅ Schema correct')
+finally:
+    conn.close()
 "
 
 # Step 6: Create test conversation and extract

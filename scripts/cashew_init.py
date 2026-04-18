@@ -6,7 +6,6 @@ Interactive setup wizard for the cashew thought-graph memory engine
 
 import os
 import sys
-import sqlite3
 import yaml
 import argparse
 import subprocess
@@ -15,6 +14,10 @@ import shutil
 import requests
 from pathlib import Path
 from typing import Dict, Any, List, Optional, Tuple
+
+# Ensure repo root on path so core.db imports work when run as a script.
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from core import db as cdb  # noqa: E402
 
 # ANSI color codes for pretty output
 class Colors:
@@ -99,7 +102,7 @@ def create_database_schema(db_path: str):
     # Ensure parent directory exists
     Path(db_path).parent.mkdir(parents=True, exist_ok=True)
     
-    conn = sqlite3.connect(db_path)
+    conn = cdb.connect(db_path)
     cursor = conn.cursor()
     
     # Core schema matching the test fixtures

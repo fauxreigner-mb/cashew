@@ -57,7 +57,7 @@ def generate_session_context(db_path: str, hints: Optional[List[str]] = None, ta
         return ""
 
 
-def extract_from_conversation(db_path: str, conversation_text: str, session_id: Optional[str] = None, model_fn: Optional[Callable[[str], str]] = None) -> Dict[str, Any]:
+def extract_from_conversation(db_path: str, conversation_text: str, session_id: Optional[str] = None, model_fn: Optional[Callable[[str], str]] = None, referent_time: Optional[str] = None, infer_referent_time: bool = False) -> Dict[str, Any]:
     """
     Extract insights and knowledge from a conversation
     
@@ -82,7 +82,9 @@ def extract_from_conversation(db_path: str, conversation_text: str, session_id: 
         
         # Extract from conversation with timing
         start_time = time.perf_counter() if is_metrics_enabled() else None
-        result = end_session(db_path, session_id, conversation_text, model_fn)
+        result = end_session(db_path, session_id, conversation_text, model_fn,
+                             default_referent_time=referent_time,
+                             infer_referent_time=infer_referent_time)
         
         # Record extraction metrics
         if is_metrics_enabled() and start_time is not None:

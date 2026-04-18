@@ -113,7 +113,7 @@ class ExtractorRegistry:
         return list(self._extractors.keys())
 
     def run(self, name: str, source_path: str, model_fn: Optional[Callable],
-            db_path: str) -> Dict[str, Any]:
+            db_path: str, **kwargs) -> Dict[str, Any]:
         """Run a specific extractor on a source.
         
         Returns:
@@ -125,7 +125,7 @@ class ExtractorRegistry:
 
         result = {"nodes_created": 0, "errors": []}
         try:
-            nodes = extractor.extract(source_path, model_fn, db_path)
+            nodes = extractor.extract(source_path, model_fn, db_path, **kwargs)
             if nodes:
                 created = self._ingest_nodes(nodes, db_path, extractor.name)
                 result["nodes_created"] = created
@@ -160,6 +160,21 @@ class ExtractorRegistry:
         
         conn = sqlite3.connect(db_path)
         cursor = conn.cursor()
+        # Ensure referent_time column is present on older DBs.
+        try:
+            from core.session import _ensure_schema as _ensure
+            _ensure(db_path)
+        except Exception:
+            pass
+
+        # Detect referent_time column once (backwards compat).
+        cursor.execute("PRAGMA table_info(thought_nodes)")
+        _cols = {row[1] for row in cursor.fetchall()}
+        has_referent_time = 'referent_time' in _cols
+
+        # Normalize referent_time once per batch; reject ambiguous input loud.
+        from core.session import _normalize_referent_time
+
         created = 0
 
         for node in nodes:
@@ -174,6 +189,14 @@ class ExtractorRegistry:
             source_file = node.get("source_file", f"extractor:{extractor_name}")
             now = datetime.now().isoformat()
 
+            try:
+                referent_time = _normalize_referent_time(node.get("referent_time"))
+            except ValueError as e:
+                logger.warning(
+                    f"Dropping unparseable referent_time on extracted node: {e}"
+                )
+                referent_time = None
+
             # Dedup: skip if identical content already exists
             cursor.execute(
                 "SELECT 1 FROM thought_nodes WHERE content = ? LIMIT 1",
@@ -182,13 +205,22 @@ class ExtractorRegistry:
                 continue
 
             try:
-                cursor.execute("""
-                    INSERT INTO thought_nodes 
-                    (id, content, node_type, confidence, domain, source_file, 
-                     timestamp, last_accessed, decayed)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0)
-                """, (node_id, content, node_type, confidence, domain,
-                      source_file, now, now))
+                if has_referent_time:
+                    cursor.execute("""
+                        INSERT INTO thought_nodes
+                        (id, content, node_type, confidence, domain, source_file,
+                         timestamp, last_accessed, decayed, referent_time)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, ?)
+                    """, (node_id, content, node_type, confidence, domain,
+                          source_file, now, now, referent_time))
+                else:
+                    cursor.execute("""
+                        INSERT INTO thought_nodes
+                        (id, content, node_type, confidence, domain, source_file,
+                         timestamp, last_accessed, decayed)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0)
+                    """, (node_id, content, node_type, confidence, domain,
+                          source_file, now, now))
                 created += 1
             except sqlite3.Error as e:
                 logger.error(f"Failed to insert node: {e}")

@@ -136,6 +136,57 @@ def _load_node_details(db_path: str, node_ids: List[str], domain_filter: Optiona
     conn.close()
     return nodes
 
+def _load_recency_clock(db_path: str, node_ids: List[str]) -> Dict[str, Optional[str]]:
+    """Return node_id -> ISO8601 event clock for similarity recency weighting.
+
+    Uses COALESCE(referent_time, timestamp): biographical / user-facing clock.
+    Callers on the operational side (decay/GC/declassify/embeddings/recent
+    activity) must NOT use this helper — read `timestamp` directly instead.
+    """
+    if not node_ids:
+        return {}
+    conn = _get_connection(db_path)
+    cursor = conn.cursor()
+    # Guard against older DBs that predate referent_time.
+    cursor.execute("PRAGMA table_info(thought_nodes)")
+    cols = {row[1] for row in cursor.fetchall()}
+    clock_expr = "COALESCE(referent_time, timestamp)" if 'referent_time' in cols else "timestamp"
+    placeholders = ','.join(['?'] * len(node_ids))
+    cursor.execute(
+        f"SELECT id, {clock_expr} FROM thought_nodes WHERE id IN ({placeholders})",
+        node_ids,
+    )
+    out = {nid: ts for nid, ts in cursor.fetchall()}
+    conn.close()
+    return out
+
+
+def _recency_weight(iso_ts: Optional[str]) -> float:
+    """Gentle recency weight in [0.5, 1.0]. Halves over ~365 days of event age.
+
+    Unknown/unparseable timestamps neutralize to 1.0 (no penalty) rather
+    than dropping the node — we'd rather rank on similarity alone than
+    silently bury a node with bad metadata.
+    """
+    if not iso_ts:
+        return 1.0
+    try:
+        from datetime import datetime, timezone
+        s = iso_ts.replace('Z', '+00:00') if iso_ts.endswith('Z') else iso_ts
+        dt = datetime.fromisoformat(s)
+        if dt.tzinfo is None:
+            return 1.0
+        age_days = (datetime.now(timezone.utc) - dt).total_seconds() / 86400.0
+        if age_days <= 0:
+            return 1.0
+        # Exponential decay with half-life = 365 days, floored at 0.5.
+        import math
+        w = 0.5 + 0.5 * math.exp(-age_days / 365.0)
+        return max(0.5, min(1.0, w))
+    except Exception:
+        return 1.0
+
+
 def _graph_walk(db_path: str, entry_points: List[str], walk_depth: int = 2) -> Dict[str, List[str]]:
     """
     Walk the graph from entry points to find connected nodes
@@ -241,19 +292,27 @@ def retrieve(db_path: str, query: str, top_k: int = 5, walk_depth: int = 2, doma
     
     # Load node details (with domain filtering if specified)
     node_details = _load_node_details(db_path, list(all_node_ids), domain, exclude_tags=exclude_tags)
-    
+
+    # Similarity recency weighting uses the EVENT clock (referent_time) when
+    # available, falling back to ingestion time. This is the user-facing /
+    # biographical reader — a 2019 WhatsApp note imported today should read
+    # as 2019-old, not fresh. Operational readers (decay/GC/declassify/
+    # embeddings maintenance/recent-activity) deliberately stay on
+    # `timestamp` — do NOT copy this COALESCE pattern there.
+    recency_by_id = _load_recency_clock(db_path, list(all_node_ids))
+
     # Step 4: Calculate hybrid scores
     results = []
-    
+
     for node_id in all_node_ids:
         if node_id not in node_details:
             continue
-        
+
         details = node_details[node_id]
-        
+
         # Embedding score (0.0 if not found in embedding search)
         embedding_score = embedding_scores.get(node_id, 0.0)
-        
+
         # Graph proximity score (inverse of path length)
         if node_id in walked_nodes:
             path_length = len(walked_nodes[node_id])
@@ -263,9 +322,12 @@ def retrieve(db_path: str, query: str, top_k: int = 5, walk_depth: int = 2, doma
         else:
             graph_score = 0.0
             path = [node_id] if node_id in embedding_scores else []
-        
-        # Hybrid score: weighted combination
-        hybrid_score = embedding_score * 0.5 + graph_score * 0.5
+
+        # Hybrid score: weighted combination, multiplied by a gentle recency
+        # factor on the event clock. Recency factor in [0.5, 1.0]: halves
+        # over ~1 year of event-time age. Pure metadata — no graph semantics.
+        recency_factor = _recency_weight(recency_by_id.get(node_id))
+        hybrid_score = (embedding_score * 0.5 + graph_score * 0.5) * recency_factor
 
         result = RetrievalResult(
             node_id=node_id,

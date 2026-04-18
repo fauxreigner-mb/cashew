@@ -7,7 +7,6 @@ Daily tracking of retrieval quality, graph health, and performance metrics.
 import os
 os.environ.setdefault('KMP_DUPLICATE_LIB_OK', 'TRUE')
 
-import sqlite3
 import json
 import numpy as np
 import sys
@@ -20,6 +19,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
 from core.stats import get_edge_count
+from core import db as cdb
 from integration.openclaw import generate_session_context
 
 def load_embedding(blob_data):
@@ -118,11 +118,11 @@ def run_retrieval_queries(db_path):
 
 def get_graph_stats(db_path):
     """Get comprehensive graph-wide statistics."""
-    conn = sqlite3.connect(db_path)
+    conn = cdb.connect(db_path)
     cursor = conn.cursor()
-    
+
     # Basic counts
-    cursor.execute("SELECT COUNT(*) FROM thought_nodes WHERE decayed = 0")
+    cursor.execute(f"SELECT COUNT(*) FROM {cdb.NODES_TABLE} WHERE decayed = 0")
     total_nodes = cursor.fetchone()[0]
     
     total_edges = get_edge_count(cursor)
