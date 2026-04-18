@@ -134,7 +134,7 @@ Environment variables override config: `${VAR:-default}` syntax supported in YAM
 
 - **Node IDs** — 12-char hex strings from content hash (`hashlib.sha256(content)[:12]`)
 - **Timestamps** — ISO 8601 strings
-- **Edges are untyped** — Ablation testing proved typed edges don't improve retrieval. Edges are pure connections; semantics come from node content + embeddings.
+- **Edges are untyped** — Topology carries the signal, not labels. In an early ablation (34 seed nodes, religion-debate test set, Claude Sonnet, 12 think cycles per method), structured graphs scored 9/10 on qualitative signatures vs 2/10 for random-edge graphs — topology matters. But an edge-label-swap variant (flipping supports↔contradicts, questions↔derived_from) produced 2.3x more conclusions than the correctly labeled version (84 vs 36), suggesting typed semantics act as constraints that narrow LLM exploration rather than guides that improve it. Edges are stored as pure topology; the LLM infers relationships from node content at read time. Ablation was small and single-domain — design-directional, not a benchmark.
 - **Embeddings** — 384-dimensional numpy arrays stored as BLOBs (and in vec_embeddings as float[384])
 - **Never delete nodes** — set `decayed=1` instead. The graph is append-mostly.
 - **Always embed new nodes** — every node must have rows in both `embeddings` and `vec_embeddings`.
@@ -203,7 +203,7 @@ cashew_context.py context --hints "bunny engineering principles best practices t
 
 ### Architecture
 - **Dumb graph, smart reasoning layer.** The graph stores connections. The LLM reasons about meaning. Don't put intelligence in the graph structure.
-- **No edge semantics.** Typed edges were ablation-tested and killed. No reintroductions under new names.
+- **No edge semantics.** Typed edges were ablation-tested (topology scored 9/10 vs 2/10 random; label-swap produced 2.3x more conclusions, suggesting semantics constrain rather than guide) and dropped. No reintroductions under new names — topology stays, labels do not.
 - **No temporal scaffolding.** Timestamps are node metadata, not graph structure.
 - **Fractal simplicity.** Simple rules, emergent behavior. If a feature adds structural complexity, the burden of proof is on the complexity.
 - **Organic decay is the forgetting mechanism.** Don't build structures that fight decay.
