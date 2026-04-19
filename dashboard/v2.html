@@ -98,6 +98,17 @@
     width: 0%; transition: width 0.4s ease;
   }
 
+  #hop-legend {
+    position: fixed; top: 58px; left: 50%; transform: translateX(-50%);
+    display: none; gap: 8px; background: rgba(17,17,17,0.85);
+    backdrop-filter: blur(8px); padding: 5px 10px; border-radius: 14px;
+    border: 1px solid var(--border); font-size: 10.5px; color: var(--dim);
+    z-index: 6; white-space: nowrap;
+  }
+  #hop-legend.on { display: flex; }
+  #hop-legend .h { display: inline-flex; align-items: center; gap: 4px; }
+  #hop-legend .bar { width: 14px; height: 2px; border-radius: 1px; }
+
   #hint {
     position: fixed; left: 16px; bottom: 14px; font-size: 11px; color: var(--dim);
     background: rgba(17,17,17,0.7); padding: 6px 10px; border-radius: 6px;
@@ -123,6 +134,12 @@
   <div id="stats"><b id="s-nodes">0</b> nodes · <b id="s-edges">0</b> edges</div>
 </div>
 <div id="progress"><div class="bar" id="progress-bar"></div></div>
+<div id="hop-legend">
+  <span class="h"><span class="bar" style="background:#fff"></span>seeds</span>
+  <span class="h"><span class="bar" style="background:#7cc4ff"></span>hop 1</span>
+  <span class="h"><span class="bar" style="background:#f5c542"></span>hop 2</span>
+  <span class="h"><span class="bar" style="background:#ff7ac2"></span>hop 3</span>
+</div>
 <canvas id="c"></canvas>
 <aside id="side">
   <div id="side-header">
@@ -260,10 +277,13 @@ function render() {
         ctx.stroke();
       }
       ctx.globalAlpha = 1;
-      ctx.strokeStyle = '#fff';
-      ctx.lineWidth = 1 / transform.k;
+      const ringColor = h.hop === 0
+        ? '#ffffff'
+        : (HOP_EDGE_COLOR[Math.min(h.hop, HOP_EDGE_COLOR.length - 1)] || '#fff');
+      ctx.strokeStyle = ringColor;
+      ctx.lineWidth = 2 / transform.k;
       ctx.beginPath();
-      ctx.arc(n.x, n.y, r, 0, Math.PI * 2);
+      ctx.arc(n.x, n.y, r + 1.5, 0, Math.PI * 2);
       ctx.stroke();
     }
   }
@@ -387,6 +407,7 @@ function clearHighlight() {
   highlight.clear(); activeEdges.clear();
   side.classList.remove('open');
   progressBar.style.width = '0%';
+  document.getElementById('hop-legend').classList.remove('on');
   render();
 }
 
@@ -414,6 +435,7 @@ function runSearch(q) {
   sideTitle.textContent = `Tracing: "${q}"`;
   sideBody.innerHTML = '<div style="color:#777;font-size:12px;">seeding…</div>';
   side.classList.add('open');
+  document.getElementById('hop-legend').classList.add('on');
   progressBar.style.width = '5%';
 
   const url = '/api/search?q=' + encodeURIComponent(q) + '&seeds=5&picks=3&depth=3';
