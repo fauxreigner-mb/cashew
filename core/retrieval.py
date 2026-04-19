@@ -501,6 +501,92 @@ def retrieve_recursive_bfs(db_path: str, query: str, top_k: int = 10, n_seeds: i
 
 
 
+def retrieve_bfs_streaming(db_path: str, query: str, n_seeds: int = 5,
+                           picks_per_hop: int = 3, max_depth: int = 3):
+    """Streaming variant of retrieve_recursive_bfs that yields events as the
+    walk progresses. Used by the dashboard to animate "LLM-query-style" node
+    reveal: seeds first, then each hop.
+
+    Yields dicts shaped like:
+      {"event": "seeds", "nodes": [{"id", "score"}, ...]}
+      {"event": "hop", "level": int, "nodes": [{"id", "score", "from": parent_id}, ...]}
+      {"event": "done", "ranked": [{"id", "score"}, ...]}
+    """
+    if not query or not query.strip():
+        yield {"event": "done", "ranked": []}
+        return
+
+    seed_results = embedding_search(db_path, query, top_k=n_seeds)
+    if not seed_results:
+        yield {"event": "done", "ranked": []}
+        return
+
+    seed_scores = {nid: score for nid, score in seed_results}
+    seeds = [nid for nid, _ in seed_results]
+    candidates = set(seeds)
+    yield {"event": "seeds",
+           "nodes": [{"id": nid, "score": float(s)} for nid, s in seed_results]}
+
+    query_vec = np.array(embed_text(query), dtype=np.float32)
+    query_norm = np.linalg.norm(query_vec)
+    if query_norm == 0:
+        yield {"event": "done", "ranked": []}
+        return
+
+    conn = _get_connection(db_path)
+    cursor = conn.cursor()
+    neighbors = defaultdict(set)
+    cursor.execute("SELECT parent_id, child_id FROM derivation_edges")
+    for parent, child in cursor.fetchall():
+        neighbors[parent].add(child)
+        neighbors[child].add(parent)
+
+    _vec_cache = {}
+    def cosine_sim(node_id: str) -> float:
+        if node_id in seed_scores:
+            return seed_scores[node_id]
+        if node_id in _vec_cache:
+            vec = _vec_cache[node_id]
+        else:
+            row = cursor.execute("SELECT vector FROM embeddings WHERE node_id = ?", (node_id,)).fetchone()
+            if row is None:
+                _vec_cache[node_id] = None
+                return 0.0
+            vec = np.frombuffer(row[0], dtype=np.float32)
+            _vec_cache[node_id] = vec
+        if vec is None:
+            return 0.0
+        nv = np.linalg.norm(vec)
+        if nv == 0:
+            return 0.0
+        return float(np.dot(query_vec, vec) / (query_norm * nv))
+
+    frontier = list(seeds)
+    for depth in range(max_depth):
+        next_frontier = []
+        hop_nodes = []
+        for node_id in frontier:
+            nbrs = neighbors.get(node_id, set())
+            if not nbrs:
+                continue
+            scored = [(nid, cosine_sim(nid)) for nid in nbrs if nid not in candidates]
+            scored.sort(key=lambda x: x[1], reverse=True)
+            for nid, sim in scored[:picks_per_hop]:
+                candidates.add(nid)
+                next_frontier.append(nid)
+                hop_nodes.append({"id": nid, "score": float(sim), "from": node_id})
+        if hop_nodes:
+            yield {"event": "hop", "level": depth + 1, "nodes": hop_nodes}
+        frontier = next_frontier
+        if not frontier:
+            break
+
+    conn.close()
+    final = sorted(((nid, cosine_sim(nid)) for nid in candidates), key=lambda x: x[1], reverse=True)
+    yield {"event": "done",
+           "ranked": [{"id": nid, "score": float(s)} for nid, s in final]}
+
+
 def format_context(results: List[RetrievalResult], include_paths: bool = False) -> str:
     """
     Format retrieval results into a prompt-ready context string

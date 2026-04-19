@@ -451,6 +451,20 @@ def cmd_ingest(args):
         return 1
 
 
+def cmd_dashboard(args):
+    """Launch the dashboard HTTP+SSE server."""
+    import importlib.util
+    from pathlib import Path as _P
+    spec = importlib.util.spec_from_file_location(
+        "dashboard_server",
+        _P(__file__).parent / "scripts" / "dashboard_server.py",
+    )
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    mod.run(args.db, host=args.host, port=args.port)
+    return 0
+
+
 def cmd_serve(args):
     """Run the warm daemon that keeps the embedding model loaded."""
     import logging as _logging
@@ -603,6 +617,11 @@ Examples:
     serve_parser.add_argument('--socket', help='Unix socket path (default: $CASHEW_SOCKET or ~/.cashew/daemon.sock)')
     serve_parser.add_argument('--no-warm', action='store_true', help='Skip loading the embedding model at startup')
     serve_parser.set_defaults(func=cmd_serve)
+
+    dash_parser = subparsers.add_parser('dashboard', help='Launch the brain dashboard (HTTP + live BFS SSE)')
+    dash_parser.add_argument('--host', default='127.0.0.1')
+    dash_parser.add_argument('--port', type=int, default=8765)
+    dash_parser.set_defaults(func=cmd_dashboard)
 
     args = parser.parse_args()
     
