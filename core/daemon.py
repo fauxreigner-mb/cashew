@@ -31,6 +31,17 @@ from typing import Optional
 
 logger = logging.getLogger("cashew.daemon")
 
+# Process-local backend singleton so the model loads exactly once per daemon.
+_backend = None
+
+
+def _local_backend():
+    global _backend
+    if _backend is None:
+        from .embedding_service import LocalBackend
+        _backend = LocalBackend()
+    return _backend
+
 
 def default_socket_path() -> str:
     env = os.environ.get("CASHEW_SOCKET")
@@ -59,9 +70,30 @@ def _handle(req: dict) -> dict:
         return {"ok": True, "result": "pong"}
 
     if op == "embed":
-        from .embeddings import embed_text
+        # Handled directly by the local backend so we don't recurse through
+        # the service (which would try the daemon and loop forever).
+        from .embedding_service import EMBEDDING_DIM
         text = req.get("text", "")
-        return {"ok": True, "result": embed_text(text)}
+        if not text or not text.strip():
+            return {"ok": True, "result": [0.0] * EMBEDDING_DIM}
+        vec = _local_backend().encode([text])[0]
+        return {"ok": True, "result": vec.tolist()}
+
+    if op == "embed_batch":
+        from .embedding_service import EMBEDDING_DIM
+        texts = req.get("texts") or []
+        if not isinstance(texts, list):
+            return {"ok": False, "error": "'texts' must be a list"}
+        if not texts:
+            return {"ok": True, "result": []}
+        nonempty_idx = [i for i, t in enumerate(texts) if t and t.strip()]
+        nonempty_texts = [texts[i] for i in nonempty_idx]
+        out = [[0.0] * EMBEDDING_DIM for _ in texts]
+        if nonempty_texts:
+            vecs = _local_backend().encode(nonempty_texts)
+            for i, vec in zip(nonempty_idx, vecs):
+                out[i] = vec.tolist()
+        return {"ok": True, "result": out}
 
     if op == "context":
         from integration.session import generate_session_context
@@ -120,8 +152,7 @@ def serve(socket_path: Optional[str] = None, warm: bool = True) -> None:
     if warm:
         logger.info("warming embedding model...")
         t0 = time.perf_counter()
-        from .embeddings import embed_text
-        embed_text("warmup")
+        _local_backend().encode(["warmup"])
         logger.info(f"model warm in {(time.perf_counter()-t0)*1000:.0f}ms")
 
     server = _ThreadingUnixServer(path, _Handler)

@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  LaunchAgent for the cashew warm daemon.
+
+  Install:
+    1. Edit CASHEW_PATH and PYTHON_PATH below for your machine.
+    2. cp packaging/com.cashew.daemon.plist ~/Library/LaunchAgents/
+    3. launchctl load ~/Library/LaunchAgents/com.cashew.daemon.plist
+    4. Verify:  launchctl list | grep com.cashew.daemon
+
+  The daemon listens on ~/.cashew/daemon.sock (override with CASHEW_SOCKET).
+  Content-hash embedding cache lives at ~/.cashew/embedding_cache.db.
+-->
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.cashew.daemon</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>/opt/homebrew/bin/python3</string>
+        <string>CASHEW_PATH/cashew_cli.py</string>
+        <string>serve</string>
+    </array>
+    <key>WorkingDirectory</key>
+    <string>CASHEW_PATH</string>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <true/>
+    <key>ThrottleInterval</key>
+    <integer>30</integer>
+    <key>StandardOutPath</key>
+    <string>/tmp/cashew-daemon.log</string>
+    <key>StandardErrorPath</key>
+    <string>/tmp/cashew-daemon-err.log</string>
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin</string>
+        <key>KMP_DUPLICATE_LIB_OK</key>
+        <string>TRUE</string>
+    </dict>
+</dict>
+</plist>

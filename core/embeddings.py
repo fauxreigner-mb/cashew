@@ -23,38 +23,16 @@ try:
 except ImportError:
     logging.info("sqlite-vec not installed — falling back to brute-force search")
 
-# Lazy import pattern - only load when first called
-_model = None
-
-def _get_model():
-    """Lazy-load the sentence transformer model (singleton pattern)"""
-    global _model
-    if _model is None:
-        try:
-            from sentence_transformers import SentenceTransformer
-            _model = SentenceTransformer('all-MiniLM-L6-v2')
-            logging.info("Loaded sentence-transformer model: all-MiniLM-L6-v2")
-        except ImportError:
-            raise ImportError("sentence-transformers package not installed. Run: pip install sentence-transformers")
-    return _model
-
 def embed_text(text: str) -> List[float]:
     """
-    Embed a single text string into a vector
-    
-    Args:
-        text: Input text to embed
-        
-    Returns:
-        384-dimensional embedding vector as list of floats
+    Embed a single text string into a vector.
+
+    Routes through the embedding service: content-hash cache, then warm
+    daemon, then in-process model as a last resort. Every caller benefits
+    transparently without touching call sites.
     """
-    if not text or not text.strip():
-        # Return zero vector for empty text
-        return [0.0] * 384
-    
-    model = _get_model()
-    embedding = model.encode(text, convert_to_numpy=True)
-    return embedding.tolist()
+    from .embedding_service import embed as _embed
+    return _embed(text)
 
 def ensure_schema(db_path: str):
     """Ensure all tables have the correct schema (call before any DB writes)"""
@@ -163,16 +141,20 @@ def embed_nodes(db_path: str, batch_size: int = 100) -> dict:
     _load_vec(conn)
     cursor = conn.cursor()
     
-    # Get nodes that need embedding (don't have decayed flag or are not decayed)
+    # Get nodes that need embedding (not decayed, non-empty content).
+    # Empty content would produce a zero-norm vector, which poisons sqlite-vec
+    # cosine distance (returns NULL) and corrupts nearest-neighbor queries.
     cursor.execute("""
-        SELECT tn.id, tn.content 
+        SELECT tn.id, tn.content
         FROM thought_nodes tn
         LEFT JOIN embeddings e ON tn.id = e.node_id
-        WHERE e.node_id IS NULL 
+        WHERE e.node_id IS NULL
         AND (tn.decayed IS NULL OR tn.decayed = 0)
+        AND tn.content IS NOT NULL
+        AND TRIM(tn.content) != ''
         ORDER BY tn.timestamp DESC
     """)
-    
+
     nodes_to_embed = cursor.fetchall()
     total_nodes = len(nodes_to_embed)
     
@@ -183,17 +165,18 @@ def embed_nodes(db_path: str, batch_size: int = 100) -> dict:
     logging.info(f"Found {total_nodes} nodes to embed")
     
     embedded_count = 0
-    model = _get_model()  # Load model once
-    
+    from .embedding_service import get_default_service
+    service = get_default_service()  # cache + daemon + local fallback
+
     # Process in batches
     for i in range(0, total_nodes, batch_size):
         batch = nodes_to_embed[i:i + batch_size]
         batch_texts = [content for _, content in batch]
         batch_ids = [node_id for node_id, _ in batch]
-        
+
         # Embed the batch
         try:
-            embeddings = model.encode(batch_texts, convert_to_numpy=True)
+            embeddings = service.embed_np(batch_texts)
             
             # Store embeddings
             has_vec = _vec_available and _has_vec_table(conn)

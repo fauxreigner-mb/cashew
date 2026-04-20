@@ -42,14 +42,24 @@ def get_edge_count(cursor: sqlite3.Cursor) -> int:
 
 
 def get_embedding_coverage(cursor: sqlite3.Cursor) -> Tuple[int, int]:
-    """Return (embedded_count, total_active_count) for non-decayed nodes."""
+    """Return (embedded_count, embeddable_count) for non-decayed nodes.
+
+    Empty-content nodes are excluded from the denominator since they are
+    intentionally not embedded — a zero-norm vector breaks sqlite-vec
+    cosine distance queries.
+    """
     cursor.execute("""
         SELECT COUNT(*) FROM embeddings e
         JOIN thought_nodes tn ON e.node_id = tn.id
         WHERE tn.decayed IS NULL OR tn.decayed = 0
     """)
     embedded = cursor.fetchone()[0]
-    total = get_active_node_count(cursor)
+    cursor.execute("""
+        SELECT COUNT(*) FROM thought_nodes
+        WHERE (decayed IS NULL OR decayed = 0)
+        AND content IS NOT NULL AND TRIM(content) != ''
+    """)
+    total = cursor.fetchone()[0]
     return embedded, total
 
 

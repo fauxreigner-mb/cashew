@@ -135,10 +135,12 @@ class TestEmbeddings:
     def test_embed_nodes_embeds_all_non_decayed_nodes(self, temp_db):
         """Test that embed_nodes processes all non-decayed nodes"""
         stats = embed_nodes(temp_db)
-        
-        # Should embed 7 nodes (8 total - 1 decayed)
-        assert stats["total_nodes"] == 7
-        assert stats["embedded"] == 7
+
+        # Fixture has 8 nodes: 1 decayed, 1 empty-content. Both skipped.
+        # Empty content would produce a zero-norm vector that breaks cosine
+        # distance queries in sqlite-vec.
+        assert stats["total_nodes"] == 6
+        assert stats["embedded"] == 6
         assert stats["skipped"] == 0
         
         # Check that embeddings were actually stored
@@ -146,7 +148,7 @@ class TestEmbeddings:
         cursor = conn.cursor()
         cursor.execute("SELECT COUNT(*) FROM embeddings")
         embedding_count = cursor.fetchone()[0]
-        assert embedding_count == 7
+        assert embedding_count == 6
         
         # Check that decayed node was not embedded
         cursor.execute("SELECT node_id FROM embeddings WHERE node_id = 'node8'")
@@ -158,7 +160,7 @@ class TestEmbeddings:
         """Test that embed_nodes doesn't re-embed already embedded nodes"""
         # First embedding
         stats1 = embed_nodes(temp_db)
-        assert stats1["embedded"] == 7
+        assert stats1["embedded"] == 6
         
         # Second embedding should skip all
         stats2 = embed_nodes(temp_db)
@@ -227,16 +229,17 @@ class TestEmbeddings:
         """Test that get_embedding_stats returns accurate statistics"""
         # Before embedding
         stats = get_embedding_stats(temp_db)
-        assert stats["total_nodes"] == 7  # Non-decayed nodes
+        # 8 nodes total: 1 decayed, 1 empty. Neither counts toward embeddable total.
+        assert stats["total_nodes"] == 6
         assert stats["embedded_nodes"] == 0
-        assert stats["missing_embeddings"] == 7
+        assert stats["missing_embeddings"] == 6
         assert stats["coverage_percentage"] == 0.0
-        
+
         # After embedding
         embed_nodes(temp_db)
         stats = get_embedding_stats(temp_db)
-        assert stats["total_nodes"] == 7
-        assert stats["embedded_nodes"] == 7
+        assert stats["total_nodes"] == 6
+        assert stats["embedded_nodes"] == 6
         assert stats["missing_embeddings"] == 0
         assert stats["coverage_percentage"] == 100.0
         assert "all-MiniLM-L6-v2" in stats["models_used"]
@@ -274,7 +277,7 @@ class TestEmbeddings:
         """Test that batch processing works with different batch sizes"""
         # Test with batch size 1
         stats1 = embed_nodes(temp_db, batch_size=1)
-        assert stats1["embedded"] == 7
+        assert stats1["embedded"] == 6
         
         # Clear embeddings
         conn = sqlite3.connect(temp_db)
@@ -285,7 +288,7 @@ class TestEmbeddings:
         
         # Test with batch size 10 (larger than number of nodes)
         stats2 = embed_nodes(temp_db, batch_size=10)
-        assert stats2["embedded"] == 7
+        assert stats2["embedded"] == 6
         
         # Results should be identical
         results1 = search(temp_db, "sunny weather", top_k=5)

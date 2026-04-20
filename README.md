@@ -140,6 +140,24 @@ cashew dashboard --db data/graph.db --port 8765
 
 A minimalist browser UI over the brain. The full graph renders as a canvas force layout colored by node type. The search box traces a live recursive-BFS walk: seeds arrive first, then each hop lights up in order with hop-colored edges and rings. Works on mobile (bottom sheet, drag-to-resize). Pass `--host 0.0.0.0` to expose on the LAN. Auto-trigger a search via `?q=...` in the URL.
 
+## Warm Daemon
+
+Every CLI invocation normally loads the sentence-transformer model from scratch (~2s cold start). For a responsive query loop, run the warm daemon once and every call routes through it automatically — no code changes in consumers.
+
+```bash
+# Foreground (development)
+cashew serve
+
+# Persistent (macOS)
+cp packaging/com.cashew.daemon.plist ~/Library/LaunchAgents/
+# edit CASHEW_PATH in the plist to match your clone, then:
+launchctl load ~/Library/LaunchAgents/com.cashew.daemon.plist
+```
+
+The daemon listens on `~/.cashew/daemon.sock`. A content-hash embedding cache at `~/.cashew/embedding_cache.db` makes repeat embeds free, keyed by `(model_version, sha256(text))` — deterministic, so no invalidation logic is needed beyond model swaps.
+
+Every entry point (`context`, `extract`, `think`, sleep cycles) checks the cache first, then the daemon, then falls back to in-process embedding if the daemon is down. Clients never need to know which path served them.
+
 ## Requirements
 
 - Python 3.10+
