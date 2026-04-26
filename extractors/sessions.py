@@ -12,6 +12,8 @@ Features:
 
 import json
 import logging
+import os
+import re
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional
 
@@ -139,60 +141,110 @@ class SessionExtractor(BaseExtractor):
         # Focus on assistant and user messages
         return role in ['assistant', 'user']
 
-    def _extract_with_llm(self, messages: List[Dict[str, Any]], 
+    # ~100k chars per chunk — well under 200k token context window for any model
+    _CHUNK_CHARS = 100_000
+    # per-message cap for LLM prompt; full content still stored in base nodes
+    _PER_MSG_CHARS = 10_000
+
+    def _truncate_at_boundary(self, text: str, max_chars: int) -> str:
+        """Truncate text at a natural boundary (line, sentence, word) near max_chars."""
+        if len(text) <= max_chars:
+            return text
+        window = text[:max_chars]
+        floor = max_chars // 2
+        for sep in ('\n', '. ', ' '):
+            pos = window.rfind(sep)
+            if pos >= floor:
+                return window[:pos + len(sep)].rstrip()
+        return window
+
+    def _extract_with_llm(self, messages: List[Dict[str, Any]],
                           model_fn: Callable, session_id: str) -> List[Dict[str, Any]]:
-        """Extract knowledge using LLM."""
+        """Extract knowledge using LLM, chunking large sessions to fit context window."""
         if not messages:
             return []
 
-        # Prepare conversation context
-        conversation = []
+        chunks = self._chunk_messages(messages)
+        nodes = []
+        for chunk in chunks:
+            nodes.extend(self._extract_chunk_with_llm(chunk, model_fn, session_id))
+        return nodes
+
+    def _chunk_messages(self, messages: List[Dict[str, Any]]) -> List[List[Dict[str, Any]]]:
+        """Split messages into chunks that fit within _CHUNK_CHARS."""
+        chunks = []
+        current_chunk: List[Dict[str, Any]] = []
+        current_size = 0
         for msg in messages:
-            role = msg.get('role', '')
-            content = msg.get('content', '')
-            timestamp = msg.get('timestamp', '')
-            
-            conversation.append(f"{role.upper()}: {content}")
+            msg_size = len(msg.get('content', ''))
+            if current_chunk and current_size + msg_size > self._CHUNK_CHARS:
+                chunks.append(current_chunk)
+                current_chunk = []
+                current_size = 0
+            current_chunk.append(msg)
+            current_size += msg_size
+        if current_chunk:
+            chunks.append(current_chunk)
+        return chunks
 
+    def _extract_chunk_with_llm(self, messages: List[Dict[str, Any]],
+                                 model_fn: Callable, session_id: str) -> List[Dict[str, Any]]:
+        """Extract knowledge from one chunk of messages."""
+        conversation = [
+            f"{msg.get('role', '').upper()}: {self._truncate_at_boundary(msg.get('content', ''), self._PER_MSG_CHARS)}"
+            for msg in messages
+        ]
         conv_text = "\n\n".join(conversation)
-        
-        prompt = f"""Extract key insights, decisions, commitments, and important information from this conversation.
 
-Session: {session_id}
+        prompt = f"""Extract insights, decisions, commitments, facts, important information from conversation. Session: {session_id}
 
 Conversation:
 {conv_text}
 
-Return distinct knowledge statements that would be valuable to remember. Each should be:
-- A specific insight, decision, commitment, or important fact
-- Actionable or memorable for future reference
-- Written in a clear, standalone format
+Output one statement per line. Prefix each with type tag.
+Types: [fact] concrete verifiable context-independent info | [observation] something noticed in context, may be situational | [insight] non-obvious connection requiring reasoning | [decision] choice made between alternatives | [commitment] stated intention or planned action | [belief] held opinion, not objectively verifiable | When uncertain, use [observation]
 
-Focus on substantive content and skip pleasantries or routine interactions."""
+Caveman style: drop articles/filler, keep technical terms exact, fragments ok if express full thought. Content fragment not ok.
+
+Good: "[fact] SNR stability used as reliability proxy for mesh links"
+Good: "[decision] Rebase approach: extract final state from 99feeab instead of cherry-picking sequentially"
+Good: "[commitment] Must add len(nh) validation to hop_id before merging"
+Bad: "[fact] Edge recovery logic (lines 1340-1403)"
+
+Rules:
+Begin output immediately with first statement — no title, no preamble, no intro line, no section dividers. Any line starting with # or ** is wrong. No bullet points, dashes, numbering. No raw content fragments. No meta-comments. Skip pleasantries, filler, routine interactions.
+
+Output typed statements only, one per line."""
 
         try:
             response = model_fn(prompt)
-            statements = [s.strip() for s in response.split('\n') if s.strip()]
-            
-            # Event clock: use the latest message timestamp in this batch as the
-            # referent_time for extracted nodes. Session extractors already parse
-            # per-message timestamps — pass them through so imported historical
-            # sessions get proper event times (not today's ingest time).
+            if os.environ.get("CASHEW_LOG_LLM"):
+                logger.info(f"LLM raw ({session_id}):\n{response}\n---")
+            parsed_statements = []
+            for s in response.split('\n'):
+                s = s.strip()
+                if not s:
+                    continue
+                if s.startswith('#'):
+                    print(f"FILTERED ({session_id}): {s}")
+                    continue
+                parsed_statements.append(self._parse_typed_statement(s))
+
             batch_referent_time = None
             for msg in messages:
                 ts = (msg.get('timestamp') or '').strip()
                 if ts:
-                    batch_referent_time = ts  # last non-empty wins
+                    batch_referent_time = ts
 
             return [{
-                "content": stmt,
-                "type": self._classify_statement(stmt),
+                "content": content,
+                "type": node_type,
                 "confidence": 0.75,
                 "domain": "conversations",
                 "source_file": f"extractor:session:{session_id}",
                 "referent_time": batch_referent_time,
-            } for stmt in statements if len(stmt) > 20]
-            
+            } for node_type, content in parsed_statements if len(content) > 20]
+
         except Exception as e:
             logger.warning(f"LLM extraction failed for {session_id}: {e}")
             return self._extract_simple(messages, session_id)
@@ -223,27 +275,26 @@ Focus on substantive content and skip pleasantries or routine interactions."""
         
         return nodes
 
+    _VALID_TYPES = {'fact', 'observation', 'insight', 'decision', 'commitment', 'belief'}
+    _TYPE_PREFIX_RE = re.compile(r'^\[(fact|observation|insight|decision|commitment|belief)\]\s+(.+)', re.IGNORECASE)
+
     def _classify_statement(self, statement: str) -> str:
-        """Classify extracted statement type."""
-        statement_lower = statement.lower()
-        
-        # Look for decision keywords
-        decision_keywords = ['decided', 'will', 'going to', 'plan to', 'agreed']
-        if any(keyword in statement_lower for keyword in decision_keywords):
+        """Classify statement type. Only catches clear cases; defaults to observation."""
+        s = statement.lower()
+        if re.search(r'\b(decided|chose|selected|agreed|going with)\b', s):
             return "decision"
-        
-        # Look for insight/learning keywords
-        insight_keywords = ['learned', 'realized', 'discovered', 'found that']
-        if any(keyword in statement_lower for keyword in insight_keywords):
-            return "insight"
-        
-        # Look for commitment keywords
-        commit_keywords = ['commit', 'promise', 'deadline', 'due', 'by']
-        if any(keyword in statement_lower for keyword in commit_keywords):
+        if re.search(r'\b(will|plan to|going to|need to|must|should)\b', s):
             return "commitment"
-        
-        # Default to observation
+        if re.search(r'\b(learned|realized|discovered|found that)\b', s):
+            return "insight"
         return "observation"
+
+    def _parse_typed_statement(self, line: str) -> tuple[str, str]:
+        """Parse [type] statement format. Falls back to classifier if no valid tag."""
+        m = self._TYPE_PREFIX_RE.match(line)
+        if m:
+            return m.group(1).lower(), m.group(2).strip()
+        return self._classify_statement(line), line
 
     def get_state(self) -> Dict[str, Any]:
         return {"processed": self._processed}

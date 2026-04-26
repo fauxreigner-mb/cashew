@@ -11,6 +11,8 @@ Features:
 """
 
 import logging
+import os
+import re
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional
 
@@ -113,30 +115,47 @@ class MarkdownDirExtractor(BaseExtractor):
     def _extract_with_llm(self, content: str, model_fn: Callable, 
                           domain: str, source_tag: str) -> List[Dict[str, Any]]:
         """Extract knowledge using LLM."""
-        prompt = f"""Extract key insights, facts, decisions, and important information from this markdown content.
+        prompt = f"""Extract insights, facts, decisions, commitments, important information from markdown content.
 
 Content:
 {content}
 
-Return distinct knowledge statements that would be valuable to remember. Each should be:
-- A specific insight, decision, fact, or important observation
-- Standalone and actionable
-- Free of markdown formatting
-- Focused on substantive content
+Output one statement per line. Prefix each with type tag.
+Types: [fact] concrete verifiable context-independent info | [observation] something noticed in context, may be situational | [insight] non-obvious connection requiring reasoning | [decision] choice made between alternatives | [commitment] stated intention or planned action | [belief] held opinion, not objectively verifiable | When uncertain, use [observation]
 
-Extract only meaningful information, skip formatting, navigation, or boilerplate text."""
+Caveman style: drop articles/filler, keep technical terms exact, fragments ok if express full thought. Content fragment not ok.
+
+Good: "[fact] Backend uses FastAPI with PostGIS on Docker Compose"
+Good: "[decision] UTS tile format chosen over rasterio for 8x RAM reduction"
+Bad: "[fact] ## Stack"
+Bad: "[fact] - Backend"
+
+Rules:
+Begin output immediately with first statement — no title, no preamble, no intro line, no section dividers. Any line starting with # or ** is wrong. No bullet points, dashes, numbering. No raw content fragments. Skip formatting, navigation, boilerplate.
+
+Output typed statements only, one per line."""
 
         try:
             response = model_fn(prompt)
-            statements = [s.strip() for s in response.split('\n') if s.strip()]
-            
+            if os.environ.get("CASHEW_LOG_LLM"):
+                logger.info(f"LLM raw ({source_tag}):\n{response}\n---")
+            parsed_statements = []
+            for s in response.split('\n'):
+                s = s.strip()
+                if not s:
+                    continue
+                if s.startswith('#'):
+                    print(f"FILTERED ({source_tag}): {s}")
+                    continue
+                parsed_statements.append(self._parse_typed_statement(s))
+
             return [{
-                "content": stmt,
-                "type": self._classify_content(stmt),
+                "content": stmt_content,
+                "type": node_type,
                 "confidence": 0.8,
                 "domain": domain,
                 "source_file": source_tag
-            } for stmt in statements if len(stmt) > 15]
+            } for node_type, stmt_content in parsed_statements if len(stmt_content) > 15]
             
         except Exception as e:
             logger.warning(f"LLM extraction failed: {e}")
@@ -156,32 +175,26 @@ Extract only meaningful information, skip formatting, navigation, or boilerplate
             "source_file": source_tag
         } for para in paragraphs]
 
+    _VALID_TYPES = {'fact', 'observation', 'insight', 'decision', 'commitment', 'belief'}
+    _TYPE_PREFIX_RE = re.compile(r'^\[(fact|observation|insight|decision|commitment|belief)\]\s+(.+)', re.IGNORECASE)
+
     def _classify_content(self, content: str) -> str:
-        """Classify extracted content type."""
-        content_lower = content.lower()
-        
-        # Look for decision indicators
-        decision_words = ['decided', 'choose', 'selected', 'will implement']
-        if any(word in content_lower for word in decision_words):
+        """Classify content type. Only catches clear cases; defaults to observation."""
+        s = content.lower()
+        if re.search(r'\b(decided|chose|selected|agreed|going with)\b', s):
             return "decision"
-        
-        # Look for belief/opinion indicators
-        belief_words = ['believe', 'think', 'opinion', 'should', 'recommend']
-        if any(word in content_lower for word in belief_words):
-            return "belief"
-        
-        # Look for factual indicators
-        fact_words = ['is', 'are', 'was', 'were', 'has', 'have', 'definition']
-        if any(word in content_lower for word in fact_words):
-            return "fact"
-        
-        # Look for insight indicators
-        insight_words = ['learned', 'discovered', 'insight', 'realization']
-        if any(word in content_lower for word in insight_words):
+        if re.search(r'\b(will|plan to|going to|need to|must)\b', s):
+            return "commitment"
+        if re.search(r'\b(learned|realized|discovered|found that)\b', s):
             return "insight"
-        
-        # Default to observation
         return "observation"
+
+    def _parse_typed_statement(self, line: str) -> tuple:
+        """Parse [type] statement format. Falls back to classifier if no valid tag."""
+        m = self._TYPE_PREFIX_RE.match(line)
+        if m:
+            return m.group(1).lower(), m.group(2).strip()
+        return self._classify_content(line), line
 
     def get_state(self) -> Dict[str, Any]:
         return {"processed": self._processed}

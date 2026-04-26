@@ -31,6 +31,8 @@ from typing import Optional
 
 logger = logging.getLogger("cashew.daemon")
 
+_HAS_UNIX_SOCKET = hasattr(socketserver, "UnixStreamServer") and hasattr(socket, "AF_UNIX")
+
 # Process-local backend singleton so the model loads exactly once per daemon.
 _backend = None
 
@@ -125,13 +127,16 @@ class _Handler(socketserver.StreamRequestHandler):
             pass
 
 
-class _ThreadingUnixServer(socketserver.ThreadingMixIn, socketserver.UnixStreamServer):
-    daemon_threads = True
-    allow_reuse_address = True
+if _HAS_UNIX_SOCKET:
+    class _ThreadingUnixServer(socketserver.ThreadingMixIn, socketserver.UnixStreamServer):
+        daemon_threads = True
+        allow_reuse_address = True
 
 
 def serve(socket_path: Optional[str] = None, warm: bool = True) -> None:
     """Run the daemon in the foreground. Blocks until interrupted."""
+    if not _HAS_UNIX_SOCKET:
+        raise RuntimeError("cashew daemon requires Unix sockets (not available on this platform)")
     path = socket_path or default_socket_path()
 
     # Clean up stale socket if no one is listening on it.
@@ -174,6 +179,8 @@ def serve(socket_path: Optional[str] = None, warm: bool = True) -> None:
 def client_request(req: dict, socket_path: Optional[str] = None, timeout: float = 0.5) -> Optional[dict]:
     """Send one request to the daemon. Returns parsed response dict, or None
     if the daemon isn't reachable (so callers can fall back to in-process)."""
+    if not _HAS_UNIX_SOCKET:
+        return None
     path = socket_path or default_socket_path()
     try:
         s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
@@ -208,6 +215,8 @@ def client_request(req: dict, socket_path: Optional[str] = None, timeout: float 
 
 def serve_in_thread(socket_path: Optional[str] = None, warm: bool = False) -> threading.Thread:
     """Start the daemon on a background thread. Used by tests."""
+    if not _HAS_UNIX_SOCKET:
+        raise RuntimeError("cashew daemon requires Unix sockets (not available on this platform)")
     t = threading.Thread(
         target=lambda: serve(socket_path=socket_path, warm=warm),
         daemon=True,

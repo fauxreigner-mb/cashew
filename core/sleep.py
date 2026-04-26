@@ -56,8 +56,9 @@ class SleepProtocol:
         self.db_path = db_path
         self.sleep_log_path = sleep_log_path
         self.sleep_frequency = 10  # Sleep every N thoughts (tunable)
-        self.dedup_threshold = 0.9
+        self.dedup_threshold = 0.82
         self.cross_link_threshold = 0.7
+        self.min_access_for_core_promotion = 10
         # GC settings from config
         self.gc_mode = getattr(config, 'gc_mode', 'soft')
         self.gc_threshold = getattr(config, 'gc_threshold', 0.05)
@@ -145,50 +146,74 @@ class SleepProtocol:
         
         return intersection / union if union > 0 else 0.0
     
-    def find_cross_link_candidates(self) -> List[CrossLinkCandidate]:
+    def find_cross_link_candidates(self, ann_k: int = 30) -> List[CrossLinkCandidate]:
         """
         Find nodes that should be cross-linked or deduplicated.
-        Uses embedding cosine similarity for accurate comparison.
-        Optimized: computes full similarity matrix once, then filters.
+        Uses ANN search (sqlite-vec) per node to avoid O(N²) memory cost.
+        For each node, retrieves top-K nearest neighbors and checks thresholds.
+        Seen pairs tracked to avoid duplicates.
         """
         try:
             from .graph_utils import load_embeddings
-            from sklearn.metrics.pairwise import cosine_similarity as sklearn_cosine_sim
-            
+            from .embeddings import _load_vec, _has_vec_table, _vec_available
+
             node_ids, vectors, node_meta = load_embeddings(self.db_path)
             if len(node_ids) < 2:
                 return []
-            
-            # Compute full pairwise similarity matrix (N x N)
-            sim_matrix = sklearn_cosine_sim(vectors)
-            
+
+            import sqlite3 as _sqlite3
+            conn = _sqlite3.connect(self.db_path)
+            use_vec = _vec_available and _has_vec_table(conn)
+            if use_vec:
+                _load_vec(conn)
+
+            seen_pairs: set = set()
             candidates = []
-            
-            # Only check upper triangle (avoid duplicates)
-            for i in range(len(node_ids)):
-                for j in range(i + 1, len(node_ids)):
-                    similarity = float(sim_matrix[i, j])
-                    
+
+            for i, node_id in enumerate(node_ids):
+                query_bytes = vectors[i].tobytes()
+                if use_vec:
+                    rows = conn.execute(
+                        "SELECT node_id, distance FROM vec_embeddings "
+                        "WHERE embedding MATCH ? ORDER BY distance LIMIT ?",
+                        (query_bytes, ann_k + 1)
+                    ).fetchall()
+                    neighbors = [(nid, 1.0 - dist) for nid, dist in rows]
+                else:
+                    # Brute-force fallback: compute dot products against all loaded vectors
+                    sims = vectors @ vectors[i]
+                    top_idx = np.argsort(sims)[::-1][:ann_k + 1]
+                    neighbors = [(node_ids[j], float(sims[j])) for j in top_idx]
+
+                for neighbor_id, similarity in neighbors:
+                    if neighbor_id == node_id:
+                        continue
+                    pair = tuple(sorted((node_id, neighbor_id)))
+                    if pair in seen_pairs:
+                        continue
+                    seen_pairs.add(pair)
+
                     if similarity >= self.dedup_threshold:
                         candidates.append(CrossLinkCandidate(
-                            node1_id=node_ids[i],
-                            node2_id=node_ids[j],
+                            node1_id=node_id,
+                            node2_id=neighbor_id,
                             similarity=similarity,
                             action="dedup"
                         ))
                     elif similarity >= self.cross_link_threshold:
                         candidates.append(CrossLinkCandidate(
-                            node1_id=node_ids[i],
-                            node2_id=node_ids[j],
+                            node1_id=node_id,
+                            node2_id=neighbor_id,
                             similarity=similarity,
                             action="cross_link"
                         ))
-            
-            logger.info(f"Found {len(candidates)} cross-link candidates from {len(node_ids)} nodes")
+
+            conn.close()
+            logger.info(f"Found {len(candidates)} cross-link candidates from {len(node_ids)} nodes (ANN k={ann_k})")
             return candidates
-            
+
         except Exception as e:
-            logger.warning(f"Embedding-based cross-link failed, falling back to text: {e}")
+            logger.warning(f"ANN cross-link failed, falling back to text: {e}")
             return self._find_cross_link_candidates_text_fallback()
     
     def _find_cross_link_candidates_text_fallback(self) -> List[CrossLinkCandidate]:
@@ -579,11 +604,16 @@ class SleepProtocol:
         # Get current core memories
         cursor.execute("SELECT id FROM thought_nodes WHERE node_type = 'core_memory'")
         current_core = set(row[0] for row in cursor.fetchall())
-        
-        # Rank all nodes by composite fitness
-        ranked_nodes = sorted(metrics.values(), key=lambda m: m.composite_fitness, reverse=True)
-        
-        # Top nodes should be core memories
+
+        # Fetch access counts — only nodes with sufficient retrieval history are eligible
+        cursor.execute("SELECT id, COALESCE(access_count, 0) FROM thought_nodes WHERE decayed=0 OR decayed IS NULL")
+        access_counts = {row[0]: row[1] for row in cursor.fetchall()}
+
+        # Rank eligible nodes by composite fitness
+        eligible = [m for m in metrics.values() if access_counts.get(m.node_id, 0) >= self.min_access_for_core_promotion]
+        ranked_nodes = sorted(eligible, key=lambda m: m.composite_fitness, reverse=True)
+
+        # Top eligible nodes should be core memories
         should_be_core = set(m.node_id for m in ranked_nodes[:target_core_memories])
         
         # Promote new core memories (and make them permanent)

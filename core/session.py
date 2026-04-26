@@ -819,7 +819,7 @@ def _find_cluster_for_thinking(db_path: str, focus_domain: Optional[str] = None)
             FROM thought_nodes 
             WHERE (decayed IS NULL OR decayed = 0)
             AND COALESCE(domain, 'unknown') = ?
-            ORDER BY COALESCE(access_count, 0) ASC, last_accessed ASC
+            ORDER BY COALESCE(access_count, 0) ASC, CASE WHEN COALESCE(access_count, 0) = 0 THEN RANDOM() ELSE last_accessed END ASC
             LIMIT 20
         """, (focus_domain,))
         high_activation_candidates = cursor.fetchall()
@@ -842,7 +842,7 @@ def _find_cluster_for_thinking(db_path: str, focus_domain: Optional[str] = None)
             FROM thought_nodes
             WHERE (decayed IS NULL OR decayed = 0)
             AND node_type != 'seed'
-            ORDER BY COALESCE(access_count, 0) ASC, last_accessed ASC
+            ORDER BY COALESCE(access_count, 0) ASC, CASE WHEN COALESCE(access_count, 0) = 0 THEN RANDOM() ELSE last_accessed END ASC
             LIMIT 20
         """)
         high_activation_candidates = cursor.fetchall()
@@ -853,7 +853,7 @@ def _find_cluster_for_thinking(db_path: str, focus_domain: Optional[str] = None)
             FROM thought_nodes 
             WHERE (decayed IS NULL OR decayed = 0)
             AND timestamp > datetime('now', '-30 days')
-            AND source_file LIKE '%system_generated%'
+            AND (source_file LIKE 'extractor:%' OR source_file LIKE '%system_generated%')
             GROUP BY node_type, domain
             ORDER BY cnt ASC
         """)

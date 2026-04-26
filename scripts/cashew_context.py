@@ -27,12 +27,21 @@ explain_complete_system = get_complete_system_stats = None
 # hotspots removed — recursive BFS is the retrieval method now
 
 
-def _build_model_fn():
-    """Build an LLM callable via core.llm.build_backend. Returns None if unavailable."""
+def _build_model_fn(purpose: str = "ingest"):
+    """Build an LLM callable via core.llm.build_backend. Returns None if unavailable.
+
+    purpose='think' uses CASHEW_THINK_MODEL (default: claude-sonnet-4-6).
+    All other purposes use CASHEW_CLAUDE_MODEL (default: claude-haiku-4-5-20251001).
+    """
+    import os as _os
     from core.llm import build_backend
-    backend = build_backend()
+    if purpose == "think":
+        model = _os.environ.get("CASHEW_THINK_MODEL", "claude-sonnet-4-6")
+    else:
+        model = None  # AnthropicBackend picks up CASHEW_CLAUDE_MODEL or haiku default
+    backend = build_backend(model=model)
     if backend is not None:
-        print(f"🔑 LLM enabled via {backend.__class__.__name__} (model={backend.model})")
+        print(f"[LLM] enabled via {backend.__class__.__name__} (model={backend.model})")
     return backend
 from core.decay import auto_decay, get_decay_candidates
 from core.stats import get_active_node_count, get_edge_count, get_embedding_coverage
@@ -391,8 +400,8 @@ def cmd_think(args):
     
     domain = args.domain if args.domain else None
     mode = getattr(args, 'mode', 'general')
-    
-    model_fn = _build_model_fn()
+
+    model_fn = _build_model_fn(purpose="think")
     if mode == "tension":
         print("⚡ Running tension detection...")
         if domain:
@@ -717,8 +726,8 @@ def cmd_complete_think(args):
     if domain:
         print(f"   Focused on domain: {domain}")
     print()
-    
-    model_fn = _build_model_fn()
+
+    model_fn = _build_model_fn(purpose="think")
     t0 = time.time()
     try:
         result = run_complete_think_cycle(args.db, domain, model_fn=model_fn)
