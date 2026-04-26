@@ -137,6 +137,34 @@ class TestSleepProtocol:
         )
         assert sim4 == 1.0  # Should be identical
     
+    def test_default_dedup_threshold_matches_design(self, sleep_protocol):
+        """dedup_threshold default must be 0.82 per DESIGN.md §10.
+
+        DESIGN.md specifies dedup at >0.82 similarity; cross-link at 0.7-0.85.
+        A pair scoring 0.82-0.89 is near-identical restatement (same fact, different
+        wording) and should be merged, not cross-linked. At 0.9 that band becomes
+        cross-links, inflating hub degree without adding knowledge.
+        """
+        assert sleep_protocol.dedup_threshold == 0.82, (
+            f"dedup_threshold is {sleep_protocol.dedup_threshold}; "
+            "DESIGN.md §10 specifies >0.82 — update code or design, not this test"
+        )
+
+    def test_high_similarity_pair_routes_to_dedup_not_cross_link(self, sleep_protocol):
+        """A pair with similarity in the 0.82-0.89 range must be a dedup candidate.
+
+        With dedup_threshold=0.9 (old default), similarity=0.85 falls into the
+        cross-link band. With the corrected 0.82 threshold it routes to dedup.
+        """
+        # Patch _text_similarity to return a controlled value in the 0.82-0.89 band
+        with patch.object(sleep_protocol, '_text_similarity', return_value=0.85):
+            candidates = sleep_protocol._find_cross_link_candidates_text_fallback()
+
+        dedup = [c for c in candidates if c.action == "dedup"]
+        cross = [c for c in candidates if c.action == "cross_link" and c.similarity == 0.85]
+        assert len(dedup) > 0, "similarity=0.85 should produce at least one dedup candidate"
+        assert len(cross) == 0, "similarity=0.85 must not produce cross_link candidates"
+
     def test_find_cross_link_candidates(self, sleep_protocol):
         """Test finding cross-link candidates"""
         # Lower thresholds for testing
