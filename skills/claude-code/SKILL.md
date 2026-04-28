@@ -134,6 +134,22 @@ done
 | `cashew [--db path] init` | Initialize new database |
 | `cashew serve` | Run the warm daemon (keeps model + sqlite-vec loaded) |
 
+## Automatic Context Injection (UserPromptSubmit hook)
+
+For fully automatic context retrieval on every message — no `/cashew` invocation needed — use the provided Claude Code hook:
+
+```bash
+# Copy the hook
+cp skills/claude-code/hooks/userpromptsubmit.sh ~/.claude/hooks/cashew-userpromptsubmit.sh
+chmod +x ~/.claude/hooks/cashew-userpromptsubmit.sh
+```
+
+Then in Claude Code settings → Hooks → UserPromptSubmit, add the hook path.
+
+The hook uses the first 300 characters of your prompt as retrieval hints and injects relevant context as an `additionalSystemPrompt`. It skips prompts under 25 characters (short acknowledgments like "yes", "ok", "go" produce low-signal retrievals that add noise).
+
+**Tradeoff:** every substantive message adds a ~3s retrieval (or ~0.1s with the warm daemon). Disable the hook and query manually with `/cashew` if you want on-demand retrieval instead.
+
 ## Warm Daemon (optional, recommended)
 
 By default, every `cashew context` call loads the ~500MB MiniLM model from scratch — ~3s of overhead per query. If you query often (e.g. once per substantive message), run the daemon:
