@@ -56,7 +56,7 @@ class SleepProtocol:
         self.db_path = db_path
         self.sleep_log_path = sleep_log_path
         self.sleep_frequency = 10  # Sleep every N thoughts (tunable)
-        self.dedup_threshold = 0.9
+        self.dedup_threshold = 0.82
         self.cross_link_threshold = 0.7
         # GC settings from config
         self.gc_mode = getattr(config, 'gc_mode', 'soft')
